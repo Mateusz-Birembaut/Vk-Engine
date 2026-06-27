@@ -2,3 +2,4 @@
 docs/
 build/
 *.md
+.clang-format

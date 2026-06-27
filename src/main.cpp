@@ -1,9 +1,20 @@
-#include <stdlib.h>
 #include <iostream>
+#include <stdexcept>
+#include <stdlib.h>
 
-int main(int argc, char* argv[]){
+#include "VkEngine/VkEngine.h"
 
-	std::cout << "VkEngine" << '\n';
+int main(int argc, char* argv[])
+{
+    VkEngine engine{};
 
-	return EXIT_SUCCESS;
+    try {
+        engine.init();
+    } catch (const std::runtime_error& error) {
+        std::cout << error.what() << '\n';
+    }
+
+    engine.run();
+
+    return EXIT_SUCCESS;
 }
