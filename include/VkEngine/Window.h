@@ -13,6 +13,8 @@ public:
 
     VkExtent2D getSizeInPixels();
 
+    VkSurfaceKHR createSurface(VkInstance instance, const struct VkAllocationCallbacks* pallocator = nullptr);
+
 private:
     SDL_Window* m_window = nullptr;
 };
