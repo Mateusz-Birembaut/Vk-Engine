@@ -1,6 +1,6 @@
 #include "VkEngine/VulkanCtx.h"
 
-#include <iostream>
+#include <stdexcept>
 #include <VkBootstrap.h>
 
 #include "VkEngine/VkEngineInfo.h"
@@ -30,14 +30,10 @@ void VulkanCtx::init(Window* pWindow)
     auto inst_ret = builder.set_app_name(app::NAME.data())
                         .request_validation_layers(useValidation)
                         .use_default_debug_messenger()
-                        .require_api_version(
-                            app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH
-                        )
+                        .require_api_version(app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH)
                         .build();
     if (!inst_ret) {
-        throw std::runtime_error(
-            "[VulkanCtx] Failed to create Vulkan instance. Error: " + inst_ret.error().message()
-        );
+        throw std::runtime_error("[VulkanCtx] Failed to create Vulkan instance. Error: " + inst_ret.error().message());
     }
     m_instance = inst_ret.value().instance;
     m_debugMessenger = inst_ret.value().debug_messenger;
@@ -64,8 +60,7 @@ void VulkanCtx::init(Window* pWindow)
                         .select();
     if (!phys_ret) {
         throw std::runtime_error(
-            "[VulkanCtx] Failed to select Vulkan Physical Device. Error: " +
-            phys_ret.error().message()
+            "[VulkanCtx] Failed to select Vulkan Physical Device. Error: " + phys_ret.error().message()
         );
     }
     m_gpu = phys_ret.value().physical_device;
@@ -74,21 +69,20 @@ void VulkanCtx::init(Window* pWindow)
     vkb::DeviceBuilder device_builder{phys_ret.value()};
     auto dev_ret = device_builder.build();
     if (!dev_ret) {
-        throw std::runtime_error(
-            "[VulkanCtx] Failed to create Vulkan device. Error: " + dev_ret.error().message()
-        );
+        throw std::runtime_error("[VulkanCtx] Failed to create Vulkan device. Error: " + dev_ret.error().message());
     }
-    m_device = dev_ret.value().device;
+    vkb::Device& vkbDevice = dev_ret.value();
+    m_device = vkbDevice.device;
 
     // GraphicsQueue
-    auto graphics_queue_ret = dev_ret.value().get_queue(vkb::QueueType::graphics);
+    auto graphics_queue_ret = vkbDevice.get_queue(vkb::QueueType::graphics);
     if (!graphics_queue_ret) {
         throw std::runtime_error(
-            "[VulkanCtx] Failed to get graphics queue. Error: " +
-            graphics_queue_ret.error().message()
+            "[VulkanCtx] Failed to get graphics queue. Error: " + graphics_queue_ret.error().message()
         );
     }
     m_graphicsQueue = graphics_queue_ret.value();
+    m_graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
     // Swapchain
     createSwapchain();
@@ -106,18 +100,16 @@ void VulkanCtx::createSwapchain()
 
     auto swap_ret =
         swapchainBuilder.set_old_swapchain(m_swapchain)
-            .set_desired_format(VkSurfaceFormatKHR{
-                .format = VK_FORMAT_B8G8R8A8_UNORM, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-            })
+            .set_desired_format(
+                VkSurfaceFormatKHR{.format = VK_FORMAT_B8G8R8A8_UNORM, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}
+            )
             .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
             .set_desired_extent(extent.width, extent.height)
             .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
             .build();
 
     if (!swap_ret) {
-        throw std::runtime_error(
-            "[VulkanCtx] Failed to create swapchain : " + swap_ret.error().message()
-        );
+        throw std::runtime_error("[VulkanCtx] Failed to create swapchain : " + swap_ret.error().message());
     } else {
         cleanupSwapchain();
 
@@ -129,16 +121,12 @@ void VulkanCtx::createSwapchain()
 
         auto imgs_ret = vkbSwap.get_images();
         if (!imgs_ret)
-            throw std::runtime_error(
-                "[VulkanCtx] Failed to create images : " + imgs_ret.error().message()
-            );
+            throw std::runtime_error("[VulkanCtx] Failed to create images : " + imgs_ret.error().message());
         m_swapchainImgs = imgs_ret.value();
 
         auto views_ret = vkbSwap.get_image_views();
         if (!views_ret)
-            throw std::runtime_error(
-                "[VulkanCtx] Failed to create image views: " + views_ret.error().message()
-            );
+            throw std::runtime_error("[VulkanCtx] Failed to create image views: " + views_ret.error().message());
         m_swapchainImgViews = views_ret.value();
     }
 }

@@ -4,6 +4,7 @@
 
 class Window;
 class VulkanCtx;
+class Renderer;
 
 class App {
 public:
@@ -16,5 +17,6 @@ public:
 private:
     std::unique_ptr<Window> m_window;
     std::unique_ptr<VulkanCtx> m_ctx;
+    std::unique_ptr<Renderer> m_renderer;
     bool m_running = true;
 };

@@ -42,8 +42,6 @@ configure_file(
     @ONLY
 )
 
-
-
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 
@@ -54,6 +52,7 @@ target_sources( ${PROJECT_NAME}
         src/App.cpp
         src/Window.cpp
         src/VulkanCtx.cpp
+        src/Renderer.cpp
 
 	PUBLIC
 		FILE_SET HEADERS
