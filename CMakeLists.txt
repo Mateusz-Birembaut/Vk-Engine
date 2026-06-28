@@ -50,6 +50,7 @@ target_sources( ${PROJECT_NAME}
 		src/main.cpp
         src/VkEngine.cpp
         src/Window.cpp
+        src/VulkanCtx.cpp
 
 	PUBLIC
 		FILE_SET HEADERS

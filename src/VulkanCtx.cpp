@@ -1,0 +1,119 @@
+#include "VkEngine/VulkanCtx.h"
+
+#include <iostream>
+#include <VkBootstrap.h>
+
+#include "VkEngine/VkEngineInfo.h"
+#include "VkEngine/Window.h"
+
+VulkanCtx::~VulkanCtx()
+{
+    vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+    vkDestroyDevice(m_device, nullptr);
+    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+    vkb::destroy_debug_utils_messenger(m_instance, m_debugMessenger);
+    vkDestroyInstance(m_instance, nullptr);
+}
+
+void VulkanCtx::init(Window* pWindow)
+{
+    m_window = pWindow;
+
+    // VkInstance
+    vkb::InstanceBuilder builder;
+    auto inst_ret = builder.set_app_name(app::NAME.data())
+                        .request_validation_layers()
+                        .use_default_debug_messenger()
+                        .require_api_version(
+                            app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH
+                        )
+                        .build();
+    if (!inst_ret) {
+        std::runtime_error(
+            "[VulkanCtx] Failed to create Vulkan instance. Error: " + inst_ret.error().message()
+        );
+    }
+    m_instance = inst_ret.value().instance;
+    m_debugMessenger = inst_ret.value().debug_messenger;
+
+    m_surface = m_window->createSurface(m_instance);
+
+    // PhysicalDevice, dynamic rendering feature, sync 2, scalar block layout
+    constexpr VkPhysicalDeviceVulkan12Features features12{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+        .scalarBlockLayout = VK_TRUE,
+    };
+
+    constexpr VkPhysicalDeviceVulkan13Features features13{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+        .synchronization2 = VK_TRUE,
+        .dynamicRendering = VK_TRUE,
+    };
+
+    vkb::PhysicalDeviceSelector selector{inst_ret.value()};
+    auto phys_ret = selector.set_surface(m_surface)
+                        .set_minimum_version(app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR)
+                        .set_required_features_12(features12)
+                        .set_required_features_13(features13)
+                        .select();
+    if (!phys_ret) {
+        std::runtime_error(
+            "[VulkanCtx] Failed to select Vulkan Physical Device. Error: " +
+            phys_ret.error().message()
+        );
+    }
+    m_gpu = phys_ret.value().physical_device;
+
+    // Device
+    vkb::DeviceBuilder device_builder{phys_ret.value()};
+    auto dev_ret = device_builder.build();
+    if (!dev_ret) {
+        std::runtime_error(
+            "[VulkanCtx] Failed to create Vulkan device. Error: " + dev_ret.error().message()
+        );
+    }
+    m_device = dev_ret.value().device;
+
+    // GraphicsQueue
+    auto graphics_queue_ret = dev_ret.value().get_queue(vkb::QueueType::graphics);
+    if (!graphics_queue_ret) {
+        std::runtime_error(
+            "[VulkanCtx] Failed to get graphics queue. Error: " +
+            graphics_queue_ret.error().message()
+        );
+    }
+    m_graphicsQueue = graphics_queue_ret.value();
+
+    // Swapchain
+    createSwapchain();
+}
+
+void VulkanCtx::createSwapchain()
+{
+    VkExtent2D extent;
+    if (m_window)
+        extent = m_window->getSizeInPixels();
+    else
+        std::runtime_error("[VulkanCtx] Failed to get window extent");
+
+    vkb::SwapchainBuilder swapchainBuilder{m_gpu, m_device, m_surface};
+
+    auto swap_ret =
+        swapchainBuilder
+            //.use_default_format_selection()
+            .set_desired_format(VkSurfaceFormatKHR{
+                .format = VK_FORMAT_B8G8R8A8_UNORM, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+            })
+            // use vsync present mode
+            .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+            .set_desired_extent(extent.width, extent.height)
+            .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+            .build();
+
+    if (!swap_ret) {
+        std::cout << "[VulkanCtx] " + swap_ret.error().value() << "\n";
+        m_swapchain = VK_NULL_HANDLE;
+    } else {
+        m_swapchain = swap_ret.value().swapchain;
+    }
+}
