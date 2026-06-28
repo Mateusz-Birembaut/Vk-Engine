@@ -48,7 +48,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/g
 target_sources( ${PROJECT_NAME}
 	PRIVATE
 		src/main.cpp
-        src/VkEngine.cpp
+        src/App.cpp
         src/Window.cpp
         src/VulkanCtx.cpp
 

@@ -1,4 +1,4 @@
-#include "VkEngine/VkEngine.h"
+#include "VkEngine/App.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
@@ -8,25 +8,34 @@
 #include <stdexcept>
 
 #include "VkEngine/VkEngineInfo.h"
+#include "VkEngine/VulkanCtx.h"
+#include "VkEngine/Window.h"
 
-VkEngine::~VkEngine()
+App::App() = default;
+
+App::~App()
 {
     SDL_Quit();
 }
 
-void VkEngine::init()
+void App::init()
 {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
-        throw std::runtime_error(std::string("Could not init sdl : ") + SDL_GetError());
+        throw std::runtime_error(std::string("[DSL] Couldn't init  : ") + SDL_GetError());
 
     if (!SDL_SetAppMetadata(app::NAME.data(), app::VERSION.data(), "VkEngineID"))
         SDL_Log("%s", "Could not set app meta data");
 
     m_window = std::make_unique<Window>();
+
+    m_ctx = std::make_unique<VulkanCtx>();
+    m_ctx->init(m_window.get());
 }
 
-void VkEngine::run()
+void App::run()
 {
+    init();
+
     while (m_running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {

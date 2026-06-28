@@ -2,19 +2,18 @@
 #include <stdexcept>
 #include <stdlib.h>
 
-#include "VkEngine/VkEngine.h"
+#include "VkEngine/App.h"
 
 int main(int argc, char* argv[])
 {
-    VkEngine engine{};
+    App app{};
 
     try {
-        engine.init();
-    } catch (const std::runtime_error& error) {
-        std::cout << error.what() << '\n';
+        app.run();
+    } catch (const std::exception& e) {
+        std::cerr << "Fatal : " << e.what() << '\n';
+        return EXIT_FAILURE;
     }
-
-    engine.run();
 
     return EXIT_SUCCESS;
 }
