@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.24)
 
 
 project(VkEngine VERSION 0.1.0 LANGUAGES CXX)
@@ -19,6 +19,15 @@ if(VkEngine_VENDORED)
 else()
     find_package(Vulkan REQUIRED)
 endif()
+
+
+include(FetchContent)
+FetchContent_Declare(
+    fetch_vk_bootstrap
+    GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
+    GIT_TAG        v1.4.313
+)
+FetchContent_MakeAvailable(fetch_vk_bootstrap)
 
 
 add_executable(${PROJECT_NAME})
@@ -51,5 +60,6 @@ target_sources( ${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
+target_link_libraries(${PROJECT_NAME} PRIVATE vk-bootstrap::vk-bootstrap)
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
