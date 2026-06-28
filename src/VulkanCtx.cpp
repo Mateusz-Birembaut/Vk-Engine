@@ -8,7 +8,7 @@
 
 VulkanCtx::~VulkanCtx()
 {
-    vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+    cleanupSwapchain();
     vkDestroyDevice(m_device, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkb::destroy_debug_utils_messenger(m_instance, m_debugMessenger);
@@ -29,7 +29,7 @@ void VulkanCtx::init(Window* pWindow)
                         )
                         .build();
     if (!inst_ret) {
-        std::runtime_error(
+        throw std::runtime_error(
             "[VulkanCtx] Failed to create Vulkan instance. Error: " + inst_ret.error().message()
         );
     }
@@ -57,7 +57,7 @@ void VulkanCtx::init(Window* pWindow)
                         .set_required_features_13(features13)
                         .select();
     if (!phys_ret) {
-        std::runtime_error(
+        throw std::runtime_error(
             "[VulkanCtx] Failed to select Vulkan Physical Device. Error: " +
             phys_ret.error().message()
         );
@@ -68,7 +68,7 @@ void VulkanCtx::init(Window* pWindow)
     vkb::DeviceBuilder device_builder{phys_ret.value()};
     auto dev_ret = device_builder.build();
     if (!dev_ret) {
-        std::runtime_error(
+        throw std::runtime_error(
             "[VulkanCtx] Failed to create Vulkan device. Error: " + dev_ret.error().message()
         );
     }
@@ -77,7 +77,7 @@ void VulkanCtx::init(Window* pWindow)
     // GraphicsQueue
     auto graphics_queue_ret = dev_ret.value().get_queue(vkb::QueueType::graphics);
     if (!graphics_queue_ret) {
-        std::runtime_error(
+        throw std::runtime_error(
             "[VulkanCtx] Failed to get graphics queue. Error: " +
             graphics_queue_ret.error().message()
         );
@@ -94,26 +94,58 @@ void VulkanCtx::createSwapchain()
     if (m_window)
         extent = m_window->getSizeInPixels();
     else
-        std::runtime_error("[VulkanCtx] Failed to get window extent");
+        throw std::runtime_error("[VulkanCtx] Failed to get window extent");
 
     vkb::SwapchainBuilder swapchainBuilder{m_gpu, m_device, m_surface};
 
     auto swap_ret =
-        swapchainBuilder
-            //.use_default_format_selection()
+        swapchainBuilder.set_old_swapchain(m_swapchain)
             .set_desired_format(VkSurfaceFormatKHR{
                 .format = VK_FORMAT_B8G8R8A8_UNORM, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
             })
-            // use vsync present mode
             .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
             .set_desired_extent(extent.width, extent.height)
             .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
             .build();
 
     if (!swap_ret) {
-        std::cout << "[VulkanCtx] " + swap_ret.error().value() << "\n";
-        m_swapchain = VK_NULL_HANDLE;
+        throw std::runtime_error(
+            "[VulkanCtx] Failed to create swapchain : " + swap_ret.error().message()
+        );
     } else {
-        m_swapchain = swap_ret.value().swapchain;
+        cleanupSwapchain();
+
+        vkb::Swapchain& vkbSwap = swap_ret.value();
+
+        m_swapchain = vkbSwap.swapchain;
+        m_swapchainExtent = vkbSwap.extent;
+        m_swapchainImgFormat = vkbSwap.image_format;
+
+        auto imgs_ret = vkbSwap.get_images();
+        if (!imgs_ret)
+            throw std::runtime_error(
+                "[VulkanCtx] Failed to create images : " + imgs_ret.error().message()
+            );
+        m_swapchainImgs = imgs_ret.value();
+
+        auto views_ret = vkbSwap.get_image_views();
+        if (!views_ret)
+            throw std::runtime_error(
+                "[VulkanCtx] Failed to create image views: " + views_ret.error().message()
+            );
+        m_swapchainImgViews = views_ret.value();
+    }
+}
+
+void VulkanCtx::cleanupSwapchain()
+{
+    if (m_swapchain) {
+        for (VkImageView view : m_swapchainImgViews)
+            vkDestroyImageView(m_device, view, nullptr);
+
+        vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+        m_swapchainImgViews.clear();
+        m_swapchainImgs.clear();
+        m_swapchain = VK_NULL_HANDLE;
     }
 }

@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include <vector>
+
 class Window;
 
 class VulkanCtx {
@@ -10,8 +12,8 @@ public:
     ~VulkanCtx();
 
     void init(Window* pWindow);
-
     void createSwapchain();
+    void cleanupSwapchain();
 
 private:
     Window* m_window = nullptr;
@@ -22,5 +24,10 @@ private:
     VkPhysicalDevice m_gpu = VK_NULL_HANDLE;
     VkDevice m_device = VK_NULL_HANDLE;
     VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
+    VkExtent2D m_swapchainExtent{};
+    VkFormat m_swapchainImgFormat{};
+    std::vector<VkImage> m_swapchainImgs;
+    std::vector<VkImageView> m_swapchainImgViews;
+
     VkQueue m_graphicsQueue = VK_NULL_HANDLE;
 };
