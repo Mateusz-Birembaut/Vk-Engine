@@ -6,6 +6,12 @@
 #include "VkEngine/VkEngineInfo.h"
 #include "VkEngine/Window.h"
 
+#ifdef VKENGINE_VALIDATION
+constexpr bool useValidation = true;
+#else
+constexpr bool useValidation = false;
+#endif
+
 VulkanCtx::~VulkanCtx()
 {
     cleanupSwapchain();
@@ -22,7 +28,7 @@ void VulkanCtx::init(Window* pWindow)
     // VkInstance
     vkb::InstanceBuilder builder;
     auto inst_ret = builder.set_app_name(app::NAME.data())
-                        .request_validation_layers()
+                        .request_validation_layers(useValidation)
                         .use_default_debug_messenger()
                         .require_api_version(
                             app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH

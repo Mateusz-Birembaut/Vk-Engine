@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.24)
 project(VkEngine VERSION 0.1.0 LANGUAGES CXX)
 
 option(VkEngine_VENDORED "Use vendored libraries" OFF)
+option(VKENGINE_VALIDATION "Enable Vulkan validation layers" ON)
 
 # -------------------SDL----------------------------
 if(VkEngine_VENDORED)
@@ -41,6 +42,8 @@ configure_file(
     @ONLY
 )
 
+
+
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 
@@ -64,3 +67,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
 target_link_libraries(${PROJECT_NAME} PRIVATE vk-bootstrap::vk-bootstrap)
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<BOOL:${VKENGINE_VALIDATION}>:VKENGINE_VALIDATION>)
