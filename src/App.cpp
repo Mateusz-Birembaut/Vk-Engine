@@ -22,7 +22,7 @@ App::~App()
 void App::init()
 {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
-        throw std::runtime_error(std::string("[DSL] Couldn't init  : ") + SDL_GetError());
+        throw std::runtime_error(std::string("[SDL] Couldn't init  : ") + SDL_GetError());
 
     if (!SDL_SetAppMetadata(app::NAME.data(), app::VERSION.data(), "VkEngineID"))
         SDL_Log("%s", "Could not set app meta data");
@@ -46,8 +46,12 @@ void App::run()
             if (event.type == SDL_EVENT_QUIT) {
                 m_running = false;
             }
-
-            // update game state, draw the current frame
         }
+
+        if (!m_running)
+            break;
+
+        // update game state, draw the current frame
+        m_renderer->drawFrame();
     }
 }
