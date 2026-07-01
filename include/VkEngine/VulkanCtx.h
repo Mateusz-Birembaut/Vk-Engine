@@ -40,6 +40,16 @@ public:
         return m_swapchainImgViews;
     }
 
+    const std::vector<VkImage>& swapchainImgs() const
+    {
+        return m_swapchainImgs;
+    }
+
+    VkSwapchainKHR swapchain() const
+    {
+        return m_swapchain;
+    }
+
 private:
     Window* m_window = nullptr;
 
