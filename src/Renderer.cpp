@@ -147,6 +147,8 @@ void Renderer::drawFrame()
     if (acquireImg == VK_ERROR_OUT_OF_DATE_KHR) {
         recreateSwapchain();
         return;
+    } else if (acquireImg != VK_SUCCESS && acquireImg != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("[Renderer] Failed to acquire swapchain image");
     }
 
     VkCommandBuffer cmdBuff = frameData.commandBuffer;

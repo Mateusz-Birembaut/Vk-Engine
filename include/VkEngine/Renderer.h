@@ -22,17 +22,18 @@ public:
     ~Renderer();
 
     void init(VulkanCtx* pVulkanCtx);
-    void initCommands();
-    void initSyncStructs();
-    void createRenderSemaphores();
     void cleanup();
-    void cleanupRenderSems();
-    void recreateSwapchain();
     void drawFrame();
 
     FrameData& getCurrentFrame();
 
 private:
+    void initCommands();
+    void initSyncStructs();
+    void createRenderSemaphores();
+    void cleanupRenderSems();
+    void recreateSwapchain();
+
     VulkanCtx* m_ctx;
 
     FrameData m_frames[FRAMES_IN_FLIGHT];
