@@ -14,6 +14,10 @@ constexpr bool useValidation = false;
 
 VulkanCtx::~VulkanCtx()
 {
+    // never initialized, nothing was created (everything derives from the instance)
+    if (!m_instance)
+        return;
+
     cleanupSwapchain();
     vkDestroyDevice(m_device, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);

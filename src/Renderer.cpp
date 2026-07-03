@@ -16,6 +16,9 @@ Renderer::~Renderer()
 
 void Renderer::init(VulkanCtx* pVulkanCtx)
 {
+    if (!pVulkanCtx)
+        return;
+
     m_ctx = pVulkanCtx;
 
     initCommands();
@@ -90,6 +93,9 @@ FrameData& Renderer::getCurrentFrame()
 
 void Renderer::cleanup()
 {
+    if (!m_ctx)
+        return; // in case after init ctx = nullptr
+
     vkDeviceWaitIdle(m_ctx->device());
 
     auto device = m_ctx->device();

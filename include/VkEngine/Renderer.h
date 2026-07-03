@@ -34,7 +34,7 @@ private:
     void cleanupRenderSems();
     void recreateSwapchain();
 
-    VulkanCtx* m_ctx;
+    VulkanCtx* m_ctx = nullptr;
 
     FrameData m_frames[FRAMES_IN_FLIGHT];
     uint32_t m_frameNb{0};
