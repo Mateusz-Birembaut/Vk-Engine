@@ -129,4 +129,41 @@ VkImageSubresourceRange imgSubresourceRange(VkImageAspectFlags aspectMask)
     return subImage;
 }
 
+VkDependencyInfo dependencyInfo(VkImageMemoryBarrier2* imgMemBarrier)
+{
+    VkDependencyInfo dependencyInfo{};
+    dependencyInfo.imageMemoryBarrierCount = 1;
+    dependencyInfo.pImageMemoryBarriers = imgMemBarrier;
+    dependencyInfo.pNext = nullptr;
+    dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+
+    return dependencyInfo;
+}
+
+VkImageMemoryBarrier2 imageMemoryBarrier(
+    VkImage img, VkImageSubresourceRange imgSubRessource, VkImageLayout oldLayout, VkAccessFlags2 srcAccess,
+    VkPipelineStageFlags2 srcStage, VkImageLayout newLayout, VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
+)
+{
+    VkImageMemoryBarrier2 imgMemBarrier{};
+
+    imgMemBarrier.image = img;
+    imgMemBarrier.subresourceRange = imgSubRessource;
+
+    imgMemBarrier.oldLayout = oldLayout;
+    imgMemBarrier.srcAccessMask = srcAccess;
+    imgMemBarrier.srcStageMask = srcStage;
+    imgMemBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+    imgMemBarrier.newLayout = newLayout;
+    imgMemBarrier.dstAccessMask = dstAccess;
+    imgMemBarrier.dstStageMask = dstStage;
+    imgMemBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+    imgMemBarrier.pNext = nullptr;
+    imgMemBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+
+    return imgMemBarrier;
+}
+
 } // namespace VkEngine
