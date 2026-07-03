@@ -114,6 +114,7 @@ void Renderer::cleanupRenderSems()
     for (int IRenderSem = 0; IRenderSem < semCount; ++IRenderSem) {
         vkDestroySemaphore(device, m_renderSems[IRenderSem], nullptr);
     }
+    m_renderSems.clear();
 }
 
 /// @brief Recreating the swapchain, if img count changed, recreate the render semaphores
