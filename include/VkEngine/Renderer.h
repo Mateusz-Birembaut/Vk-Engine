@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <time.h>
 #include <vector>
 
 class VulkanCtx;
@@ -23,7 +24,9 @@ public:
     void init(VulkanCtx* pVulkanCtx);
     void initCommands();
     void initSyncStructs();
+    void createRenderSemaphores();
     void cleanup();
+    void cleanupRenderSems();
     void recreateSwapchain();
     void drawFrame();
 
@@ -38,4 +41,6 @@ private:
     std::vector<VkSemaphore> m_renderSems; // 1 per swapchain image
 
     VkClearColorValue m_clearColorValue{};
+
+    double start = 100 * ((double) clock()) / (double) CLOCKS_PER_SEC;
 };

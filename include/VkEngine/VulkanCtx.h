@@ -50,6 +50,11 @@ public:
         return m_swapchain;
     }
 
+    int swapchainImgCount() const
+    {
+        return static_cast<int>(m_swapchainImgs.size());
+    }
+
 private:
     Window* m_window = nullptr;
 
