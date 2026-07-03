@@ -71,7 +71,7 @@ void Renderer::createRenderSemaphores()
 
     // one render semaphore per img in swapchain
     int imgCount = static_cast<int>(m_ctx->swapchainImgs().size());
-    m_renderSems.reserve(imgCount);
+    m_renderSems.resize(imgCount);
 
     for (int ISwapChainImg = 0; ISwapChainImg < imgCount; ++ISwapChainImg) {
         if (vkCreateSemaphore(m_ctx->device(), &semaphoreCreateInfo, nullptr, &m_renderSems[ISwapChainImg]) !=
@@ -110,9 +110,9 @@ void Renderer::cleanupRenderSems()
 {
     auto device = m_ctx->device();
 
-    int imgCount = static_cast<int>(m_ctx->swapchainImgs().size());
-    for (int ISwapChainImg = 0; ISwapChainImg < imgCount; ++ISwapChainImg) {
-        vkDestroySemaphore(device, m_renderSems[ISwapChainImg], nullptr);
+    int semCount = static_cast<int>(m_renderSems.size());
+    for (int IRenderSem = 0; IRenderSem < semCount; ++IRenderSem) {
+        vkDestroySemaphore(device, m_renderSems[IRenderSem], nullptr);
     }
 }
 
