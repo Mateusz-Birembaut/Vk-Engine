@@ -5,16 +5,12 @@
 #include <time.h>
 #include <vector>
 
+#include "VkEngine/ResourceDestroyer.h"
+#include "VkEngine/Types.h"
+
 class VulkanCtx;
 
 inline constexpr int FRAMES_IN_FLIGHT = 2;
-
-struct FrameData {
-    VkCommandPool commandPool;
-    VkCommandBuffer commandBuffer;
-    VkFence renderFence;
-    VkSemaphore swapchainSem;
-};
 
 class Renderer {
 public:
@@ -25,23 +21,25 @@ public:
     void cleanup();
     void drawFrame();
 
-    FrameData& getCurrentFrame();
+    VkEngine::FrameData& getCurrentFrame();
 
 private:
     void initCommands();
     void initSyncStructs();
-    void createRenderSemaphores();
+    void createRenderSems();
     void cleanupRenderSems();
     void recreateSwapchain();
 
     VulkanCtx* m_ctx = nullptr;
 
-    FrameData m_frames[FRAMES_IN_FLIGHT];
+    VkEngine::FrameData m_frames[FRAMES_IN_FLIGHT];
     uint32_t m_frameNb{0};
 
     std::vector<VkSemaphore> m_renderSems; // 1 per swapchain image
 
     VkClearColorValue m_clearColorValue{};
+
+    ResourceDestroyer resourceDestroyer;
 
     double start = 100 * ((double) clock()) / (double) CLOCKS_PER_SEC;
 };

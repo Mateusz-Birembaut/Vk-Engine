@@ -141,8 +141,8 @@ VkDependencyInfo dependencyInfo(VkImageMemoryBarrier2* imgMemBarrier)
 }
 
 VkImageMemoryBarrier2 imageMemoryBarrier(
-    VkImage img, VkImageSubresourceRange imgSubRessource, VkImageLayout oldLayout, VkAccessFlags2 srcAccess,
-    VkPipelineStageFlags2 srcStage, VkImageLayout newLayout, VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
+    VkImage img, VkImageSubresourceRange imgSubRessource, VkImageLayout oldLayout, VkPipelineStageFlags2 srcStage,
+    VkAccessFlags2 srcAccess, VkImageLayout newLayout, VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess
 )
 {
     VkImageMemoryBarrier2 imgMemBarrier{};
@@ -151,13 +151,13 @@ VkImageMemoryBarrier2 imageMemoryBarrier(
     imgMemBarrier.subresourceRange = imgSubRessource;
 
     imgMemBarrier.oldLayout = oldLayout;
-    imgMemBarrier.srcAccessMask = srcAccess;
     imgMemBarrier.srcStageMask = srcStage;
+    imgMemBarrier.srcAccessMask = srcAccess;
     imgMemBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
     imgMemBarrier.newLayout = newLayout;
-    imgMemBarrier.dstAccessMask = dstAccess;
     imgMemBarrier.dstStageMask = dstStage;
+    imgMemBarrier.dstAccessMask = dstAccess;
     imgMemBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
     imgMemBarrier.pNext = nullptr;

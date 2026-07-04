@@ -39,6 +39,7 @@ void Renderer::initCommands()
         if (vkCreateCommandPool(m_ctx->device(), &cmdPoolInfo, nullptr, &m_frames[Iframe].commandPool) != VK_SUCCESS) {
             throw std::runtime_error("[Renderer] Failed to create command pool " + std::to_string(Iframe));
         }
+        resourceDestroyer.push(m_frames[Iframe].commandPool);
 
         VkCommandBufferAllocateInfo cmdBuffInfo =
             VkEngine::cmdBufferAllocInfo(m_frames[Iframe].commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
@@ -46,6 +47,7 @@ void Renderer::initCommands()
         if (vkAllocateCommandBuffers(m_ctx->device(), &cmdBuffInfo, &m_frames[Iframe].commandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("[Renderer] Failed to create command buffer " + std::to_string(Iframe));
         }
+        // will be destroyed with its command pool
     }
 }
 
@@ -59,16 +61,19 @@ void Renderer::initSyncStructs()
         if (vkCreateFence(m_ctx->device(), &fenceCreateInfo, nullptr, &m_frames[IFrame].renderFence) != VK_SUCCESS) {
             throw std::runtime_error("[Renderer] Failed to create render fence " + std::to_string(IFrame));
         }
+        resourceDestroyer.push(m_frames[IFrame].renderFence);
+
         if (vkCreateSemaphore(m_ctx->device(), &semaphoreCreateInfo, nullptr, &m_frames[IFrame].swapchainSem) !=
             VK_SUCCESS) {
             throw std::runtime_error("[Renderer] Failed to create swapchain semaphore " + std::to_string(IFrame));
         }
+        resourceDestroyer.push(m_frames[IFrame].swapchainSem);
     }
 
-    createRenderSemaphores();
+    createRenderSems();
 }
 
-void Renderer::createRenderSemaphores()
+void Renderer::createRenderSems()
 {
     VkSemaphoreCreateInfo semaphoreCreateInfo = VkEngine::semaphoreCreateInfo();
 
@@ -86,7 +91,7 @@ void Renderer::createRenderSemaphores()
     }
 }
 
-FrameData& Renderer::getCurrentFrame()
+VkEngine::FrameData& Renderer::getCurrentFrame()
 {
     return m_frames[m_frameNb % FRAMES_IN_FLIGHT];
 }
@@ -98,16 +103,7 @@ void Renderer::cleanup()
 
     vkDeviceWaitIdle(m_ctx->device());
 
-    auto device = m_ctx->device();
-
-    for (int Iframe = 0; Iframe < FRAMES_IN_FLIGHT; ++Iframe) {
-        vkDestroyCommandPool(device, m_frames[Iframe].commandPool, nullptr);
-        m_frames[Iframe].commandPool = VK_NULL_HANDLE;
-        m_frames[Iframe].commandBuffer = VK_NULL_HANDLE;
-
-        vkDestroyFence(device, m_frames[Iframe].renderFence, nullptr);
-        vkDestroySemaphore(device, m_frames[Iframe].swapchainSem, nullptr);
-    }
+    resourceDestroyer.flush(m_ctx->device());
 
     cleanupRenderSems();
 }
@@ -134,7 +130,7 @@ void Renderer::recreateSwapchain()
 
     if (imgCountBefore != imgCountAfter) {
         cleanupRenderSems();
-        createRenderSemaphores();
+        createRenderSems();
     }
 }
 
@@ -173,8 +169,8 @@ void Renderer::drawFrame()
 
     // Transition to VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL to clear
     VkImageMemoryBarrier2 undefinedToTransferBarrier = VkEngine::imageMemoryBarrier(
-        img, imgSubresourceRange, VK_IMAGE_LAYOUT_UNDEFINED, VK_ACCESS_2_NONE, VK_PIPELINE_STAGE_2_NONE,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_2_CLEAR_BIT
+        img, imgSubresourceRange, VK_IMAGE_LAYOUT_UNDEFINED, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT
     );
 
     VkDependencyInfo dependencyInfo = VkEngine::dependencyInfo(&undefinedToTransferBarrier);
@@ -190,8 +186,8 @@ void Renderer::drawFrame()
     );
 
     VkImageMemoryBarrier2 transferToPresentBarrier = VkEngine::imageMemoryBarrier(
-        img, imgSubresourceRange, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 0, VK_PIPELINE_STAGE_2_NONE
+        img, imgSubresourceRange, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_2_CLEAR_BIT,
+        VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_NONE, 0
     );
 
     VkDependencyInfo dependencyInfo2 = VkEngine::dependencyInfo(&transferToPresentBarrier);
