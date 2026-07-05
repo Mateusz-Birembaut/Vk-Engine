@@ -89,6 +89,8 @@ void VulkanCtx::init(Window* pWindow)
     vkb::InstanceBuilder builder;
     auto inst_ret = builder.set_app_name(app::NAME.data())
                         .request_validation_layers(useValidation)
+                        .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT)
+                        //.add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT)
                         .set_debug_callback(debugCallback)
                         .require_api_version(app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH)
                         .build();
@@ -112,11 +114,17 @@ void VulkanCtx::init(Window* pWindow)
         .dynamicRendering = VK_TRUE,
     };
 
+    constexpr VkPhysicalDeviceVulkan14Features features14{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES,
+        .maintenance5 = VK_TRUE,
+    };
+
     vkb::PhysicalDeviceSelector selector{inst_ret.value()};
     auto phys_ret = selector.set_surface(m_surface)
                         .set_minimum_version(app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR)
                         .set_required_features_12(features12)
                         .set_required_features_13(features13)
+                        .set_required_features_14(features14)
                         .select();
     if (!phys_ret) {
         throw std::runtime_error(
