@@ -17,9 +17,15 @@ inline std::expected<ShaderCodeData, ShaderFileError> readShader(const std::file
     try {
         ShaderCodeData shaderData{};
 
+        if (path.extension() != ".spv") {
+            return std::unexpected(ShaderFileError::invalidPath);
+        }
+
         if (!std::filesystem::exists(path)) {
             return std::unexpected(ShaderFileError::fileNotFound);
         }
+
+        auto ext = path.extension();
 
         std::ifstream fileReader{path, std::ifstream::binary};
 
