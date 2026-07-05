@@ -42,3 +42,15 @@ TEST_CASE("Read on non existing file", "[FileReader]")
         VkEngine::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "dazdazdazd.frag.spv");
     REQUIRE(resultFragShader.error() == VkEngine::ShaderFileError::fileNotFound);
 }
+
+TEST_CASE("Read on directory", "[FileReader]")
+{
+    auto resultFragShader = VkEngine::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR});
+    REQUIRE(resultFragShader.error() == VkEngine::ShaderFileError::invalidPath);
+}
+
+TEST_CASE("Read file with invalid extension", "[FileReader]")
+{
+    auto resultFragShader = VkEngine::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "shader.frag.sdzad");
+    REQUIRE(resultFragShader.error() == VkEngine::ShaderFileError::invalidPath);
+}
