@@ -1,6 +1,9 @@
 #include "VkEngine/VulkanCtx.h"
 
+#include <iostream>
 #include <stdexcept>
+#include <string_view>
+#include <unistd.h>
 #include <VkBootstrap.h>
 
 #include "VkEngine/VkEngineInfo.h"
@@ -25,6 +28,59 @@ VulkanCtx::~VulkanCtx()
     vkDestroyInstance(m_instance, nullptr);
 }
 
+VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type,
+    const VkDebugUtilsMessengerCallbackDataEXT* data, void* /*userData*/
+)
+{
+    // colors disabled when stderr is redirected to a file
+    static const bool useColor = isatty(fileno(stderr));
+
+    const char* color = "";
+    const char* label = "INFO";
+    if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        color = "\033[1;31m"; // bold red
+        label = "ERROR";
+    } else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        color = "\033[1;33m"; // bold yellow
+        label = "WARNING";
+    } else {
+        color = "\033[90m"; // grey
+    }
+    const char* dim = "\033[90m";
+    const char* reset = "\033[0m";
+    if (!useColor)
+        color = dim = reset = "";
+
+    const char* tag = "GENERAL";
+    if (type & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
+        tag = "VALIDATION";
+    else if (type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
+        tag = "PERF"; // best-practices warnings land here
+
+    // pMessageIdName holds the short VUID, no need to dig it out of the message
+    std::string_view vuid = data->pMessageIdName ? data->pMessageIdName : "-";
+
+    // drop the spec quote + URL, the VUID is enough to look it up
+    std::string_view msg = data->pMessage ? data->pMessage : "";
+    if (size_t specPos = msg.find("The Vulkan spec states"); specPos != std::string_view::npos)
+        msg = msg.substr(0, specPos);
+    while (msg.ends_with(' ') || msg.ends_with('\n'))
+        msg.remove_suffix(1);
+
+    std::cerr << color << "[" << label << "|" << tag << "] " << vuid << reset << '\n' << msg << '\n';
+
+    // objects named via vkSetDebugUtilsObjectNameEXT show up here
+    for (uint32_t i = 0; i < data->objectCount; ++i) {
+        const auto& obj = data->pObjects[i];
+        std::cerr << dim << "    object " << i << ": " << (obj.pObjectName ? obj.pObjectName : "?") << " (0x"
+                  << std::hex << obj.objectHandle << std::dec << ")" << reset << '\n';
+    }
+    std::cerr << '\n';
+
+    return VK_FALSE; // VK_TRUE would abort the offending Vulkan call
+}
+
 void VulkanCtx::init(Window* pWindow)
 {
     m_window = pWindow;
@@ -33,7 +89,7 @@ void VulkanCtx::init(Window* pWindow)
     vkb::InstanceBuilder builder;
     auto inst_ret = builder.set_app_name(app::NAME.data())
                         .request_validation_layers(useValidation)
-                        .use_default_debug_messenger()
+                        .set_debug_callback(debugCallback)
                         .require_api_version(app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH)
                         .build();
     if (!inst_ret) {
