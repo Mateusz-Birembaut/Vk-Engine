@@ -10,7 +10,7 @@
 
 namespace VkEngine {
 
-enum class ShaderFileError { invalidPath, invalidData, readError, failOpen, fileNotFound, unknownError };
+enum ShaderFileError { invalidPath, invalidData, readError, failOpen, fileNotFound, unknownError };
 
 inline std::expected<ShaderCodeData, ShaderFileError> readShader(const std::filesystem::path& path)
 {

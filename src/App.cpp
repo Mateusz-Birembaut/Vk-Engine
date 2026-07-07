@@ -5,6 +5,8 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_main.h>
 
+#include <filesystem>
+#include <iostream>
 #include <stdexcept>
 
 #include "VkEngine/Renderer.h"
@@ -32,8 +34,12 @@ void App::init()
     m_ctx = std::make_unique<VulkanCtx>();
     m_ctx->init(m_window.get());
 
+    const char* exeDir = SDL_GetBasePath();
+    std::filesystem::path shadePath{exeDir};
+    shadePath += "Shaders";
+
     m_renderer = std::make_unique<Renderer>();
-    m_renderer->init(m_ctx.get());
+    m_renderer->init(m_ctx.get(), shadePath);
 }
 
 void App::run()
