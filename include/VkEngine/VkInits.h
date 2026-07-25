@@ -234,9 +234,9 @@ VkPipelineViewportStateCreateInfo viewportStateCreateInfo()
 {
     VkPipelineViewportStateCreateInfo info{};
     info.viewportCount = 1;
-    info.pViewports = nullptr;
+    info.pViewports = nullptr; // null, set dynamically
     info.scissorCount = 1;
-    info.pScissors = nullptr;
+    info.pScissors = nullptr; // null, set dynamically
 
     info.pNext = nullptr;
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -280,6 +280,7 @@ VkPipelineColorBlendAttachmentState colorBlendAttachmentState()
 {
     VkPipelineColorBlendAttachmentState state{};
     state.blendEnable = VK_FALSE;
+    // the color components that can be written to by the framebuffer
     state.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 

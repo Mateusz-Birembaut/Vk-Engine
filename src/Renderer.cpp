@@ -137,6 +137,14 @@ void Renderer::initGraphicsPipeline()
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkEngine::pipelineLayoutCreateInfo();
 
+    VkPushConstantRange pushConstant{};
+    pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushConstant.offset = 0;
+    pushConstant.size = sizeof(float);
+
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
+
     VkPipelineRenderingCreateInfo pipelineRenderingInfo = VkEngine::pipelineRenderingCreateInfo(&imgFormat);
 
     if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_graphicsPipelineLayout) != VK_SUCCESS)
@@ -308,6 +316,10 @@ void Renderer::drawFrame()
 
     vkCmdSetViewport(cmdBuff, 0, 1, &viewport);
     vkCmdSetScissor(cmdBuff, 0, 1, &scissor);
+
+    float constant = static_cast<float>(sin(static_cast<double>(m_frameNb) * 0.01));
+
+    vkCmdPushConstants(cmdBuff, m_graphicsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float), &constant);
 
     vkCmdDraw(cmdBuff, 3, 1, 0, 0);
 

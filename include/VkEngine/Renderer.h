@@ -37,7 +37,7 @@ private:
     bool m_swapchainDirty = false;
 
     VkEngine::FrameData m_frames[FRAMES_IN_FLIGHT];
-    uint32_t m_frameNb{0};
+    uint64_t m_frameNb{0};
 
     std::vector<VkSemaphore> m_renderSems; // 1 per swapchain image
 
