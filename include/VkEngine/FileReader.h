@@ -25,8 +25,6 @@ inline std::expected<ShaderCodeData, ShaderFileError> readShader(const std::file
             return std::unexpected(ShaderFileError::fileNotFound);
         }
 
-        auto ext = path.extension();
-
         std::ifstream fileReader{path, std::ifstream::binary};
 
         size_t size = static_cast<size_t>(std::filesystem::file_size(path));
