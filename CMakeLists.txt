@@ -27,7 +27,7 @@ include(FetchContent)
 FetchContent_Declare(
     fetch_vk_bootstrap
     GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
-    GIT_TAG        v1.4.313
+    GIT_TAG        v1.4.364
 )
 FetchContent_MakeAvailable(fetch_vk_bootstrap)
 
@@ -41,14 +41,18 @@ add_executable(${PROJECT_NAME})
 
 
 add_executable(engine_tests tests/FileReader/fileReaderTests.cpp)
-target_link_libraries(engine_tests PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(engine_tests PRIVATE Catch2::Catch2WithMain Vulkan::Vulkan)
 target_include_directories(engine_tests PRIVATE include)
 set_property(TARGET engine_tests PROPERTY CXX_STANDARD 23)
 
-# -Wno-missing-field-initializers : l'init partielle par designated initializers
-# (champs restants à zéro) est l'idiome standard pour les structs Vulkan
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wconversion -Wno-missing-field-initializers)
-target_compile_options(engine_tests PRIVATE -Wall -Wextra -Wconversion -Wno-missing-field-initializers)
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4)
+    target_compile_options(engine_tests PRIVATE /W4)
+else()
+    # Partial designated initializers are the usual Vulkan struct initialization idiom.
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wconversion -Wno-missing-field-initializers)
+    target_compile_options(engine_tests PRIVATE -Wall -Wextra -Wconversion -Wno-missing-field-initializers)
+endif()
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY COMPILE_WARNING_AS_ERROR ON)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
@@ -71,7 +75,6 @@ target_sources( ${PROJECT_NAME}
         src/Window.cpp
         src/VulkanCtx.cpp
         src/Renderer.cpp
-        src/ResourceManager.cpp
 
 	PUBLIC
 		FILE_SET HEADERS
@@ -83,6 +86,15 @@ target_sources( ${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
 target_link_libraries(${PROJECT_NAME} PRIVATE vk-bootstrap::vk-bootstrap)
+
+if(WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:SDL3::SDL3>
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+        VERBATIM
+    )
+endif()
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<BOOL:${VKENGINE_VALIDATION}>:VKENGINE_VALIDATION>)
