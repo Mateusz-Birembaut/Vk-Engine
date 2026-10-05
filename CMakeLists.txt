@@ -71,6 +71,7 @@ target_sources( ${PROJECT_NAME}
         src/Window.cpp
         src/VulkanCtx.cpp
         src/Renderer.cpp
+        src/ResourceManager.cpp
 
 	PUBLIC
 		FILE_SET HEADERS

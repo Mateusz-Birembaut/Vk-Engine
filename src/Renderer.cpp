@@ -251,8 +251,8 @@ void Renderer::drawFrame()
 
     VkCommandPool cmdPool = frameData.commandPool;
     VkCommandBuffer cmdBuff = frameData.commandBuffer;
-    // vkResetCommandBuffer(cmdBuff, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-    if (vkResetCommandPool(device, cmdPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT) != VK_SUCCESS)
+
+    if (vkResetCommandPool(device, cmdPool, 0) != VK_SUCCESS)
         throw std::runtime_error("[Renderer] Failed to reset command pool");
 
     VkCommandBufferBeginInfo beginInfo = VkEngine::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
