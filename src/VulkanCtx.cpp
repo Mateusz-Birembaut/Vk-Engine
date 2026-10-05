@@ -3,7 +3,11 @@
 #include <iostream>
 #include <stdexcept>
 #include <string_view>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <VkBootstrap.h>
 
 #include "VkEngine/VkEngineInfo.h"
@@ -34,7 +38,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 )
 {
     // colors disabled when stderr is redirected to a file
-    static const bool useColor = isatty(fileno(stderr));
+    static const bool useColor =
+#ifdef _WIN32
+        _isatty(_fileno(stderr));
+#else
+        isatty(fileno(stderr));
+#endif
 
     const char* color = "";
     const char* label = "INFO";
