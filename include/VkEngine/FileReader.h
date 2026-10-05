@@ -44,7 +44,7 @@ inline std::expected<ShaderCodeData, ShaderFileError> readShader(const std::file
 
         return shaderData;
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
         return std::unexpected(ShaderFileError::unknownError);
     }
 }
