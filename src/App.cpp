@@ -3,7 +3,9 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_init.h>
+#if defined(__linux__)
 #include <SDL3/SDL_main.h>
+#endif
 
 #include <filesystem>
 #include <iostream>

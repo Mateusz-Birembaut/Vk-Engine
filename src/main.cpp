@@ -2,6 +2,10 @@
 #include <stdexcept>
 #include <stdlib.h>
 
+#ifdef _WIN32
+#include <SDL3/SDL_main.h>
+#endif
+
 #include "VkEngine/App.h"
 
 int main(int, char*[])
