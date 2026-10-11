@@ -3,11 +3,14 @@
 #include <iostream>
 #include <stdexcept>
 #include <string_view>
+
 #ifdef _WIN32
 #include <io.h>
 #else
 #include <unistd.h>
 #endif
+
+#include <vk_mem_alloc.h>
 #include <VkBootstrap.h>
 
 #include "VkEngine/VkEngineInfo.h"
@@ -26,6 +29,7 @@ VulkanCtx::~VulkanCtx()
         return;
 
     cleanupSwapchain();
+    vmaDestroyAllocator(m_allocator);
     vkDestroyDevice(m_device, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkb::destroy_debug_utils_messenger(m_instance, m_debugMessenger);
@@ -99,7 +103,7 @@ void VulkanCtx::init(Window* pWindow)
     auto inst_ret = builder.set_app_name(app::NAME.data())
                         .request_validation_layers(useValidation)
                         .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT)
-                        //.add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT)
+                        .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT)
                         .set_debug_callback(debugCallback)
                         .require_api_version(app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH)
                         .build();
@@ -161,6 +165,9 @@ void VulkanCtx::init(Window* pWindow)
     m_graphicsQueue = graphics_queue_ret.value();
     m_graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
+    // VMA
+    initVMA();
+
     // Swapchain
     createSwapchain();
 }
@@ -218,5 +225,20 @@ void VulkanCtx::cleanupSwapchain()
         m_swapchainImgViews.clear();
         m_swapchainImgs.clear();
         m_swapchain = VK_NULL_HANDLE;
+    }
+}
+
+void VulkanCtx::initVMA()
+{
+    VmaAllocatorCreateInfo vmaAllocatorCreateInfo{};
+    vmaAllocatorCreateInfo.device = m_device;
+    vmaAllocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT; // in shader access vram via pointer
+    vmaAllocatorCreateInfo.instance = m_instance;
+    vmaAllocatorCreateInfo.physicalDevice = m_gpu;
+    vmaAllocatorCreateInfo.vulkanApiVersion =
+        VK_MAKE_API_VERSION(0, app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH);
+
+    if (vmaCreateAllocator(&vmaAllocatorCreateInfo, &m_allocator) != VK_SUCCESS) {
+        throw std::runtime_error("[VulkanCtx] Failed to initialize VMA");
     }
 }

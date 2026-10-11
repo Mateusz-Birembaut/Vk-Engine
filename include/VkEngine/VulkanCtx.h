@@ -5,6 +5,9 @@
 #include <vector>
 
 class Window;
+// forward declaration
+struct VmaAllocator_T;
+VK_DEFINE_HANDLE(VmaAllocator)
 
 class VulkanCtx {
 public:
@@ -12,6 +15,7 @@ public:
     ~VulkanCtx();
 
     void init(Window* pWindow);
+    void initVMA();
     void createSwapchain();
     void cleanupSwapchain();
 
@@ -63,6 +67,9 @@ private:
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
     VkPhysicalDevice m_gpu = VK_NULL_HANDLE;
     VkDevice m_device = VK_NULL_HANDLE;
+
+    VmaAllocator m_allocator = VK_NULL_HANDLE;
+
     VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
     VkExtent2D m_swapchainExtent{};
     VkFormat m_swapchainImgFormat{};
