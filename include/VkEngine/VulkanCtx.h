@@ -3,11 +3,10 @@
 #include <vulkan/vulkan.h>
 
 #include <vector>
+#include <vk_mem_alloc.h>
 
-class Window;
 // forward declaration
-struct VmaAllocator_T;
-VK_DEFINE_HANDLE(VmaAllocator)
+class Window;
 
 class VulkanCtx {
 public:
@@ -57,6 +56,11 @@ public:
     int swapchainImgCount() const
     {
         return static_cast<int>(m_swapchainImgs.size());
+    }
+
+    VmaAllocator vmaAllocator() const
+    {
+        return m_allocator;
     }
 
 private:

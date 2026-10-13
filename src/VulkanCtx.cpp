@@ -10,7 +10,6 @@
 #include <unistd.h>
 #endif
 
-#include <vk_mem_alloc.h>
 #include <VkBootstrap.h>
 
 #include "VkEngine/VkEngineInfo.h"
