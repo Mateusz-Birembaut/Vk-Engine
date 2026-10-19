@@ -34,6 +34,7 @@ public:
             Slot& slot = m_slots[slotIndex];
 
             slot.obj = std::move(obj);
+            slot.state = SlotState::Alive;
             m_freeSlots.pop_back();
 
             return {static_cast<uint32_t>(slotIndex), slot.gen};
@@ -47,7 +48,7 @@ public:
 
         Slot& slot = m_slots[static_cast<size_t>(handle.index)];
 
-        return (!slot.pending && handle.gen == slot.gen) ? &slot.obj : nullptr;
+        return (slot.state == SlotState::Alive && handle.gen == slot.gen) ? &slot.obj : nullptr;
     }
 
     std::optional<T> retire(const Handle<T>& handle)
@@ -57,8 +58,8 @@ public:
 
         Slot& slot = m_slots[handle.index];
 
-        if (!slot.pending && handle.gen == slot.gen) {
-            slot.pending = true;
+        if (slot.state == SlotState::Alive && handle.gen == slot.gen) {
+            slot.state = SlotState::Pending;
             ++slot.gen;
             return std::move(slot.obj);
         }
@@ -73,8 +74,8 @@ public:
 
         Slot& slot = m_slots[index];
 
-        if (slot.pending) {
-            slot.pending = false;
+        if (slot.state == SlotState::Pending) {
+            slot.state = SlotState::Free;
             m_freeSlots.push_back(index);
         }
     }
@@ -109,10 +110,11 @@ public:
     }
 
 private:
+    enum class SlotState { Free, Alive, Pending };
     struct Slot {
         T obj;
         uint32_t gen{1};
-        bool pending{false};
+        SlotState state{SlotState::Alive};
     };
 
     std::vector<Slot> m_slots;
