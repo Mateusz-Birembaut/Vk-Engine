@@ -86,6 +86,14 @@ public:
         m_freeSlots.reserve(size);
     };
 
+    template <typename F> void forEachAlive(F&& f)
+    {
+        for (auto&& slot : m_slots) {
+            if (slot.state == SlotState::Alive) {
+                f(slot.obj);
+            }
+        }
+    }
     uint32_t availableSlots() const
     {
         return static_cast<uint32_t>(m_freeSlots.size());
