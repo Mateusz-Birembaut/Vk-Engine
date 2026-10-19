@@ -11,6 +11,8 @@ template <typename T> struct Handle {
 
 template <typename T> class Pool {
 public:
+    Pool() = default;
+
     Pool(const uint32_t size)
     {
         m_slots.reserve(size);
@@ -75,6 +77,12 @@ public:
             m_freeSlots.push_back(index);
         }
     }
+
+    void reserve(const uint32_t size)
+    {
+        m_slots.reserve(size);
+        m_freeSlots.reserve(size);
+    };
 
     uint32_t availableSlots() const
     {
