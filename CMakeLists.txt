@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 
-enable_testing() 
-
 project(VkEngine VERSION 0.1.0 LANGUAGES CXX)
+
+enable_testing()
 
 option(VkEngine_VENDORED "Use vendored libraries" OFF)
 option(VKENGINE_VALIDATION "Enable Vulkan validation layers" ON)
@@ -50,10 +50,17 @@ FetchContent_MakeAvailable(glm)
 
 add_executable(${PROJECT_NAME})
 
-add_executable(engine_tests tests/FileReader/fileReaderTests.cpp)
+add_executable(engine_tests tests/FileReader/fileReaderTests.cpp
+    tests/Pool/PoolTests.cpp)
 target_link_libraries(engine_tests PRIVATE Catch2::Catch2WithMain Vulkan::Vulkan)
 target_include_directories(engine_tests PRIVATE include)
+target_include_directories(engine_tests PRIVATE external/)
 set_property(TARGET engine_tests PROPERTY CXX_STANDARD 23)
+
+# register each Catch2 TEST_CASE with CTest (VS Code Testing panel)
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+include(Catch)
+catch_discover_tests(engine_tests)
 
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4)
