@@ -6,7 +6,7 @@
 
 namespace VkEngine {
 
-VkSemaphoreCreateInfo semaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0)
+inline VkSemaphoreCreateInfo semaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0)
 {
     VkSemaphoreCreateInfo semInfo{};
     semInfo.flags = flags;
@@ -16,7 +16,7 @@ VkSemaphoreCreateInfo semaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0)
     return semInfo;
 }
 
-VkFenceCreateInfo fenceCreateInfo(VkFenceCreateFlags flags = 0)
+inline VkFenceCreateInfo fenceCreateInfo(VkFenceCreateFlags flags = 0)
 {
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.flags = flags;
@@ -26,7 +26,7 @@ VkFenceCreateInfo fenceCreateInfo(VkFenceCreateFlags flags = 0)
     return fenceInfo;
 }
 
-VkCommandBufferBeginInfo commandBufferBeginInfo(VkCommandBufferUsageFlags flags)
+inline VkCommandBufferBeginInfo commandBufferBeginInfo(VkCommandBufferUsageFlags flags)
 {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.flags = flags;
@@ -37,7 +37,7 @@ VkCommandBufferBeginInfo commandBufferBeginInfo(VkCommandBufferUsageFlags flags)
     return beginInfo;
 }
 
-VkCommandPoolCreateInfo cmdPoolCreateInfo(uint32_t queueFamilyIndex, VkCommandBufferUsageFlags flags)
+inline VkCommandPoolCreateInfo cmdPoolCreateInfo(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags)
 {
     VkCommandPoolCreateInfo cmdPoolInfo{};
     cmdPoolInfo.flags = flags;
@@ -48,7 +48,7 @@ VkCommandPoolCreateInfo cmdPoolCreateInfo(uint32_t queueFamilyIndex, VkCommandBu
     return cmdPoolInfo;
 }
 
-VkSemaphoreSubmitInfo semSubmitInfo(VkSemaphore sem, VkPipelineStageFlags2 stageMask)
+inline VkSemaphoreSubmitInfo semSubmitInfo(VkSemaphore sem, VkPipelineStageFlags2 stageMask)
 {
     VkSemaphoreSubmitInfo semSubmitInfo{};
     semSubmitInfo.semaphore = sem;
@@ -61,7 +61,7 @@ VkSemaphoreSubmitInfo semSubmitInfo(VkSemaphore sem, VkPipelineStageFlags2 stage
     return semSubmitInfo;
 }
 
-VkCommandBufferSubmitInfo cmdBuffSubmitInfo(VkCommandBuffer commandBuffer)
+inline VkCommandBufferSubmitInfo cmdBuffSubmitInfo(VkCommandBuffer commandBuffer)
 {
     VkCommandBufferSubmitInfo cmdBuffSubmitInfo{};
     cmdBuffSubmitInfo.commandBuffer = commandBuffer;
@@ -72,7 +72,8 @@ VkCommandBufferSubmitInfo cmdBuffSubmitInfo(VkCommandBuffer commandBuffer)
     return cmdBuffSubmitInfo;
 }
 
-VkCommandBufferAllocateInfo cmdBufferAllocInfo(VkCommandPool cmdPool, VkCommandBufferLevel lvl, uint32_t bufferCount)
+inline VkCommandBufferAllocateInfo
+cmdBufferAllocInfo(VkCommandPool cmdPool, VkCommandBufferLevel lvl, uint32_t bufferCount)
 {
     VkCommandBufferAllocateInfo cmdBuffInfo{};
     cmdBuffInfo.commandPool = cmdPool;
@@ -84,7 +85,7 @@ VkCommandBufferAllocateInfo cmdBufferAllocInfo(VkCommandPool cmdPool, VkCommandB
     return cmdBuffInfo;
 }
 
-VkSubmitInfo2 submitInfo(
+inline VkSubmitInfo2 submitInfo(
     VkCommandBufferSubmitInfo* cmdBufferSubmitInfo, VkSemaphoreSubmitInfo* semWaitInfo,
     VkSemaphoreSubmitInfo* semSignalInfo
 )
@@ -102,7 +103,7 @@ VkSubmitInfo2 submitInfo(
     return submitInfo;
 }
 
-VkPresentInfoKHR presentInfo(VkSwapchainKHR* swapchain, uint32_t* imgId, VkSemaphore* waitSem)
+inline VkPresentInfoKHR presentInfo(VkSwapchainKHR* swapchain, uint32_t* imgId, VkSemaphore* waitSem)
 {
     VkPresentInfoKHR presentInfo{};
     presentInfo.pImageIndices = imgId;
@@ -117,7 +118,7 @@ VkPresentInfoKHR presentInfo(VkSwapchainKHR* swapchain, uint32_t* imgId, VkSemap
     return presentInfo;
 }
 
-VkImageSubresourceRange imgSubresourceRange(VkImageAspectFlags aspectMask)
+inline VkImageSubresourceRange imgSubresourceRange(VkImageAspectFlags aspectMask)
 {
     VkImageSubresourceRange subImage{};
     subImage.aspectMask = aspectMask;
@@ -129,7 +130,7 @@ VkImageSubresourceRange imgSubresourceRange(VkImageAspectFlags aspectMask)
     return subImage;
 }
 
-VkDependencyInfo dependencyInfo(VkImageMemoryBarrier2* imgMemBarrier)
+inline VkDependencyInfo dependencyInfo(VkImageMemoryBarrier2* imgMemBarrier)
 {
     VkDependencyInfo dependencyInfo{};
     dependencyInfo.imageMemoryBarrierCount = 1;
@@ -140,7 +141,7 @@ VkDependencyInfo dependencyInfo(VkImageMemoryBarrier2* imgMemBarrier)
     return dependencyInfo;
 }
 
-VkImageMemoryBarrier2 imageMemoryBarrier(
+inline VkImageMemoryBarrier2 imageMemoryBarrier(
     VkImage img, VkImageSubresourceRange imgSubRessource, VkImageLayout oldLayout, VkPipelineStageFlags2 srcStage,
     VkAccessFlags2 srcAccess, VkImageLayout newLayout, VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess
 )
@@ -166,7 +167,7 @@ VkImageMemoryBarrier2 imageMemoryBarrier(
     return imgMemBarrier;
 }
 
-VkPipelineRenderingCreateInfo pipelineRenderingCreateInfo(VkFormat* colorFormat)
+inline VkPipelineRenderingCreateInfo pipelineRenderingCreateInfo(VkFormat* colorFormat)
 {
     VkPipelineRenderingCreateInfo info{};
     info.colorAttachmentCount = 1;
@@ -181,7 +182,7 @@ VkPipelineRenderingCreateInfo pipelineRenderingCreateInfo(VkFormat* colorFormat)
     return info;
 }
 
-VkShaderModuleCreateInfo shaderModuleCreateInfo(size_t codeSize, const uint32_t* code)
+inline VkShaderModuleCreateInfo shaderModuleCreateInfo(size_t codeSize, const uint32_t* code)
 {
     VkShaderModuleCreateInfo info{};
     info.codeSize = codeSize;
@@ -193,7 +194,7 @@ VkShaderModuleCreateInfo shaderModuleCreateInfo(size_t codeSize, const uint32_t*
     return info;
 }
 
-VkPipelineShaderStageCreateInfo
+inline VkPipelineShaderStageCreateInfo
 shaderStageCreateInfo(VkShaderStageFlagBits shaderStage, VkShaderModuleCreateInfo* shaderModuleInfo)
 {
     VkPipelineShaderStageCreateInfo info{};
@@ -209,7 +210,7 @@ shaderStageCreateInfo(VkShaderStageFlagBits shaderStage, VkShaderModuleCreateInf
     return info;
 }
 
-VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo()
+inline VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo()
 {
     VkPipelineVertexInputStateCreateInfo info{};
     info.vertexAttributeDescriptionCount = 0;
@@ -220,7 +221,7 @@ VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo()
     return info;
 }
 
-VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo(VkPrimitiveTopology primitiveTopology)
+inline VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo(VkPrimitiveTopology primitiveTopology)
 {
     VkPipelineInputAssemblyStateCreateInfo info{};
     info.primitiveRestartEnable = VK_FALSE;
@@ -230,7 +231,7 @@ VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo(VkPrimitiveT
     return info;
 }
 
-VkPipelineViewportStateCreateInfo viewportStateCreateInfo()
+inline VkPipelineViewportStateCreateInfo viewportStateCreateInfo()
 {
     VkPipelineViewportStateCreateInfo info{};
     info.viewportCount = 1;
@@ -243,7 +244,7 @@ VkPipelineViewportStateCreateInfo viewportStateCreateInfo()
     return info;
 }
 
-VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo(VkPolygonMode polygonMode)
+inline VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo(VkPolygonMode polygonMode)
 {
     VkPipelineRasterizationStateCreateInfo info{};
     info.depthClampEnable = VK_FALSE;
@@ -260,7 +261,7 @@ VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo(VkPolygonMod
     return info;
 }
 
-VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo()
+inline VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo()
 {
     VkPipelineMultisampleStateCreateInfo info{};
 
@@ -276,7 +277,7 @@ VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo()
     return info;
 }
 
-VkPipelineColorBlendAttachmentState colorBlendAttachmentState()
+inline VkPipelineColorBlendAttachmentState colorBlendAttachmentState()
 {
     VkPipelineColorBlendAttachmentState state{};
     state.blendEnable = VK_FALSE;
@@ -287,7 +288,7 @@ VkPipelineColorBlendAttachmentState colorBlendAttachmentState()
     return state;
 }
 
-VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo(VkPipelineColorBlendAttachmentState* attachState)
+inline VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo(VkPipelineColorBlendAttachmentState* attachState)
 {
     VkPipelineColorBlendStateCreateInfo info{};
     info.flags = 0;
@@ -300,7 +301,7 @@ VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo(VkPipelineColorBle
     return info;
 }
 
-VkPipelineDynamicStateCreateInfo
+inline VkPipelineDynamicStateCreateInfo
 dynamicStateCreateInfo(uint32_t dynamicStateCount, const VkDynamicState* pDynamicStates)
 {
     VkPipelineDynamicStateCreateInfo info{};
@@ -312,7 +313,7 @@ dynamicStateCreateInfo(uint32_t dynamicStateCount, const VkDynamicState* pDynami
     return info;
 }
 
-VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo()
+inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo()
 {
     VkPipelineLayoutCreateInfo info{};
     info.flags = 0;
@@ -327,7 +328,7 @@ VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo()
     return info;
 }
 
-VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo(
+inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo(
     uint32_t shaderStagesCount, VkPipelineShaderStageCreateInfo* shaderStagesInfo,
     VkPipelineVertexInputStateCreateInfo* vertexStateInfo, VkPipelineInputAssemblyStateCreateInfo* assemblyStateInfo,
     VkPipelineViewportStateCreateInfo* viewportInfo, VkPipelineRasterizationStateCreateInfo* rasterStateInfo,
@@ -360,7 +361,7 @@ VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo(
     return info;
 }
 
-VkRenderingAttachmentInfo renderingAttachmentInfo(
+inline VkRenderingAttachmentInfo renderingAttachmentInfo(
     VkImageView imgView, VkImageLayout imgLayout, VkClearValue clearValue, VkAttachmentLoadOp loadOp,
     VkAttachmentStoreOp storeOp
 )
@@ -381,7 +382,7 @@ VkRenderingAttachmentInfo renderingAttachmentInfo(
     return info;
 }
 
-VkRenderingInfo renderingInfo(VkRenderingAttachmentInfo* colorAttachmentInfo, VkRect2D renderArea)
+inline VkRenderingInfo renderingInfo(VkRenderingAttachmentInfo* colorAttachmentInfo, VkRect2D renderArea)
 {
     VkRenderingInfo info{};
     info.colorAttachmentCount = 1;
