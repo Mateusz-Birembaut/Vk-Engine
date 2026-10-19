@@ -94,6 +94,22 @@ public:
             }
         }
     }
+
+    template <typename F> void releaseAllAlive(F&& f)
+    {
+        for (size_t slotIndex = 0; slotIndex < m_slots.size(); ++slotIndex) {
+            Slot& slot = m_slots[slotIndex];
+
+            if (slot.state == SlotState::Alive) {
+                f(slot.obj);
+
+                slot.state = SlotState::Free;
+                ++slot.gen;
+                m_freeSlots.push_back(static_cast<uint32_t>(slotIndex));
+            }
+        }
+    }
+
     uint32_t availableSlots() const
     {
         return static_cast<uint32_t>(m_freeSlots.size());
