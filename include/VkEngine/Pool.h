@@ -1,8 +1,8 @@
 #pragma once
 
 #include <algorithm>
-#include <memory>
 #include <stdint.h>
+#include <vector>
 
 template <typename T> struct Handle {
     uint32_t index{0};
