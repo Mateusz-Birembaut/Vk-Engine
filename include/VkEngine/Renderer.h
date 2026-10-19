@@ -49,6 +49,4 @@ private:
 
     VkPipeline m_graphicsPipeline;
     VkPipelineLayout m_graphicsPipelineLayout;
-
-    double start = 100 * ((double) clock()) / (double) CLOCKS_PER_SEC;
 };
