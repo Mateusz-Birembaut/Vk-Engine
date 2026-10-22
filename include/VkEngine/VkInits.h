@@ -400,4 +400,57 @@ inline VkRenderingInfo renderingInfo(VkRenderingAttachmentInfo* colorAttachmentI
     return info;
 }
 
+inline VkImageCreateInfo img2DCreateInfo(uint32_t width, uint32_t height)
+{
+    VkImageCreateInfo imgCreateInfo{};
+
+    imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imgCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    imgCreateInfo.extent = {.width = width, .height = height, .depth = 1};
+
+    imgCreateInfo.mipLevels = 1;
+    imgCreateInfo.arrayLayers = 1;
+    imgCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    imgCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imgCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imgCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imgCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    imgCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imgCreateInfo.pNext = nullptr;
+
+    return imgCreateInfo;
+}
+
+inline VkImageViewCreateInfo imgView2DCreateInfo(VkImage image)
+{
+    VkImageViewCreateInfo imgViewCreateInfo{};
+    imgViewCreateInfo.image = image;
+    imgViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imgViewCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    imgViewCreateInfo.subresourceRange = {
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .levelCount = 1,
+        .layerCount = 1,
+    };
+
+    imgViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imgViewCreateInfo.pNext = nullptr;
+    return imgViewCreateInfo;
+}
+
+inline VkBufferCreateInfo bufferCreateInfo(uint64_t bufferSize, VkBufferUsageFlags usage)
+{
+    VkBufferCreateInfo bufferCreateInfo{};
+    bufferCreateInfo.size = bufferSize;
+    bufferCreateInfo.usage = usage;
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferCreateInfo.pNext = nullptr;
+
+    return bufferCreateInfo;
+}
+
 } // namespace VkEngine
