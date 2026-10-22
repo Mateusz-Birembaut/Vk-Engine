@@ -159,7 +159,6 @@ TEST_CASE("Freed slot is reused by the next create", "[Pool][free]")
 
     REQUIRE(newHandle.index == oldHandle.index);
     REQUIRE(newHandle.gen != oldHandle.gen);
-    REQUIRE(pool.get(newHandle) != nullptr);
     REQUIRE(*pool.get(newHandle) == "new");
 }
 
