@@ -92,6 +92,7 @@ target_sources( ${PROJECT_NAME}
         src/VulkanCtx.cpp
         src/Renderer.cpp
         src/External.cpp
+        src/GPUResources.cpp
 
 	PUBLIC
 		FILE_SET HEADERS
