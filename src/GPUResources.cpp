@@ -92,7 +92,7 @@ Handle<VkEngine::GPUImage> GPUResources::createTexture(const VkEngine::CPUImage&
     return m_gpuImgs.create(std::move(gpuImage));
 }
 
-uint32_t GPUResources::getOrCreateSampler()
+uint32_t GPUResources::getOrCreateSampler() 
 {
     VkSamplerCreateInfo samplerInfo{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
