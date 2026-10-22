@@ -27,10 +27,23 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
     initSyncStructs();
     initGraphicsPipeline();
 
+    m_gpuResources.init(pVulkanCtx);
+
     m_clearColorValue.float32[0] = 0.0f; // R
     m_clearColorValue.float32[1] = 0.2f; // G
     m_clearColorValue.float32[2] = 0.4f; // B
     m_clearColorValue.float32[3] = 1.0f; // A
+
+    // for now load fallback texture here
+    uint32_t whitePixelData = 0xFFFFFFFF; // RGBA
+    VkEngine::CPUImage whitePixel{
+        .width = 1, .height = 1, .channels = 4, .data = reinterpret_cast<unsigned char*>(&whitePixelData)
+    };
+
+    Handle<VkEngine::GPUImage> whitePixelImgHandle = m_gpuResources.createTexture(whitePixel);
+    uint32_t whitePixelSamplerId = m_gpuResources.getOrCreateSampler(); // for now create a basic sampler
+
+    m_fallbackTexture = {whitePixelImgHandle, whitePixelSamplerId};
 }
 
 void Renderer::initCommands()
@@ -192,6 +205,7 @@ void Renderer::cleanup()
 
     vkDeviceWaitIdle(device);
 
+    m_gpuResources.cleanup();
     m_resourceDestroyer.flush(device);
 
     cleanupRenderSems();

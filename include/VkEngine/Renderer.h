@@ -6,6 +6,7 @@
 #include <time.h>
 #include <vector>
 
+#include "VkEngine/GPUResources.h"
 #include "VkEngine/ResourceDestroyer.h"
 #include "VkEngine/Types.h"
 
@@ -42,7 +43,9 @@ private:
     std::vector<VkSemaphore> m_renderSems; // 1 per swapchain image
 
     VkClearColorValue m_clearColorValue{};
+    VkEngine::Texture m_fallbackTexture{};
 
+    GPUResources m_gpuResources;
     ResourceDestroyer m_resourceDestroyer;
 
     std::filesystem::path m_shaderFolderPath{};
