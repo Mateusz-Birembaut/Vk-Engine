@@ -33,8 +33,8 @@ private:
     void cleanupRenderSems();
     void recreateSwapchain();
 
-    VulkanCtx* m_ctx = nullptr;
-    bool m_swapchainDirty = false;
+    VulkanCtx* m_ctx{nullptr};
+    bool m_swapchainDirty{false};
 
     VkEngine::FrameData m_frames[FRAMES_IN_FLIGHT];
     uint64_t m_frameNb{0};
