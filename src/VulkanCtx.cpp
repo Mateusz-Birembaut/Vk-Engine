@@ -242,3 +242,53 @@ void VulkanCtx::initVMA()
         throw std::runtime_error("[VulkanCtx] Failed to initialize VMA");
     }
 }
+
+VkDevice VulkanCtx::device() const
+{
+    return m_device;
+}
+
+VkQueue VulkanCtx::graphicsQueue() const
+{
+    return m_graphicsQueue;
+}
+
+uint32_t VulkanCtx::graphicsQueueFamily() const
+{
+    return m_graphicsQueueFamily;
+}
+
+VkExtent2D VulkanCtx::swapchainExtent() const
+{
+    return m_swapchainExtent;
+}
+
+VkFormat VulkanCtx::swapchainFormat() const
+{
+    return m_swapchainImgFormat;
+}
+
+const std::vector<VkImageView>& VulkanCtx::swapchainViews() const
+{
+    return m_swapchainImgViews;
+}
+
+const std::vector<VkImage>& VulkanCtx::swapchainImgs() const
+{
+    return m_swapchainImgs;
+}
+
+VkSwapchainKHR VulkanCtx::swapchain() const
+{
+    return m_swapchain;
+}
+
+int VulkanCtx::swapchainImgCount() const
+{
+    return static_cast<int>(m_swapchainImgs.size());
+}
+
+VmaAllocator VulkanCtx::vmaAllocator() const
+{
+    return m_allocator;
+}

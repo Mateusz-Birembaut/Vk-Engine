@@ -18,50 +18,16 @@ public:
     void createSwapchain();
     void cleanupSwapchain();
 
-    VkDevice device() const
-    {
-        return m_device;
-    }
-    VkQueue graphicsQueue() const
-    {
-        return m_graphicsQueue;
-    }
-    uint32_t graphicsQueueFamily() const
-    {
-        return m_graphicsQueueFamily;
-    }
-    VkExtent2D swapchainExtent() const
-    {
-        return m_swapchainExtent;
-    }
-    VkFormat swapchainFormat() const
-    {
-        return m_swapchainImgFormat;
-    }
-    const std::vector<VkImageView>& swapchainViews() const
-    {
-        return m_swapchainImgViews;
-    }
-
-    const std::vector<VkImage>& swapchainImgs() const
-    {
-        return m_swapchainImgs;
-    }
-
-    VkSwapchainKHR swapchain() const
-    {
-        return m_swapchain;
-    }
-
-    int swapchainImgCount() const
-    {
-        return static_cast<int>(m_swapchainImgs.size());
-    }
-
-    VmaAllocator vmaAllocator() const
-    {
-        return m_allocator;
-    }
+    VkDevice device() const;
+    VkQueue graphicsQueue() const;
+    uint32_t graphicsQueueFamily() const;
+    VkExtent2D swapchainExtent() const;
+    VkFormat swapchainFormat() const;
+    const std::vector<VkImageView>& swapchainViews() const;
+    const std::vector<VkImage>& swapchainImgs() const;
+    VkSwapchainKHR swapchain() const;
+    int swapchainImgCount() const;
+    VmaAllocator vmaAllocator() const;
 
 private:
     Window* m_window = nullptr;
