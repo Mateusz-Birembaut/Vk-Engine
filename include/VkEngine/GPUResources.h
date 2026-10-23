@@ -90,6 +90,7 @@ private:
     Pool<VkEngine::GPUBuffer> m_gpuBuffs;
     std::vector<VkSampler> m_samplers;
 
-    VkCommandPool m_transientBuffCmdPool = VK_NULL_HANDLE;
-    VulkanCtx* m_ctx = nullptr;
+
+    VkCommandPool m_transientBuffCmdPool{VK_NULL_HANDLE};
+    VulkanCtx* m_ctx{nullptr};
 };
