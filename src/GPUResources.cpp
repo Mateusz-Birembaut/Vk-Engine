@@ -67,9 +67,7 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
         VkDescriptorBindingFlags{
             VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
         },
-        {
-            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
-        },
+        {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT},
     };
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo flagsInfo{
@@ -98,7 +96,7 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
     };
 
     if (vkAllocateDescriptorSets(device, &descSetAllocInfo, &m_descSet) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to create descriptor set");
+        throw std::runtime_error("[GPUResources] Failed to allocate descriptor set");
     }
 }
 
