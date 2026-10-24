@@ -12,6 +12,9 @@ public:
     GPUResources() = default;
     ~GPUResources() = default;
 
+    VkDescriptorSetLayout descSetLayout() const;
+    VkDescriptorSet descSet() const;
+
     /**
      * @brief Sets vulkan context and creates a command pool for uploads to VRAM
      *
@@ -96,6 +99,7 @@ private:
     VkDescriptorPool m_descPool{VK_NULL_HANDLE};
     VkDescriptorSetLayout m_descSetLayout{VK_NULL_HANDLE};
     VkDescriptorSet m_descSet{VK_NULL_HANDLE};
+
     VkCommandPool m_transientBuffCmdPool{VK_NULL_HANDLE};
     VulkanCtx* m_ctx{nullptr};
 };

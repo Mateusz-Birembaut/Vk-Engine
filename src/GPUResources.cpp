@@ -373,3 +373,13 @@ void GPUResources::cleanup()
     vkDestroyDescriptorSetLayout(device, m_descSetLayout, nullptr);
     vkDestroyDescriptorPool(device, m_descPool, nullptr);
 }
+
+VkDescriptorSetLayout GPUResources::descSetLayout() const
+{
+    return m_descSetLayout;
+}
+
+VkDescriptorSet GPUResources::descSet() const
+{
+    return m_descSet;
+}
