@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <array>
 #include <stdexcept>
 #include <vk_mem_alloc.h>
 
@@ -14,13 +15,74 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
 
     m_ctx = pVulkanCtx;
 
+    const auto device = m_ctx->device();
+
     // setup command pool for transfers
     VkCommandPoolCreateInfo transientBuffCmdPoolInfo =
         VkEngine::cmdPoolCreateInfo(m_ctx->graphicsQueueFamily(), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
-    if (vkCreateCommandPool(m_ctx->device(), &transientBuffCmdPoolInfo, nullptr, &m_transientBuffCmdPool) !=
-        VK_SUCCESS) {
+    if (vkCreateCommandPool(device, &transientBuffCmdPoolInfo, nullptr, &m_transientBuffCmdPool) != VK_SUCCESS) {
         throw std::runtime_error("[GPUResources] Init : Failed to create command pool for transient buffers");
+    }
+
+    std::array<VkDescriptorPoolSize, 2> poolSizes{
+        VkDescriptorPoolSize{
+            .type = VK_DESCRIPTOR_TYPE_SAMPLER,
+            .descriptorCount = m_maxSamplerCount,
+        },
+        {
+            .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .descriptorCount = m_maxTextureCount,
+        }
+    };
+
+    VkDescriptorPoolCreateInfo poolInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+        .maxSets = 1,
+        .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
+        .pPoolSizes = poolSizes.data(),
+    };
+
+    if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &m_descPool) != VK_SUCCESS) {
+        throw std::runtime_error("[GPUResources] Failed to create descriptor pool");
+    }
+
+    std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings{
+        VkDescriptorSetLayoutBinding{
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+            .descriptorCount = m_maxSamplerCount,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+        {
+            .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .descriptorCount = m_maxTextureCount,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        }
+    };
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
+        .bindingCount = static_cast<uint32_t>(layoutBindings.size()),
+        .pBindings = layoutBindings.data(),
+    };
+
+    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &m_descSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("[GPUResources] Failed to create descriptor set layout");
+    }
+
+    VkDescriptorSetAllocateInfo descSetAllocInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = m_descPool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &m_descSetLayout,
+    };
+
+    if (vkAllocateDescriptorSets(device, &descSetAllocInfo, &m_descSet) != VK_SUCCESS) {
+        throw std::runtime_error("[GPUResources] Failed to create descriptor set");
     }
 }
 
@@ -92,7 +154,7 @@ Handle<VkEngine::GPUImage> GPUResources::createTexture(const VkEngine::CPUImage&
     return m_gpuImgs.create(std::move(gpuImage));
 }
 
-uint32_t GPUResources::getOrCreateSampler() 
+uint32_t GPUResources::getOrCreateSampler()
 {
     VkSamplerCreateInfo samplerInfo{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -241,18 +303,24 @@ void GPUResources::cleanup()
     if (!m_ctx)
         return;
 
-    vkDestroyCommandPool(m_ctx->device(), m_transientBuffCmdPool, nullptr);
+    const auto device = m_ctx->device();
+    const auto vmaAllocator = m_ctx->vmaAllocator();
+
+    vkDestroyCommandPool(device, m_transientBuffCmdPool, nullptr);
 
     for (auto& sampler : m_samplers) {
-        vkDestroySampler(m_ctx->device(), sampler, nullptr);
+        vkDestroySampler(device, sampler, nullptr);
     }
 
-    m_gpuImgs.releaseAllAlive([this](VkEngine::GPUImage& gpuImage) {
-        vkDestroyImageView(m_ctx->device(), gpuImage.vkImageView, nullptr);
-        vmaDestroyImage(m_ctx->vmaAllocator(), gpuImage.vkImage, gpuImage.allocation);
+    m_gpuImgs.releaseAllAlive([this, device, vmaAllocator](VkEngine::GPUImage& gpuImage) {
+        vkDestroyImageView(device, gpuImage.vkImageView, nullptr);
+        vmaDestroyImage(vmaAllocator, gpuImage.vkImage, gpuImage.allocation);
     });
 
-    m_gpuBuffs.releaseAllAlive([this](VkEngine::GPUBuffer& gpuBuff) {
-        vmaDestroyBuffer(m_ctx->vmaAllocator(), gpuBuff.vkbuffer, gpuBuff.allocation);
+    m_gpuBuffs.releaseAllAlive([this, vmaAllocator](VkEngine::GPUBuffer& gpuBuff) {
+        vmaDestroyBuffer(vmaAllocator, gpuBuff.vkbuffer, gpuBuff.allocation);
     });
+
+    vkDestroyDescriptorSetLayout(device, m_descSetLayout, nullptr);
+    vkDestroyDescriptorPool(device, m_descPool, nullptr);
 }

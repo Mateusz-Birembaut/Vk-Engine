@@ -117,6 +117,7 @@ void VulkanCtx::init(Window* pWindow)
     // PhysicalDevice, dynamic rendering feature, sync 2, scalar block layout
     constexpr VkPhysicalDeviceVulkan12Features features12{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+        .descriptorIndexing = VK_TRUE,
         .scalarBlockLayout = VK_TRUE,
         .bufferDeviceAddress = VK_TRUE,
     };
