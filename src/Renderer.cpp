@@ -1,5 +1,6 @@
 #include "VkEngine/Renderer.h"
 
+#include <array>
 #include <cmath>
 #include <stdexcept>
 #include <time.h>
@@ -23,11 +24,11 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
     m_ctx = pVulkanCtx;
     m_shaderFolderPath = shaderFolderPath;
 
+    m_gpuResources.init(pVulkanCtx);
+
     initCommands();
     initSyncStructs();
     initGraphicsPipeline();
-
-    m_gpuResources.init(pVulkanCtx);
 
     m_clearColorValue.float32[0] = 0.0f; // R
     m_clearColorValue.float32[1] = 0.2f; // G
@@ -148,15 +149,21 @@ void Renderer::initGraphicsPipeline()
     VkPipelineDynamicStateCreateInfo dynamicStateInfo =
         VkEngine::dynamicStateCreateInfo(dynamicStatesCount, dynamicStates);
 
+    VkDescriptorSetLayout descriptorSetLayout = m_gpuResources.descSetLayout();
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = VkEngine::pipelineLayoutCreateInfo();
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
-    VkPushConstantRange pushConstant{};
-    pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    pushConstant.offset = 0;
-    pushConstant.size = sizeof(float);
+    VkPushConstantRange fragShaderPushCosntants{};
+    fragShaderPushCosntants.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderPushCosntants.offset = 0;
+    fragShaderPushCosntants.size = sizeof(uint32_t) * 2;
 
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
-    pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
+    std::array<VkPushConstantRange, 1> pushConstants{fragShaderPushCosntants};
+
+    pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
+    pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
 
     VkPipelineRenderingCreateInfo pipelineRenderingInfo = VkEngine::pipelineRenderingCreateInfo(&imgFormat);
 
@@ -328,12 +335,19 @@ void Renderer::drawFrame()
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
+    VkDescriptorSet descSet = m_gpuResources.descSet();
+    vkCmdBindDescriptorSets(
+        cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout, 0, 1, &descSet, 0, nullptr
+    );
+
     vkCmdSetViewport(cmdBuff, 0, 1, &viewport);
     vkCmdSetScissor(cmdBuff, 0, 1, &scissor);
 
-    float constant = static_cast<float>(sin(static_cast<double>(m_frameNb) * 0.01));
+    std::array<uint32_t, 2> fragConstants{m_fallbackTexture.samplerIndex, m_fallbackTexture.imageHandle.index};
 
-    vkCmdPushConstants(cmdBuff, m_graphicsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float), &constant);
+    vkCmdPushConstants(
+        cmdBuff, m_graphicsPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(fragConstants), fragConstants.data()
+    );
 
     vkCmdDraw(cmdBuff, 3, 1, 0, 0);
 
