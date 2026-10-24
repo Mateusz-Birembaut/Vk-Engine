@@ -122,6 +122,8 @@ VkEngine::GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
 
 Handle<VkEngine::GPUImage> GPUResources::createTexture(const VkEngine::CPUImage& cpuImg)
 {
+    const auto device = m_ctx->device();
+
     // image and view creation
     VkImageCreateInfo whiteTextureCreateInfo = VkEngine::img2DCreateInfo(cpuImg.width, cpuImg.height);
 
@@ -138,7 +140,7 @@ Handle<VkEngine::GPUImage> GPUResources::createTexture(const VkEngine::CPUImage&
 
     VkImageViewCreateInfo whiteTextureViewCreateInfo = VkEngine::imgView2DCreateInfo(gpuImage.vkImage);
 
-    if (vkCreateImageView(m_ctx->device(), &whiteTextureViewCreateInfo, nullptr, &gpuImage.vkImageView) != VK_SUCCESS) {
+    if (vkCreateImageView(device, &whiteTextureViewCreateInfo, nullptr, &gpuImage.vkImageView) != VK_SUCCESS) {
         throw std::runtime_error("[GPUResources] Failed to create image view for white texture");
     }
 
@@ -147,7 +149,7 @@ Handle<VkEngine::GPUImage> GPUResources::createTexture(const VkEngine::CPUImage&
         VkEngine::cmdBufferAllocInfo(m_transientBuffCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
     VkCommandBuffer transientCmdBuff = VK_NULL_HANDLE;
-    if (vkAllocateCommandBuffers(m_ctx->device(), &transientBuffInfo, &transientCmdBuff) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(device, &transientBuffInfo, &transientCmdBuff) != VK_SUCCESS) {
         throw std::runtime_error("[GPUResources] Failed to create transient command buffer");
     }
 
@@ -164,6 +166,23 @@ Handle<VkEngine::GPUImage> GPUResources::createTexture(const VkEngine::CPUImage&
     vmaDestroyBuffer(
         m_ctx->vmaAllocator(), stagingBuffer.vkbuffer, stagingBuffer.allocation
     ); // safe to destroy since waited before
+
+    VkDescriptorImageInfo descImageInfo{
+        .imageView = gpuImage.vkImageView,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+
+    VkWriteDescriptorSet descSetWrite{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = m_descSet,
+        .dstBinding = 1,
+        .dstArrayElement = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+        .pImageInfo = &descImageInfo,
+    };
+
+    vkUpdateDescriptorSets(device, 1, &descSetWrite, 0, nullptr);
 
     return m_gpuImgs.create(std::move(gpuImage));
 }
