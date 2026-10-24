@@ -63,8 +63,24 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
         }
     };
 
+    std::array<VkDescriptorBindingFlags, 2> flags{
+        VkDescriptorBindingFlags{
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+        },
+        {
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+        },
+    };
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flagsInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+        .bindingCount = static_cast<uint32_t>(flags.size()),
+        .pBindingFlags = flags.data(),
+    };
+
     VkDescriptorSetLayoutCreateInfo layoutInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext = &flagsInfo,
         .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
         .bindingCount = static_cast<uint32_t>(layoutBindings.size()),
         .pBindings = layoutBindings.data(),

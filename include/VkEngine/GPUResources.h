@@ -90,7 +90,7 @@ private:
     Pool<VkEngine::GPUBuffer> m_gpuBuffs;
     std::vector<VkSampler> m_samplers;
 
-    const uint32_t m_maxTextureCount{1000};
+    const uint32_t m_maxTextureCount{1024};
     const uint32_t m_maxSamplerCount{16};
 
     VkDescriptorPool m_descPool{VK_NULL_HANDLE};
