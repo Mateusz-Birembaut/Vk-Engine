@@ -189,6 +189,8 @@ Handle<VkEngine::GPUImage> GPUResources::createTexture(const VkEngine::CPUImage&
 
 uint32_t GPUResources::getOrCreateSampler()
 {
+    const auto device = m_ctx->device();
+
     VkSamplerCreateInfo samplerInfo{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
         .magFilter = VK_FILTER_NEAREST,
@@ -200,12 +202,26 @@ uint32_t GPUResources::getOrCreateSampler()
     };
 
     VkSampler sampler = nullptr;
-    if (vkCreateSampler(m_ctx->device(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
+    if (vkCreateSampler(device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
         throw std::runtime_error("[GPUResources] Failed to create sampler");
     };
 
     uint32_t samplerIndex = static_cast<uint32_t>(m_samplers.size());
     m_samplers.push_back(sampler);
+
+    VkDescriptorImageInfo descImageInfo{.sampler = sampler};
+
+    VkWriteDescriptorSet descSetWrite{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = m_descSet,
+        .dstBinding = 0,
+        .dstArrayElement = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+        .pImageInfo = &descImageInfo,
+    };
+
+    vkUpdateDescriptorSets(device, 1, &descSetWrite, 0, nullptr);
 
     return samplerIndex;
 }
