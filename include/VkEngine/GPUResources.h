@@ -22,7 +22,7 @@ public:
     void init(VulkanCtx* pVulkanCtx);
 
     /**
-     * @brief Create a 2D R8G8B8A8_SRGB texture
+     * @brief Create a 2D R8G8B8A8_SRGB image stored vram for the given img data
      *
      * @attention Image channels must be 4, blocks CPU (waits for upload to end)
      *
@@ -30,7 +30,7 @@ public:
      *
      * @return Handle of the created Texture { gpuImage index, gen }
      */
-    Handle<VkEngine::GPUImage> createTexture(const VkEngine::CPUImage& cpuImg);
+    Handle<VkEngine::GPUImage> createGpuImage(const VkEngine::CPUImage& cpuImg);
 
     /**
      * @brief Create a simple sampler

@@ -120,7 +120,7 @@ VkEngine::GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
     return stagingBuffer;
 }
 
-Handle<VkEngine::GPUImage> GPUResources::createTexture(const VkEngine::CPUImage& cpuImg)
+Handle<VkEngine::GPUImage> GPUResources::createGpuImage(const VkEngine::CPUImage& cpuImg)
 {
     const auto device = m_ctx->device();
 

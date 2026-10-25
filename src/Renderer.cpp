@@ -41,7 +41,7 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
         .width = 1, .height = 1, .channels = 4, .data = reinterpret_cast<unsigned char*>(&whitePixelData)
     };
 
-    Handle<VkEngine::GPUImage> whitePixelImgHandle = m_gpuResources.createTexture(whitePixel);
+    Handle<VkEngine::GPUImage> whitePixelImgHandle = m_gpuResources.createGpuImage(whitePixel);
     uint32_t whitePixelSamplerId = m_gpuResources.getOrCreateSampler(); // for now create a basic sampler
 
     m_fallbackTexture = {whitePixelImgHandle, whitePixelSamplerId};
