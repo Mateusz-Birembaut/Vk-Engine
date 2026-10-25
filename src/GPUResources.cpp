@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vk_mem_alloc.h>
 
+#include "VkEngine/Helpers.h"
 #include "VkEngine/VkInits.h"
 
 void GPUResources::init(VulkanCtx* pVulkanCtx)
@@ -21,9 +22,10 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
     VkCommandPoolCreateInfo transientBuffCmdPoolInfo =
         VkEngine::cmdPoolCreateInfo(m_ctx->graphicsQueueFamily(), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
-    if (vkCreateCommandPool(device, &transientBuffCmdPoolInfo, nullptr, &m_transientBuffCmdPool) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Init : Failed to create command pool for transient buffers");
-    }
+    VkEngine::check(
+        vkCreateCommandPool(device, &transientBuffCmdPoolInfo, nullptr, &m_transientBuffCmdPool),
+        "[GPUResources] Init : Failed to create command pool for transient buffers"
+    );
 
     std::array<VkDescriptorPoolSize, 2> poolSizes{
         VkDescriptorPoolSize{
@@ -44,9 +46,10 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
         .pPoolSizes = poolSizes.data(),
     };
 
-    if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &m_descPool) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to create descriptor pool");
-    }
+    VkEngine::check(
+        vkCreateDescriptorPool(device, &poolInfo, nullptr, &m_descPool),
+        "[GPUResources] Failed to create descriptor pool"
+    );
 
     std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings{
         VkDescriptorSetLayoutBinding{
@@ -84,9 +87,10 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
         .pBindings = layoutBindings.data(),
     };
 
-    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &m_descSetLayout) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to create descriptor set layout");
-    }
+    VkEngine::check(
+        vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &m_descSetLayout),
+        "[GPUResources] Failed to create descriptor set layout"
+    );
 
     VkDescriptorSetAllocateInfo descSetAllocInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -95,9 +99,16 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
         .pSetLayouts = &m_descSetLayout,
     };
 
-    if (vkAllocateDescriptorSets(device, &descSetAllocInfo, &m_descSet) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to allocate descriptor set");
-    }
+    VkEngine::check(
+        vkAllocateDescriptorSets(device, &descSetAllocInfo, &m_descSet),
+        "[GPUResources] Failed to allocate descriptor set"
+    );
+
+    VmaVirtualBlockCreateInfo vertexBlockInfo{.size = m_vertexMegaBuff.capacity};
+    vmaCreateVirtualBlock(&vertexBlockInfo, &m_vertexMegaBuff.block);
+
+    VmaVirtualBlockCreateInfo vertexBlockInfo{.size = m_vertexMegaBuff.capacity};
+    vmaCreateVirtualBlock(&vertexBlockInfo, &m_vertexMegaBuff.block);
 }
 
 VkEngine::GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
@@ -110,12 +121,13 @@ VkEngine::GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST, // prefer_host for allocation in ram
     };
 
-    if (vmaCreateBuffer(
+    VkEngine::check(
+        vmaCreateBuffer(
             m_ctx->vmaAllocator(), &stagingBufferCreateInfo, &stagingBufferAllocInfo, &stagingBuffer.vkbuffer,
             &stagingBuffer.allocation, nullptr
-        ) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to create staging buffer");
-    }
+        ),
+        "[GPUResources] Failed to create staging buffer"
+    );
 
     return stagingBuffer;
 }
@@ -131,27 +143,30 @@ Handle<VkEngine::GPUImage> GPUResources::createGpuImage(const VkEngine::CPUImage
 
     VmaAllocationCreateInfo imgAllocInfo{.usage = VMA_MEMORY_USAGE_AUTO};
 
-    if (vmaCreateImage(
+    VkEngine::check(
+        vmaCreateImage(
             m_ctx->vmaAllocator(), &whiteTextureCreateInfo, &imgAllocInfo, &gpuImage.vkImage, &gpuImage.allocation,
             nullptr
-        ) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] VMA Failed to create image");
-    }
+        ),
+        "[GPUResources] VMA Failed to create image"
+    );
 
     VkImageViewCreateInfo whiteTextureViewCreateInfo = VkEngine::imgView2DCreateInfo(gpuImage.vkImage);
 
-    if (vkCreateImageView(device, &whiteTextureViewCreateInfo, nullptr, &gpuImage.vkImageView) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to create image view for white texture");
-    }
+    VkEngine::check(
+        vkCreateImageView(device, &whiteTextureViewCreateInfo, nullptr, &gpuImage.vkImageView),
+        "[GPUResources] Failed to create image view for white texture"
+    );
 
     // create transient command buff
     VkCommandBufferAllocateInfo transientBuffInfo =
         VkEngine::cmdBufferAllocInfo(m_transientBuffCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
     VkCommandBuffer transientCmdBuff = VK_NULL_HANDLE;
-    if (vkAllocateCommandBuffers(device, &transientBuffInfo, &transientCmdBuff) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to create transient command buffer");
-    }
+    VkEngine::check(
+        vkAllocateCommandBuffers(device, &transientBuffInfo, &transientCmdBuff),
+        "[GPUResources] Failed to create transient command buffer"
+    );
 
     // staging buffer to hold texture data
     const size_t byteSize = cpuImg.width * cpuImg.height * cpuImg.channels;
@@ -202,9 +217,9 @@ uint32_t GPUResources::getOrCreateSampler()
     };
 
     VkSampler sampler = nullptr;
-    if (vkCreateSampler(device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to create sampler");
-    };
+    VkEngine::check(
+        vkCreateSampler(device, &samplerInfo, nullptr, &sampler), "[GPUResources] Failed to create sampler"
+    );
 
     uint32_t samplerIndex = static_cast<uint32_t>(m_samplers.size());
     m_samplers.push_back(sampler);
@@ -230,9 +245,10 @@ void GPUResources::copyImageToStagingBuffer(const VkEngine::CPUImage& cpuImg, Vk
 {
     // map so cpu can write texture data in the buffer
     void* buffPtr = nullptr;
-    if (vmaMapMemory(m_ctx->vmaAllocator(), stagingBuffer.allocation, &buffPtr) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to map staging buffer");
-    }
+    VkEngine::check(
+        vmaMapMemory(m_ctx->vmaAllocator(), stagingBuffer.allocation, &buffPtr),
+        "[GPUResources] Failed to map staging buffer"
+    );
 
     // write data
     const size_t byteSize = cpuImg.width * cpuImg.height * cpuImg.channels;
@@ -250,9 +266,10 @@ void GPUResources::recordTransientCommandBuffer(
     VkCommandBufferBeginInfo transientBuffBegin =
         VkEngine::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-    if (vkBeginCommandBuffer(transientCmdBuff, &transientBuffBegin) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to begin transient command buffer");
-    }
+    VkEngine::check(
+        vkBeginCommandBuffer(transientCmdBuff, &transientBuffBegin),
+        "[GPUResources] Failed to begin transient command buffer"
+    );
 
     // wait for transition undefined image to transfer dst
     VkImageMemoryBarrier2 transferBarrier{
@@ -327,9 +344,7 @@ void GPUResources::recordTransientCommandBuffer(
 
     vkCmdPipelineBarrier2(transientCmdBuff, &shaderSampleDependencyInfo);
 
-    if (vkEndCommandBuffer(transientCmdBuff) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to end transient command buffer");
-    } // commands recorded
+    VkEngine::check(vkEndCommandBuffer(transientCmdBuff), "[GPUResources] Failed to end transient command buffer");
 }
 
 void GPUResources::submitTransientCommandBuffer(VkCommandBuffer& transientCmdBuff)
@@ -340,9 +355,10 @@ void GPUResources::submitTransientCommandBuffer(VkCommandBuffer& transientCmdBuf
         .pCommandBuffers = &transientCmdBuff,
     };
 
-    if (vkQueueSubmit(m_ctx->graphicsQueue(), 1, &submitInfo, nullptr) != VK_SUCCESS) {
-        throw std::runtime_error("[GPUResources] Failed to submit transient command buffer to the queue");
-    }
+    VkEngine::check(
+        vkQueueSubmit(m_ctx->graphicsQueue(), 1, &submitInfo, nullptr),
+        "[GPUResources] Failed to submit transient command buffer to the queue"
+    );
     vkQueueWaitIdle(m_ctx->graphicsQueue()); // bad but for now ok
     vkFreeCommandBuffers(m_ctx->device(), m_transientBuffCmdPool, 1, &transientCmdBuff);
 }

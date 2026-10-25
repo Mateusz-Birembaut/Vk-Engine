@@ -12,6 +12,7 @@
 
 #include <VkBootstrap.h>
 
+#include "VkEngine/Helpers.h"
 #include "VkEngine/VkEngineInfo.h"
 #include "VkEngine/Window.h"
 
@@ -243,9 +244,7 @@ void VulkanCtx::initVMA()
     vmaAllocatorCreateInfo.vulkanApiVersion =
         VK_MAKE_API_VERSION(0, app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH);
 
-    if (vmaCreateAllocator(&vmaAllocatorCreateInfo, &m_allocator) != VK_SUCCESS) {
-        throw std::runtime_error("[VulkanCtx] Failed to initialize VMA");
-    }
+    VkEngine::check(vmaCreateAllocator(&vmaAllocatorCreateInfo, &m_allocator), "[VulkanCtx] Failed to initialize VMA");
 }
 
 VkDevice VulkanCtx::device() const

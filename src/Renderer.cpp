@@ -6,6 +6,7 @@
 #include <time.h>
 
 #include "VkEngine/FileReader.h"
+#include "VkEngine/Helpers.h"
 #include "VkEngine/VkInits.h"
 #include "VkEngine/VulkanCtx.h"
 
@@ -52,17 +53,19 @@ void Renderer::initCommands()
     VkCommandPoolCreateInfo cmdPoolInfo = VkEngine::cmdPoolCreateInfo(m_ctx->graphicsQueueFamily(), 0);
 
     for (int Iframe = 0; Iframe < FRAMES_IN_FLIGHT; ++Iframe) {
-        if (vkCreateCommandPool(m_ctx->device(), &cmdPoolInfo, nullptr, &m_frames[Iframe].commandPool) != VK_SUCCESS) {
-            throw std::runtime_error("[Renderer] Failed to create command pool " + std::to_string(Iframe));
-        }
+        VkEngine::check(
+            vkCreateCommandPool(m_ctx->device(), &cmdPoolInfo, nullptr, &m_frames[Iframe].commandPool),
+            "[Renderer] Failed to create command pool"
+        );
         m_resourceDestroyer.push(m_frames[Iframe].commandPool);
 
         VkCommandBufferAllocateInfo cmdBuffInfo =
             VkEngine::cmdBufferAllocInfo(m_frames[Iframe].commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
-        if (vkAllocateCommandBuffers(m_ctx->device(), &cmdBuffInfo, &m_frames[Iframe].commandBuffer) != VK_SUCCESS) {
-            throw std::runtime_error("[Renderer] Failed to create command buffer " + std::to_string(Iframe));
-        }
+        VkEngine::check(
+            vkAllocateCommandBuffers(m_ctx->device(), &cmdBuffInfo, &m_frames[Iframe].commandBuffer),
+            "[Renderer] Failed to create command buffer"
+        );
         // will be destroyed with its command pool
     }
 }
@@ -74,15 +77,16 @@ void Renderer::initSyncStructs()
 
     // one fence and swapchain semaphore per frame in flight
     for (int IFrame = 0; IFrame < FRAMES_IN_FLIGHT; ++IFrame) {
-        if (vkCreateFence(m_ctx->device(), &fenceCreateInfo, nullptr, &m_frames[IFrame].renderFence) != VK_SUCCESS) {
-            throw std::runtime_error("[Renderer] Failed to create render fence " + std::to_string(IFrame));
-        }
+        VkEngine::check(
+            vkCreateFence(m_ctx->device(), &fenceCreateInfo, nullptr, &m_frames[IFrame].renderFence),
+            "[Renderer] Failed to create render fence"
+        );
         m_resourceDestroyer.push(m_frames[IFrame].renderFence);
 
-        if (vkCreateSemaphore(m_ctx->device(), &semaphoreCreateInfo, nullptr, &m_frames[IFrame].swapchainSem) !=
-            VK_SUCCESS) {
-            throw std::runtime_error("[Renderer] Failed to create swapchain semaphore " + std::to_string(IFrame));
-        }
+        VkEngine::check(
+            vkCreateSemaphore(m_ctx->device(), &semaphoreCreateInfo, nullptr, &m_frames[IFrame].swapchainSem),
+            "[Renderer] Failed to create swapchain semaphore"
+        );
         m_resourceDestroyer.push(m_frames[IFrame].swapchainSem);
     }
 
@@ -167,17 +171,20 @@ void Renderer::initGraphicsPipeline()
 
     VkPipelineRenderingCreateInfo pipelineRenderingInfo = VkEngine::pipelineRenderingCreateInfo(&imgFormat);
 
-    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_graphicsPipelineLayout) != VK_SUCCESS)
-        throw std::runtime_error("[Renderer] Failed to create pipeline layout");
+    VkEngine::check(
+        vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_graphicsPipelineLayout),
+        "[Renderer] Failed to create pipeline layout"
+    );
 
     VkGraphicsPipelineCreateInfo graphicsPipelineInfo = VkEngine::graphicsPipelineCreateInfo(
         2, shaderStages, &vertexStageInfo, &assemblyInfo, &viewportStateInfo, &rasterInfo, &msSampleStateCreateInfo,
         &colorBlendInfo, &dynamicStateInfo, m_graphicsPipelineLayout, &pipelineRenderingInfo
     );
 
-    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineInfo, nullptr, &m_graphicsPipeline) !=
-        VK_SUCCESS)
-        throw std::runtime_error("[Renderer] Failed to create graphics pipeline");
+    VkEngine::check(
+        vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineInfo, nullptr, &m_graphicsPipeline),
+        "[Renderer] Failed to create graphics pipeline"
+    );
 }
 
 void Renderer::createRenderSems()
@@ -189,12 +196,10 @@ void Renderer::createRenderSems()
     m_renderSems.resize(imgCount);
 
     for (int ISwapChainImg = 0; ISwapChainImg < imgCount; ++ISwapChainImg) {
-        if (vkCreateSemaphore(m_ctx->device(), &semaphoreCreateInfo, nullptr, &m_renderSems[ISwapChainImg]) !=
-            VK_SUCCESS) {
-            throw std::runtime_error(
-                "[Renderer] Failed to create swapchain semaphore " + std::to_string(ISwapChainImg)
-            );
-        }
+        VkEngine::check(
+            vkCreateSemaphore(m_ctx->device(), &semaphoreCreateInfo, nullptr, &m_renderSems[ISwapChainImg]),
+            "[Renderer] Failed to create swapchain semaphore"
+        );
     }
 }
 
@@ -264,22 +269,22 @@ void Renderer::drawFrame()
     if (acquireImg == VK_ERROR_OUT_OF_DATE_KHR) {
         m_swapchainDirty = true;
         return;
-    } else if (acquireImg == VK_SUBOPTIMAL_KHR) {
+    }
+
+    if (acquireImg == VK_SUBOPTIMAL_KHR) {
         m_swapchainDirty = true;
-    } else if (acquireImg != VK_SUCCESS) {
-        throw std::runtime_error("[Renderer] Failed to acquire swapchain image");
+    } else {
+        VkEngine::check(acquireImg, "[Renderer] Failed to acquire swapchain image");
     }
 
     VkCommandPool cmdPool = frameData.commandPool;
     VkCommandBuffer cmdBuff = frameData.commandBuffer;
 
-    if (vkResetCommandPool(device, cmdPool, 0) != VK_SUCCESS)
-        throw std::runtime_error("[Renderer] Failed to reset command pool");
+    VkEngine::check(vkResetCommandPool(device, cmdPool, 0), "[Renderer] Failed to reset command pool");
 
     VkCommandBufferBeginInfo beginInfo = VkEngine::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-    if (vkBeginCommandBuffer(cmdBuff, &beginInfo) != VK_SUCCESS)
-        throw std::runtime_error("[Renderer] failed to begin cmd buffer");
+    VkEngine::check(vkBeginCommandBuffer(cmdBuff, &beginInfo), "[Renderer] failed to begin cmd buffer");
 
     VkImage img = m_ctx->swapchainImgs()[imgId];
     VkImageView imgView = m_ctx->swapchainViews()[imgId];
@@ -368,21 +373,19 @@ void Renderer::drawFrame()
     VkSemaphoreSubmitInfo signalSemInfo =
         VkEngine::semSubmitInfo(renderSemaphore, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
 
-    if (vkEndCommandBuffer(cmdBuff) != VK_SUCCESS)
-        throw std::runtime_error("[Renderer] failed to end cmd buffer");
+    VkEngine::check(vkEndCommandBuffer(cmdBuff), "[Renderer] failed to end cmd buffer");
 
     VkCommandBufferSubmitInfo cmdBufferSubmitInfo = VkEngine::cmdBuffSubmitInfo(cmdBuff);
 
     // reset here so if an early return happens before sumbit, on the next iteration renderFence would be left waiting
     // because never signaled
-    if (vkResetFences(device, 1, &frameData.renderFence) != VK_SUCCESS)
-        throw std::runtime_error("[Renderer] Failed to reset fence");
+    VkEngine::check(vkResetFences(device, 1, &frameData.renderFence), "[Renderer] Failed to reset fence");
 
     // submit to graphics queue and signal fence for next iteration that uses this frameData
     VkSubmitInfo2 submitInfo = VkEngine::submitInfo(&cmdBufferSubmitInfo, &waitSemInfo, &signalSemInfo);
-    auto resSumbit = vkQueueSubmit2(m_ctx->graphicsQueue(), 1, &submitInfo, frameData.renderFence);
-    if (resSumbit != VK_SUCCESS)
-        throw std::runtime_error("[Renderer] submit failed");
+    VkEngine::check(
+        vkQueueSubmit2(m_ctx->graphicsQueue(), 1, &submitInfo, frameData.renderFence), "[Renderer] submit failed"
+    );
 
     // present after render semaphore signaled
     VkPresentInfoKHR presentInfo = VkEngine::presentInfo(&swapChain, &imgId, &renderSemaphore);
