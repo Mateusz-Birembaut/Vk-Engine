@@ -1,10 +1,5 @@
 #version 460 core
 
-layout ( push_constant ) uniform constants
-{
-    float val;
-} PushConstants;
-
 layout (location = 0) out vec3 outColor;
 layout (location = 1) out vec2 uv;
 
@@ -22,13 +17,6 @@ vec2 uvs[3] = vec2[](
 
 
 void main() {
-	
-    if(gl_VertexIndex != 1){
-        gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
-        outColor = vec3((PushConstants.val + 1.0) / 2.0, (PushConstants.val + 1.0) / 2.0, 1.0);
-    } else {
-        gl_Position = vec4((PushConstants.val + 1.0) / 2.0, (PushConstants.val + 1.0) / 2.0, 0.0, 1.0);
-        outColor = vec3(1.0, 0.0, (PushConstants.val + 1.0) / 2.0);
-    }
+    gl_Position = vec4(positions[gl_VertexIndex], 0, 1);
     uv = uvs[gl_VertexIndex];
 }   
