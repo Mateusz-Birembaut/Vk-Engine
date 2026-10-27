@@ -5,6 +5,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include <span>
 #include <vector>
 #include <vk_mem_alloc.h>
 
@@ -29,6 +30,13 @@ struct CPUImage {
     int height{0};
     int channels{4};
     unsigned char* data{nullptr};
+
+    /// @return Size of image in bytes
+    size_t sizeBytes() const
+    {
+        return static_cast<size_t>(width) * height * channels;
+    }
+
 };
 
 struct GPUImage {
