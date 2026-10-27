@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <cstddef>
 #include <stdexcept>
 #include <vk_mem_alloc.h>
 
@@ -409,6 +410,8 @@ void GPUResources::cleanup()
 
     const auto device = m_ctx->device();
     const auto vmaAllocator = m_ctx->vmaAllocator();
+    const auto vertexBlock = m_vertexMegaBuff.block;
+    const auto indexBlock = m_indexMegaBuff.block;
 
     vkDestroyCommandPool(device, m_transientBuffCmdPool, nullptr);
 
@@ -424,6 +427,14 @@ void GPUResources::cleanup()
     m_gpuBuffs.releaseAllAlive([this, vmaAllocator](VkEngine::GPUBuffer& gpuBuff) {
         vmaDestroyBuffer(vmaAllocator, gpuBuff.vkbuffer, gpuBuff.allocation);
     });
+
+    m_gpuMeshes.releaseAllAlive([this, vertexBlock, indexBlock](VkEngine::GPUMesh& gpuMesh) {
+        vmaVirtualFree(vertexBlock, gpuMesh.vAllocVertices);
+        vmaVirtualFree(indexBlock, gpuMesh.vAllocIndices);
+    });
+
+    vmaDestroyVirtualBlock(vertexBlock);
+    vmaDestroyVirtualBlock(indexBlock);
 
     vmaDestroyBuffer(vmaAllocator, m_vertexMegaBuff.gpuBuffer.vkbuffer, m_vertexMegaBuff.gpuBuffer.allocation);
     vmaDestroyBuffer(vmaAllocator, m_indexMegaBuff.gpuBuffer.vkbuffer, m_indexMegaBuff.gpuBuffer.allocation);
