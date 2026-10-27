@@ -213,10 +213,9 @@ Handle<VkEngine::GPUImage> GPUResources::createGpuImage(const VkEngine::CPUImage
     );
 
     // staging buffer to hold texture data
-    const size_t byteSize = cpuImg.width * cpuImg.height * cpuImg.channels;
-    VkEngine::GPUBuffer stagingBuffer = createStagingBuffer(byteSize);
+    VkEngine::GPUBuffer stagingBuffer = createStagingBuffer(cpuImg.sizeBytes());
 
-    copyImageToStagingBuffer(cpuImg, stagingBuffer);
+    copyToStagingBuffer(cpuImg.bytes(), 0, stagingBuffer);
 
     recordTransientCommandBuffer(transientCmdBuff, stagingBuffer, cpuImg, gpuImage);
 
