@@ -83,4 +83,10 @@ struct GPUMegaBuffer {
     GPUBuffer gpuBuffer{};
 };
 
+struct PushConstants {
+    uint64_t vertBuffAddress{0};
+    uint32_t samplerIndex{0};
+    uint32_t textureIndex{0};
+};
+
 } // namespace VkEngine
