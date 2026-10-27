@@ -56,8 +56,10 @@ struct Texture {
     uint32_t samplerIndex{0};
 };
 
-/* struct SamplerDesc{
+struct GPUMegaBuffer {
+    uint64_t capacity{0};
+    VmaVirtualBlock block{VK_NULL_HANDLE};
+    GPUBuffer gpuBuffer{};
+};
 
-}
- */
 } // namespace VkEngine

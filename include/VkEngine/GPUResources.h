@@ -58,6 +58,9 @@ private:
 
     void initDescriptorSet(VkDevice device);
 
+    VkEngine::GPUBuffer
+    createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, const VmaAllocationCreateInfo& allocInfo);
+
     /**
      * @brief Creates a staging buffer (allocation via VMA).
      * @attention The Buffer is returned and the caller is responsible for buffer deletion
@@ -67,6 +70,8 @@ private:
      * @return Buffer created
      */
     VkEngine::GPUBuffer createStagingBuffer(const uint64_t size);
+
+    VkEngine::GPUMegaBuffer createMegaGPUBuffer(const uint64_t capacity, VkBufferUsageFlags usage);
 
     /**
      * @brief Copies Img data to staging buffer
@@ -97,7 +102,14 @@ private:
 
     Pool<VkEngine::GPUImage> m_gpuImgs;
     Pool<VkEngine::GPUBuffer> m_gpuBuffs;
+    Pool<VkEngine::GPUMesh> m_meshes;
     std::vector<VkSampler> m_samplers;
+
+    const uint64_t vertexMegaBuffCapacity{50000000};
+    VkEngine::GPUMegaBuffer m_vertexMegaBuff{};
+
+    const uint64_t indexMegaBuffCapacity{1000000};
+    VkEngine::GPUMegaBuffer m_indexMegaBuff{};
 
     const uint32_t m_maxTextureCount{1024};
     const uint32_t m_maxSamplerCount{16};

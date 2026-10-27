@@ -31,7 +31,15 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
     initDescriptorSetLayout(device);
     initDescriptorSet(device);
 
+    m_vertexMegaBuff = createMegaGPUBuffer(
+        vertexMegaBuffCapacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+    );
+
+    m_indexMegaBuff =
+        createMegaGPUBuffer(indexMegaBuffCapacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 }
+
 void GPUResources::initDescriptorPool(VkDevice device)
 {
     std::array<VkDescriptorPoolSize, 2> poolSizes{
@@ -118,32 +126,54 @@ void GPUResources::initDescriptorSet(VkDevice device)
     );
 }
 
-    VmaVirtualBlockCreateInfo vertexBlockInfo{.size = m_vertexMegaBuff.capacity};
-    vmaCreateVirtualBlock(&vertexBlockInfo, &m_vertexMegaBuff.block);
+VkEngine::GPUBuffer
+GPUResources::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, const VmaAllocationCreateInfo& allocInfo)
+{
+    VkEngine::GPUBuffer gpuBuff;
+    VkBufferCreateInfo stagingBufferCreateInfo = VkEngine::bufferCreateInfo(size, usage);
 
-    VmaVirtualBlockCreateInfo vertexBlockInfo{.size = m_vertexMegaBuff.capacity};
-    vmaCreateVirtualBlock(&vertexBlockInfo, &m_vertexMegaBuff.block);
+    VkEngine::check(
+        vmaCreateBuffer(
+            m_ctx->vmaAllocator(), &stagingBufferCreateInfo, &allocInfo, &gpuBuff.vkbuffer, &gpuBuff.allocation, nullptr
+        ),
+        "[GPUResources] Failed to create buffer"
+    );
+
+    if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+        VkBufferDeviceAddressInfoKHR address_info{VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR};
+        address_info.buffer = gpuBuff.vkbuffer;
+
+        gpuBuff.deviceAddress = vkGetBufferDeviceAddress(m_ctx->device(), &address_info);
+    }
+
+    return gpuBuff;
 }
 
 VkEngine::GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
 {
-    VkEngine::GPUBuffer stagingBuffer;
-    VkBufferCreateInfo stagingBufferCreateInfo = VkEngine::bufferCreateInfo(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-
     VmaAllocationCreateInfo stagingBufferAllocInfo{
         .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST, // prefer_host for allocation in ram
     };
 
+    return createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, stagingBufferAllocInfo);
+}
+
+VkEngine::GPUMegaBuffer GPUResources::createMegaGPUBuffer(const uint64_t capacity, VkBufferUsageFlags usage)
+{
+    VkEngine::GPUMegaBuffer megaBuff;
+
+    VmaAllocationCreateInfo megaBuffVmaAllocInfo{.usage = VMA_MEMORY_USAGE_AUTO};
+
+    megaBuff.gpuBuffer = createBuffer(capacity, usage, megaBuffVmaAllocInfo);
+
+    VmaVirtualBlockCreateInfo megaBuffBlockInfo{.size = capacity};
     VkEngine::check(
-        vmaCreateBuffer(
-            m_ctx->vmaAllocator(), &stagingBufferCreateInfo, &stagingBufferAllocInfo, &stagingBuffer.vkbuffer,
-            &stagingBuffer.allocation, nullptr
-        ),
-        "[GPUResources] Failed to create staging buffer"
+        vmaCreateVirtualBlock(&megaBuffBlockInfo, &megaBuff.block),
+        "[GPUResources] Failed to create virtual block for vertex Mega Buffer"
     );
 
-    return stagingBuffer;
+    return megaBuff;
 }
 
 Handle<VkEngine::GPUImage> GPUResources::createGpuImage(const VkEngine::CPUImage& cpuImg)
@@ -399,6 +429,9 @@ void GPUResources::cleanup()
     m_gpuBuffs.releaseAllAlive([this, vmaAllocator](VkEngine::GPUBuffer& gpuBuff) {
         vmaDestroyBuffer(vmaAllocator, gpuBuff.vkbuffer, gpuBuff.allocation);
     });
+
+    vmaDestroyBuffer(vmaAllocator, m_vertexMegaBuff.gpuBuffer.vkbuffer, m_vertexMegaBuff.gpuBuffer.allocation);
+    vmaDestroyBuffer(vmaAllocator, m_indexMegaBuff.gpuBuffer.vkbuffer, m_indexMegaBuff.gpuBuffer.allocation);
 
     vkDestroyDescriptorSetLayout(device, m_descSetLayout, nullptr);
     vkDestroyDescriptorPool(device, m_descPool, nullptr);
