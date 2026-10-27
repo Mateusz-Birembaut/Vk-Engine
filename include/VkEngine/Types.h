@@ -72,7 +72,7 @@ struct Texture {
 struct GPUMesh {
     uint32_t firstIndex{0}; // first index inside index buffer
     uint32_t indexCount{0};
-    int32_t vertexOffset{0}; // offset index to read vertex data inside the vertex buffer
+    int32_t baseVertex{0}; // offset index to read vertex data inside the vertex buffer
     VmaVirtualAllocation vAllocVertices{VK_NULL_HANDLE};
     VmaVirtualAllocation vAllocIndices{VK_NULL_HANDLE};
 };
