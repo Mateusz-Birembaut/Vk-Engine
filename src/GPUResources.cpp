@@ -29,7 +29,7 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
 
     initDescriptorPool(device);
     initDescriptorSetLayout(device);
-    initDescriptorSetLayout(device);
+    initDescriptorSet(device);
 
 }
 void GPUResources::initDescriptorPool(VkDevice device)
