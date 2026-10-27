@@ -41,12 +41,12 @@ public:
         }
     }
 
-    T* get(const Handle<T>& handle)
+    const T* get(const Handle<T>& handle) const
     {
         if (handle.index >= m_slots.size())
             return nullptr;
 
-        Slot& slot = m_slots[static_cast<size_t>(handle.index)];
+        const Slot& slot = m_slots[static_cast<size_t>(handle.index)];
 
         return (slot.state == SlotState::Alive && handle.gen == slot.gen) ? &slot.obj : nullptr;
     }
