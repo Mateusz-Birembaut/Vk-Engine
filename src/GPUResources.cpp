@@ -285,20 +285,16 @@ uint32_t GPUResources::getOrCreateSampler()
     return samplerIndex;
 }
 
-void GPUResources::copyImageToStagingBuffer(const VkEngine::CPUImage& cpuImg, VkEngine::GPUBuffer& stagingBuffer)
+void GPUResources::copyToStagingBuffer(
+    std::span<const std::byte> bytes, const uint64_t copyOffset, VkEngine::GPUBuffer& stagingBuffer
+)
 {
-    // map so cpu can write texture data in the buffer
-    void* buffPtr = nullptr;
     VkEngine::check(
-        vmaMapMemory(m_ctx->vmaAllocator(), stagingBuffer.allocation, &buffPtr),
-        "[GPUResources] Failed to map staging buffer"
+        vmaCopyMemoryToAllocation(
+            m_ctx->vmaAllocator(), bytes.data(), stagingBuffer.allocation, copyOffset, bytes.size_bytes()
+        ),
+        "[GPUResources] Failed to copy memory to staging buffer"
     );
-
-    // write data
-    const size_t byteSize = cpuImg.width * cpuImg.height * cpuImg.channels;
-    std::memcpy(buffPtr, cpuImg.data, byteSize); // cast if offset needed
-
-    vmaUnmapMemory(m_ctx->vmaAllocator(), stagingBuffer.allocation);
 }
 
 void GPUResources::recordTransientCommandBuffer(

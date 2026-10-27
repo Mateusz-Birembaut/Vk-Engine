@@ -81,7 +81,9 @@ private:
      *
      * @attention Image and buffer size must be the same
      */
-    void copyImageToStagingBuffer(const VkEngine::CPUImage& cpuImg, VkEngine::GPUBuffer& stagingBuffer);
+    void copyToStagingBuffer(
+        std::span<const std::byte> bytes, const uint64_t copyOffset, VkEngine::GPUBuffer& stagingBuffer
+    );
 
     /**
      * @brief Starts the recording of the command buffer.
