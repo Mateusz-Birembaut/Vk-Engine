@@ -115,6 +115,8 @@ void VulkanCtx::init(Window* pWindow)
 
     m_surface = m_window->createSurface(m_instance);
 
+    constexpr VkPhysicalDeviceFeatures physicalFeatures{.shaderInt64 = VK_TRUE};
+
     // PhysicalDevice, dynamic rendering feature, sync 2, scalar block layout
     constexpr VkPhysicalDeviceVulkan12Features features12{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
@@ -141,6 +143,7 @@ void VulkanCtx::init(Window* pWindow)
     vkb::PhysicalDeviceSelector selector{inst_ret.value()};
     auto phys_ret = selector.set_surface(m_surface)
                         .set_minimum_version(app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR)
+                        .set_required_features(physicalFeatures)
                         .set_required_features_12(features12)
                         .set_required_features_13(features13)
                         .set_required_features_14(features14)
