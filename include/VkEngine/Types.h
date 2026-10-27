@@ -37,6 +37,11 @@ struct CPUImage {
         return static_cast<size_t>(width) * height * channels;
     }
 
+    /// @return Read only bytes of the image
+    std::span<const std::byte> bytes() const
+    {
+        return std::as_bytes(std::span(data, sizeBytes()));
+    };
 };
 
 struct GPUImage {
