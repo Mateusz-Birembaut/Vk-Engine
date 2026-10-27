@@ -102,7 +102,7 @@ private:
 
     Pool<VkEngine::GPUImage> m_gpuImgs;
     Pool<VkEngine::GPUBuffer> m_gpuBuffs;
-    Pool<VkEngine::GPUMesh> m_meshes;
+    Pool<VkEngine::GPUMesh> m_gpuMeshes;
     std::vector<VkSampler> m_samplers;
 
     const uint64_t vertexMegaBuffCapacity{50000000};
