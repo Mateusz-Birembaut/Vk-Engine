@@ -52,6 +52,12 @@ public:
     void cleanup();
 
 private:
+    void initDescriptorPool(VkDevice device);
+
+    void initDescriptorSetLayout(VkDevice device);
+
+    void initDescriptorSet(VkDevice device);
+
     /**
      * @brief Creates a staging buffer (allocation via VMA).
      * @attention The Buffer is returned and the caller is responsible for buffer deletion

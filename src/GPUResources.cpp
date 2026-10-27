@@ -27,6 +27,13 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
         "[GPUResources] Init : Failed to create command pool for transient buffers"
     );
 
+    initDescriptorPool(device);
+    initDescriptorSetLayout(device);
+    initDescriptorSetLayout(device);
+
+}
+void GPUResources::initDescriptorPool(VkDevice device)
+{
     std::array<VkDescriptorPoolSize, 2> poolSizes{
         VkDescriptorPoolSize{
             .type = VK_DESCRIPTOR_TYPE_SAMPLER,
@@ -50,7 +57,10 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
         vkCreateDescriptorPool(device, &poolInfo, nullptr, &m_descPool),
         "[GPUResources] Failed to create descriptor pool"
     );
+}
 
+void GPUResources::initDescriptorSetLayout(VkDevice device)
+{
     std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings{
         VkDescriptorSetLayoutBinding{
             .binding = 0,
@@ -91,7 +101,10 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
         vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &m_descSetLayout),
         "[GPUResources] Failed to create descriptor set layout"
     );
+}
 
+void GPUResources::initDescriptorSet(VkDevice device)
+{
     VkDescriptorSetAllocateInfo descSetAllocInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = m_descPool,
@@ -103,6 +116,7 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
         vkAllocateDescriptorSets(device, &descSetAllocInfo, &m_descSet),
         "[GPUResources] Failed to allocate descriptor set"
     );
+}
 
     VmaVirtualBlockCreateInfo vertexBlockInfo{.size = m_vertexMegaBuff.capacity};
     vmaCreateVirtualBlock(&vertexBlockInfo, &m_vertexMegaBuff.block);
