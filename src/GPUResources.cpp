@@ -446,3 +446,18 @@ VkDescriptorSet GPUResources::descSet() const
 {
     return m_descSet;
 }
+
+uint64_t GPUResources::vertBuffAddr() const
+{
+    return m_vertexMegaBuff.gpuBuffer.deviceAddress;
+}
+
+VkBuffer GPUResources::indexBuffer() const
+{
+    return m_indexMegaBuff.gpuBuffer.vkbuffer;
+}
+
+const VkEngine::GPUMesh* GPUResources::getMesh(const Handle<VkEngine::GPUMesh>& meshHandle) const
+{
+    return m_gpuMeshes.get(meshHandle);
+}

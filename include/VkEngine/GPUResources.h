@@ -14,6 +14,9 @@ public:
 
     VkDescriptorSetLayout descSetLayout() const;
     VkDescriptorSet descSet() const;
+    uint64_t vertBuffAddr() const;
+    VkBuffer indexBuffer() const;
+    const VkEngine::GPUMesh* getMesh(const Handle<VkEngine::GPUMesh>& meshHandle) const;
 
     /**
      * @brief Sets vulkan context and creates a command pool for uploads to VRAM
