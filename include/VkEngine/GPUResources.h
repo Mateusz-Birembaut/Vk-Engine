@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include <vector>
 
+#include "VkEngine/Helpers.h"
 #include "VkEngine/Pool.h"
 #include "VkEngine/Types.h"
+#include "VkEngine/VkInits.h"
 #include "VkEngine/VulkanCtx.h"
 
 class GPUResources {
@@ -65,54 +67,123 @@ private:
 
     void initDescriptorSet(VkDevice device);
 
+    /**
+     * @brief Creates a new GPUBuffer of the specified size
+
+     * @param usage If contains VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, gpuBuff.deviceAddress will be filled
+     *
+     * @attention The Buffer is returned and the caller is responsible for buffer deletion
+     */
     VkEngine::GPUBuffer
-    createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, const VmaAllocationCreateInfo& allocInfo);
+    createBuffer(const uint64_t size, VkBufferUsageFlags usage, const VmaAllocationCreateInfo& allocInfo);
 
     /**
-     * @brief Creates a staging buffer (allocation via VMA).
+     * @brief Creates a staging buffer
+     *
      * @attention The Buffer is returned and the caller is responsible for buffer deletion
-     *
-     * @param size Size in bytes of the buffer
-     *
-     * @return Buffer created
      */
     VkEngine::GPUBuffer createStagingBuffer(const uint64_t size);
 
+    /**
+     * @brief Creates a mega buffer
+     *
+     * @attention The Buffer is returned and the caller is responsible for buffer deletion
+     */
     VkEngine::GPUMegaBuffer createMegaGPUBuffer(const uint64_t capacity, VkBufferUsageFlags usage);
 
     /**
-     * @brief Copies Img data to staging buffer
-     *
-     * @attention Image and buffer size must be the same
+     * @brief Copies bytes to staging buffer using VMA
      */
     void copyToStagingBuffer(
         std::span<const std::byte> bytes, const uint64_t copyOffset, VkEngine::GPUBuffer& stagingBuffer
     );
 
     /**
-     * @brief Starts the recording of the command buffer.
-     * sets up barrier to transition the VkImage to VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-     * copy operation from buffer to image.
-     * sets up barrier to transition the VkImage to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-     * Ends the recording.
+     * @brief Records commands to copy image to GPU
+     *
+     * Final image layout is SHADER_READ_ONLY_OPTIMAL (ready to sample in shader)
+     *
+     * @param cmdBuff must be in recording state
+     *
+     * @attention First barrier layout is UNDEFINED so all original content is lost
      */
-    void recordTransientCommandBuffer(
-        VkCommandBuffer& transientCmdBuff, VkEngine::GPUBuffer& stagingBuffer, const VkEngine::CPUImage& cpuImg,
-        const VkEngine::GPUImage& gpuImage
-    );
+    void
+    recordImgCopyCmds(VkCommandBuffer cmdBuff, VkBuffer vkStagingBuff, const VkExtent3D& imgExtent, VkImage gpuVkImage);
 
-    void recordMeshCopy(
-        VkCommandBuffer transientCmdBuff, VkBuffer stagingVkBuffer, const VkBufferCopy& vertCopyRegion,
+    /**
+     * @brief Records copy to vertex and index data to both GPU mega buffers
+     *
+     * Vertices can be read from the vertex shader
+     * Indices ready to be bound as index buffer
+     *
+     * @param cmdBuff must be in recording state
+     *
+     * @attention Sizes must be allocated in virtual blocks (so both regions have the correct src and dst offsets)
+     * @attention Regions are in bytes
+     */
+    void recordMeshCopyCmds(
+        VkCommandBuffer cmdBuff, VkBuffer vkStagingBuff, const VkBufferCopy& vertCopyRegion,
         const VkBufferCopy& indexCopyRegion
     );
 
     /**
-     * @brief Submits command buffer to GPU using graphics queue,
-     * use vkQueueWaitIdle to wait for upload to end
+     * @brief Records commands with @p f, submits them to the graphics queue and waits for completion.
      *
-     * // TODO update this to not use vkQueueWaitIdle
+     * On return, all recorded commands have finished on the GPU (staging buffers can be destroyed)
+     *
+     * @param f Called once with a command buffer already in the recording state.
+     *          Do not begin/end it, and do not keep it after @p f returns.
+     *
+     * @attention Blocks the CPU until the GPU is idle
      */
-    void submitTransientCommandBuffer(VkCommandBuffer& transientCmdBuff);
+    template <typename F>
+        requires std::invocable<F, VkCommandBuffer>
+    void immediateSubmit(F&& f)
+    {
+        const auto device = m_ctx->device();
+        const auto graphicsQueue = m_ctx->graphicsQueue();
+
+        // create transient command buff
+        VkCommandBufferAllocateInfo transientBuffInfo =
+            VkEngine::cmdBufferAllocInfo(m_transientBuffCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+
+        VkCommandBuffer transientCmdBuff = VK_NULL_HANDLE;
+        VkEngine::check(
+            vkAllocateCommandBuffers(device, &transientBuffInfo, &transientCmdBuff),
+            "[GPUResources] Failed to create transient command buffer"
+        );
+
+        // begin record
+        VkCommandBufferBeginInfo transientBuffBegin =
+            VkEngine::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+        VkEngine::check(
+            vkBeginCommandBuffer(transientCmdBuff, &transientBuffBegin),
+            "[GPUResources] Failed to begin mesh transient command buffer"
+        );
+
+        // F holds commands to records
+        f(transientCmdBuff);
+
+        VkEngine::check(
+            vkEndCommandBuffer(transientCmdBuff), "[GPUResources] Failed to end mesh transient command buffer"
+        );
+
+        // submit
+        VkSubmitInfo submitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &transientCmdBuff,
+        };
+
+        VkEngine::check(
+            vkQueueSubmit(graphicsQueue, 1, &submitInfo, nullptr),
+            "[GPUResources] Failed to submit transient command buffer to the queue"
+        );
+        vkQueueWaitIdle(graphicsQueue); // bad but for now ok
+
+        vkFreeCommandBuffers(device, m_transientBuffCmdPool, 1, &transientCmdBuff);
+    }
 
     Pool<VkEngine::GPUImage> m_gpuImgs;
     Pool<VkEngine::GPUBuffer> m_gpuBuffs;

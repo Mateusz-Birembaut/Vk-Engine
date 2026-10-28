@@ -128,7 +128,7 @@ void GPUResources::initDescriptorSet(VkDevice device)
 }
 
 VkEngine::GPUBuffer
-GPUResources::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, const VmaAllocationCreateInfo& allocInfo)
+GPUResources::createBuffer(const uint64_t size, VkBufferUsageFlags usage, const VmaAllocationCreateInfo& allocInfo)
 {
     VkEngine::GPUBuffer gpuBuff;
     VkBufferCreateInfo stagingBufferCreateInfo = VkEngine::bufferCreateInfo(size, usage);
@@ -162,7 +162,7 @@ VkEngine::GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
 
 VkEngine::GPUMegaBuffer GPUResources::createMegaGPUBuffer(const uint64_t capacity, VkBufferUsageFlags usage)
 {
-    VkEngine::GPUMegaBuffer megaBuff;
+    VkEngine::GPUMegaBuffer megaBuff{.capacity = capacity};
 
     VmaAllocationCreateInfo megaBuffVmaAllocInfo{.usage = VMA_MEMORY_USAGE_AUTO};
 
@@ -203,24 +203,18 @@ Handle<VkEngine::GPUImage> GPUResources::createGpuImage(const VkEngine::CPUImage
         "[GPUResources] Failed to create image view for white texture"
     );
 
-    // create transient command buff
-    VkCommandBufferAllocateInfo transientBuffInfo =
-        VkEngine::cmdBufferAllocInfo(m_transientBuffCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-
-    VkCommandBuffer transientCmdBuff = VK_NULL_HANDLE;
-    VkEngine::check(
-        vkAllocateCommandBuffers(device, &transientBuffInfo, &transientCmdBuff),
-        "[GPUResources] Failed to create transient command buffer"
-    );
-
     // staging buffer to hold texture data
     VkEngine::GPUBuffer stagingBuffer = createStagingBuffer(cpuImg.sizeBytes());
 
     copyToStagingBuffer(cpuImg.bytes(), 0, stagingBuffer);
 
-    recordTransientCommandBuffer(transientCmdBuff, stagingBuffer, cpuImg, gpuImage);
+    VkExtent3D imdExtend{
+        .width = static_cast<uint32_t>(cpuImg.width), .height = static_cast<uint32_t>(cpuImg.height), .depth = 1
+    };
 
-    submitTransientCommandBuffer(transientCmdBuff); // submit and wait
+    immediateSubmit([&](VkCommandBuffer transientCmdBuff) {
+        recordImgCopyCmds(transientCmdBuff, stagingBuffer.vkbuffer, imdExtend, gpuImage.vkImage);
+    });
 
     vmaDestroyBuffer(
         m_ctx->vmaAllocator(), stagingBuffer.vkbuffer, stagingBuffer.allocation
@@ -249,8 +243,6 @@ Handle<VkEngine::GPUImage> GPUResources::createGpuImage(const VkEngine::CPUImage
 Handle<VkEngine::GPUMesh>
 GPUResources::createGpuMesh(std::span<const VkEngine::Vertex> vertices, std::span<const uint32_t> indices)
 {
-    const auto device = m_ctx->device();
-
     VkEngine::GPUMesh gpuMesh;
     gpuMesh.indexCount = static_cast<uint32_t>(indices.size());
 
@@ -281,16 +273,6 @@ GPUResources::createGpuMesh(std::span<const VkEngine::Vertex> vertices, std::spa
     );
     gpuMesh.firstIndex = static_cast<uint32_t>(allocIndexOffset / sizeof(uint32_t));
 
-    // create transient command buff
-    VkCommandBufferAllocateInfo transientBuffInfo =
-        VkEngine::cmdBufferAllocInfo(m_transientBuffCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-
-    VkCommandBuffer transientCmdBuff = VK_NULL_HANDLE;
-    VkEngine::check(
-        vkAllocateCommandBuffers(device, &transientBuffInfo, &transientCmdBuff),
-        "[GPUResources] Failed to create transient command buffer"
-    );
-
     VkEngine::GPUBuffer stagingBuffer = createStagingBuffer(vertices.size_bytes() + indices.size_bytes());
 
     copyToStagingBuffer(std::as_bytes(vertices), 0, stagingBuffer);
@@ -308,9 +290,9 @@ GPUResources::createGpuMesh(std::span<const VkEngine::Vertex> vertices, std::spa
         .size = indices.size_bytes(),
     };
 
-    recordMeshCopy(transientCmdBuff, stagingBuffer.vkbuffer, vertexCopyRegion, indexCopyRegion);
-
-    submitTransientCommandBuffer(transientCmdBuff);
+    immediateSubmit([&](VkCommandBuffer cmd) {
+        recordMeshCopyCmds(cmd, stagingBuffer.vkbuffer, vertexCopyRegion, indexCopyRegion);
+    });
 
     vmaDestroyBuffer(
         m_ctx->vmaAllocator(), stagingBuffer.vkbuffer, stagingBuffer.allocation
@@ -370,20 +352,10 @@ void GPUResources::copyToStagingBuffer(
     );
 }
 
-void GPUResources::recordTransientCommandBuffer(
-    VkCommandBuffer& transientCmdBuff, VkEngine::GPUBuffer& stagingBuffer, const VkEngine::CPUImage& cpuImg,
-    const VkEngine::GPUImage& gpuImage
+void GPUResources::recordImgCopyCmds(
+    VkCommandBuffer transientCmdBuff, VkBuffer vkStagingBuff, const VkExtent3D& imgExtent, VkImage gpuVkImage
 )
 {
-    // begin recording
-    VkCommandBufferBeginInfo transientBuffBegin =
-        VkEngine::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-    VkEngine::check(
-        vkBeginCommandBuffer(transientCmdBuff, &transientBuffBegin),
-        "[GPUResources] Failed to begin transient command buffer"
-    );
-
     // wait for transition undefined image to transfer dst
     VkImageMemoryBarrier2 transferBarrier{
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -393,7 +365,7 @@ void GPUResources::recordTransientCommandBuffer(
         .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
         .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        .image = gpuImage.vkImage,
+        .image = gpuVkImage,
         .subresourceRange = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
             .baseMipLevel = 0,
@@ -420,14 +392,12 @@ void GPUResources::recordTransientCommandBuffer(
                 .baseArrayLayer = 0,
                 .layerCount = 1,
             },
-        .imageExtent = {
-            .width = static_cast<uint32_t>(cpuImg.width), .height = static_cast<uint32_t>(cpuImg.height), .depth = 1
-        },
+        .imageExtent = imgExtent,
     };
 
     vkCmdCopyBufferToImage(
-        transientCmdBuff, stagingBuffer.vkbuffer, gpuImage.vkImage,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL /* current image layout */, 1, &bufferImageCopy
+        transientCmdBuff, vkStagingBuff, gpuVkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL /* current image layout */, 1,
+        &bufferImageCopy
     );
 
     // wait for transition from transfer dst to shader read
@@ -439,7 +409,7 @@ void GPUResources::recordTransientCommandBuffer(
         .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
         .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        .image = gpuImage.vkImage,
+        .image = gpuVkImage,
         .subresourceRange = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
             .baseMipLevel = 0,
@@ -456,27 +426,16 @@ void GPUResources::recordTransientCommandBuffer(
     };
 
     vkCmdPipelineBarrier2(transientCmdBuff, &shaderSampleDependencyInfo);
-
-    VkEngine::check(vkEndCommandBuffer(transientCmdBuff), "[GPUResources] Failed to end transient command buffer");
 }
 
-void GPUResources::recordMeshCopy(
-    VkCommandBuffer transientCmdBuff, VkBuffer stagingVkBuffer, const VkBufferCopy& vertCopyRegion,
+void GPUResources::recordMeshCopyCmds(
+    VkCommandBuffer transientCmdBuff, VkBuffer vkStagingBuff, const VkBufferCopy& vertCopyRegion,
     const VkBufferCopy& indexCopyRegion
 )
 {
-    // begin recording
-    VkCommandBufferBeginInfo transientBuffBegin =
-        VkEngine::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    vkCmdCopyBuffer(transientCmdBuff, vkStagingBuff, m_vertexMegaBuff.gpuBuffer.vkbuffer, 1, &vertCopyRegion);
 
-    VkEngine::check(
-        vkBeginCommandBuffer(transientCmdBuff, &transientBuffBegin),
-        "[GPUResources] Failed to begin mesh transient command buffer"
-    );
-
-    vkCmdCopyBuffer(transientCmdBuff, stagingVkBuffer, m_vertexMegaBuff.gpuBuffer.vkbuffer, 1, &vertCopyRegion);
-
-    vkCmdCopyBuffer(transientCmdBuff, stagingVkBuffer, m_indexMegaBuff.gpuBuffer.vkbuffer, 1, &indexCopyRegion);
+    vkCmdCopyBuffer(transientCmdBuff, vkStagingBuff, m_indexMegaBuff.gpuBuffer.vkbuffer, 1, &indexCopyRegion);
 
     std::array<VkBufferMemoryBarrier2, 2> barriers{
         VkBufferMemoryBarrier2{
@@ -514,24 +473,6 @@ void GPUResources::recordMeshCopy(
     };
 
     vkCmdPipelineBarrier2(transientCmdBuff, &transferDependencyInfo);
-
-    VkEngine::check(vkEndCommandBuffer(transientCmdBuff), "[GPUResources] Failed to end mesh transient command buffer");
-}
-
-void GPUResources::submitTransientCommandBuffer(VkCommandBuffer& transientCmdBuff)
-{
-    VkSubmitInfo submitInfo{
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .commandBufferCount = 1,
-        .pCommandBuffers = &transientCmdBuff,
-    };
-
-    VkEngine::check(
-        vkQueueSubmit(m_ctx->graphicsQueue(), 1, &submitInfo, nullptr),
-        "[GPUResources] Failed to submit transient command buffer to the queue"
-    );
-    vkQueueWaitIdle(m_ctx->graphicsQueue()); // bad but for now ok
-    vkFreeCommandBuffers(m_ctx->device(), m_transientBuffCmdPool, 1, &transientCmdBuff);
 }
 
 void GPUResources::cleanup()
