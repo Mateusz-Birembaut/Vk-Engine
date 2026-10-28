@@ -246,6 +246,79 @@ Handle<VkEngine::GPUImage> GPUResources::createGpuImage(const VkEngine::CPUImage
     return m_gpuImgs.create(std::move(gpuImage));
 }
 
+Handle<VkEngine::GPUMesh>
+GPUResources::createGpuMesh(std::span<const VkEngine::Vertex> vertices, std::span<const uint32_t> indices)
+{
+    const auto device = m_ctx->device();
+
+    VkEngine::GPUMesh gpuMesh;
+    gpuMesh.indexCount = static_cast<uint32_t>(indices.size());
+
+    // virtual allocate (checks for size available)
+    VmaVirtualAllocationCreateInfo vertexVirtualAllocInfo{
+        .size = vertices.size_bytes(),
+    };
+
+    uint64_t allocVertexOffset{}; // in byte
+    VkEngine::check(
+        vmaVirtualAllocate(
+            m_vertexMegaBuff.block, &vertexVirtualAllocInfo, &gpuMesh.vAllocVertices, &allocVertexOffset
+        ),
+        "[GPUResources] Failed to allocate virtual memory for vertices"
+    );
+
+    // get the index from the offset in byte
+    gpuMesh.baseVertex = static_cast<uint32_t>(allocVertexOffset / sizeof(VkEngine::Vertex));
+
+    VmaVirtualAllocationCreateInfo indexVirtualAllocInfo{
+        .size = indices.size() * sizeof(uint32_t),
+    };
+
+    uint64_t allocIndexOffset{}; // in byte
+    VkEngine::check(
+        vmaVirtualAllocate(m_indexMegaBuff.block, &indexVirtualAllocInfo, &gpuMesh.vAllocIndices, &allocIndexOffset),
+        "[GPUResources] Failed to allocate virtual memory for indices"
+    );
+    gpuMesh.firstIndex = static_cast<uint32_t>(allocIndexOffset / sizeof(uint32_t));
+
+    // create transient command buff
+    VkCommandBufferAllocateInfo transientBuffInfo =
+        VkEngine::cmdBufferAllocInfo(m_transientBuffCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+
+    VkCommandBuffer transientCmdBuff = VK_NULL_HANDLE;
+    VkEngine::check(
+        vkAllocateCommandBuffers(device, &transientBuffInfo, &transientCmdBuff),
+        "[GPUResources] Failed to create transient command buffer"
+    );
+
+    VkEngine::GPUBuffer stagingBuffer = createStagingBuffer(vertices.size_bytes() + indices.size_bytes());
+
+    copyToStagingBuffer(std::as_bytes(vertices), 0, stagingBuffer);
+    copyToStagingBuffer(std::as_bytes(indices), vertices.size_bytes(), stagingBuffer);
+
+    VkBufferCopy vertexCopyRegion{
+        .srcOffset = 0,
+        .dstOffset = allocVertexOffset,
+        .size = vertices.size_bytes(),
+    };
+
+    VkBufferCopy indexCopyRegion{
+        .srcOffset = vertices.size_bytes(),
+        .dstOffset = allocIndexOffset,
+        .size = indices.size_bytes(),
+    };
+
+    recordMeshCopy(transientCmdBuff, stagingBuffer.vkbuffer, vertexCopyRegion, indexCopyRegion);
+
+    submitTransientCommandBuffer(transientCmdBuff);
+
+    vmaDestroyBuffer(
+        m_ctx->vmaAllocator(), stagingBuffer.vkbuffer, stagingBuffer.allocation
+    ); // safe to destroy since waited before
+
+    return m_gpuMeshes.create(std::move(gpuMesh));
+}
+
 uint32_t GPUResources::getOrCreateSampler()
 {
     const auto device = m_ctx->device();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <stdint.h>
 #include <vector>
 
@@ -34,6 +35,9 @@ public:
      * @return Handle of the created Texture { gpuImage index, gen }
      */
     Handle<VkEngine::GPUImage> createGpuImage(const VkEngine::CPUImage& cpuImg);
+
+    Handle<VkEngine::GPUMesh>
+    createGpuMesh(std::span<const VkEngine::Vertex> vertices, std::span<const uint32_t> indices);
 
     /**
      * @brief Create a simple sampler
