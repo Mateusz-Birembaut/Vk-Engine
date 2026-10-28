@@ -45,6 +45,9 @@ private:
     VkClearColorValue m_clearColorValue{};
     VkEngine::Texture m_fallbackTexture{};
 
+    Handle<VkEngine::GPUMesh> m_testMesh;
+    Handle<VkEngine::GPUMesh> m_testMesh2;
+
     GPUResources m_gpuResources;
     ResourceDestroyer m_resourceDestroyer;
 

@@ -45,7 +45,29 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
     Handle<VkEngine::GPUImage> whitePixelImgHandle = m_gpuResources.createGpuImage(whitePixel);
     uint32_t whitePixelSamplerId = m_gpuResources.getOrCreateSampler(); // for now create a basic sampler
 
+    std::vector<VkEngine::Vertex> vertices{
+        VkEngine::Vertex{.position = {-0.5f, -0.5f, 0.0f}},
+        VkEngine::Vertex{.position = {0.5f, -0.5f, 0.0f}},
+        VkEngine::Vertex{.position = {0.0f, 0.5f, 0.0f}},
+    };
+    std::vector<uint32_t> indices{0, 1, 2};
+
+    m_testMesh = m_gpuResources.createGpuMesh(vertices, indices);
     m_fallbackTexture = {whitePixelImgHandle, whitePixelSamplerId};
+
+    std::vector<VkEngine::Vertex> vertices2{
+        VkEngine::Vertex{.position = {0.0f, 0.8f, 0.0f}},       VkEngine::Vertex{.position = {0.283f, 0.206f, 0.0f}},
+        VkEngine::Vertex{.position = {0.761f, 0.247f, 0.0f}},   VkEngine::Vertex{.position = {0.333f, -0.108f, 0.0f}},
+        VkEngine::Vertex{.position = {0.470f, -0.647f, 0.0f}},  VkEngine::Vertex{.position = {0.0f, -0.35f, 0.0f}},
+        VkEngine::Vertex{.position = {-0.470f, -0.647f, 0.0f}}, VkEngine::Vertex{.position = {-0.333f, -0.108f, 0.0f}},
+        VkEngine::Vertex{.position = {-0.761f, 0.247f, 0.0f}},  VkEngine::Vertex{.position = {-0.283f, 0.206f, 0.0f}},
+        VkEngine::Vertex{.position = {0.0f, 0.0f, 0.0f}},
+    };
+    std::vector<uint32_t> indices2{
+        10, 1, 0, 10, 2, 1, 10, 3, 2, 10, 4, 3, 10, 5, 4, 10, 6, 5, 10, 7, 6, 10, 8, 7, 10, 9, 8, 10, 0, 9,
+    };
+
+    m_testMesh2 = m_gpuResources.createGpuMesh(vertices2, indices2);
 }
 
 void Renderer::initCommands()
@@ -159,15 +181,13 @@ void Renderer::initGraphicsPipeline()
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
-    VkPushConstantRange fragShaderPushCosntants{};
-    fragShaderPushCosntants.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderPushCosntants.offset = 0;
-    fragShaderPushCosntants.size = sizeof(uint32_t) * 2;
+    VkPushConstantRange fragShaderPushConstants{};
+    fragShaderPushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderPushConstants.offset = 0;
+    fragShaderPushConstants.size = sizeof(VkEngine::PushConstants);
 
-    std::array<VkPushConstantRange, 1> pushConstants{fragShaderPushCosntants};
-
-    pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
-    pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &fragShaderPushConstants;
 
     VkPipelineRenderingCreateInfo pipelineRenderingInfo = VkEngine::pipelineRenderingCreateInfo(&imgFormat);
 
@@ -348,13 +368,28 @@ void Renderer::drawFrame()
     vkCmdSetViewport(cmdBuff, 0, 1, &viewport);
     vkCmdSetScissor(cmdBuff, 0, 1, &scissor);
 
-    std::array<uint32_t, 2> fragConstants{m_fallbackTexture.samplerIndex, m_fallbackTexture.imageHandle.index};
+    VkEngine::PushConstants pushConstants{
+        .vertBuffAddress = m_gpuResources.vertBuffAddr(),
+        .samplerIndex = m_fallbackTexture.samplerIndex,
+        .textureIndex = m_fallbackTexture.imageHandle.index
+    };
 
     vkCmdPushConstants(
-        cmdBuff, m_graphicsPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(fragConstants), fragConstants.data()
+        cmdBuff, m_graphicsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+        sizeof(VkEngine::PushConstants), &pushConstants
     );
 
-    vkCmdDraw(cmdBuff, 3, 1, 0, 0);
+    vkCmdBindIndexBuffer(cmdBuff, m_gpuResources.indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+    const VkEngine::GPUMesh* mesh = m_gpuResources.getMesh(m_testMesh);
+    if (mesh) {
+        vkCmdDrawIndexed(cmdBuff, mesh->indexCount, 1, mesh->firstIndex, mesh->baseVertex, 0);
+    }
+
+    const VkEngine::GPUMesh* mesh2 = m_gpuResources.getMesh(m_testMesh2);
+    if (mesh2) {
+        vkCmdDrawIndexed(cmdBuff, mesh2->indexCount, 1, mesh2->firstIndex, mesh2->baseVertex, 0);
+    }
 
     vkCmdEndRendering(cmdBuff);
 
