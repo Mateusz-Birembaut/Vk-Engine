@@ -97,6 +97,11 @@ private:
         const VkEngine::GPUImage& gpuImage
     );
 
+    void recordMeshCopy(
+        VkCommandBuffer transientCmdBuff, VkBuffer stagingVkBuffer, const VkBufferCopy& vertCopyRegion,
+        const VkBufferCopy& indexCopyRegion
+    );
+
     /**
      * @brief Submits command buffer to GPU using graphics queue,
      * use vkQueueWaitIdle to wait for upload to end

@@ -387,6 +387,64 @@ void GPUResources::recordTransientCommandBuffer(
     VkEngine::check(vkEndCommandBuffer(transientCmdBuff), "[GPUResources] Failed to end transient command buffer");
 }
 
+void GPUResources::recordMeshCopy(
+    VkCommandBuffer transientCmdBuff, VkBuffer stagingVkBuffer, const VkBufferCopy& vertCopyRegion,
+    const VkBufferCopy& indexCopyRegion
+)
+{
+    // begin recording
+    VkCommandBufferBeginInfo transientBuffBegin =
+        VkEngine::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+    VkEngine::check(
+        vkBeginCommandBuffer(transientCmdBuff, &transientBuffBegin),
+        "[GPUResources] Failed to begin mesh transient command buffer"
+    );
+
+    vkCmdCopyBuffer(transientCmdBuff, stagingVkBuffer, m_vertexMegaBuff.gpuBuffer.vkbuffer, 1, &vertCopyRegion);
+
+    vkCmdCopyBuffer(transientCmdBuff, stagingVkBuffer, m_indexMegaBuff.gpuBuffer.vkbuffer, 1, &indexCopyRegion);
+
+    std::array<VkBufferMemoryBarrier2, 2> barriers{
+        VkBufferMemoryBarrier2{
+            // vertex mega buffer barrier
+            .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT,
+            .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+            .dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .buffer = m_vertexMegaBuff.gpuBuffer.vkbuffer,
+            .offset = vertCopyRegion.dstOffset,
+            .size = vertCopyRegion.size,
+        },
+        {
+            // index mega buffer barrier
+            .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT,
+            .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT,
+            .dstAccessMask = VK_ACCESS_2_INDEX_READ_BIT,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .buffer = m_indexMegaBuff.gpuBuffer.vkbuffer,
+            .offset = indexCopyRegion.dstOffset,
+            .size = indexCopyRegion.size,
+        },
+    };
+
+    VkDependencyInfo transferDependencyInfo{
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .bufferMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
+        .pBufferMemoryBarriers = barriers.data(),
+    };
+
+    vkCmdPipelineBarrier2(transientCmdBuff, &transferDependencyInfo);
+
+    VkEngine::check(vkEndCommandBuffer(transientCmdBuff), "[GPUResources] Failed to end mesh transient command buffer");
+}
+
 void GPUResources::submitTransientCommandBuffer(VkCommandBuffer& transientCmdBuff)
 {
     VkSubmitInfo submitInfo{
