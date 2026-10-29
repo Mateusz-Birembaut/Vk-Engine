@@ -2,12 +2,11 @@
 
 #include <SDL3/SDL_vulkan.h>
 
-#include "VkEngine/VkEngineInfo.h"
+#include "VkEngine/vkeInfo.h"
 
 Window::Window()
 {
-    m_window =
-        SDL_CreateWindow(app::NAME.data(), 1920, 1080, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
+    m_window = SDL_CreateWindow(app::NAME.data(), 1920, 1080, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
 }
 
 Window::~Window()
@@ -26,8 +25,7 @@ VkExtent2D Window::getSizeInPixels()
     return {static_cast<uint32_t>(w), static_cast<uint32_t>(h)};
 }
 
-VkSurfaceKHR
-Window::createSurface(VkInstance instance, const struct VkAllocationCallbacks* pallocator)
+VkSurfaceKHR Window::createSurface(VkInstance instance, const struct VkAllocationCallbacks* pallocator)
 {
     VkSurfaceKHR vkSurface{};
     if (!SDL_Vulkan_CreateSurface(m_window, instance, pallocator, &vkSurface))

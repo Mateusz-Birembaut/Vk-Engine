@@ -12,7 +12,7 @@
 #include <stdexcept>
 
 #include "VkEngine/Renderer.h"
-#include "VkEngine/VkEngineInfo.h"
+#include "VkEngine/vkeInfo.h"
 #include "VkEngine/VulkanCtx.h"
 #include "VkEngine/Window.h"
 
@@ -28,7 +28,7 @@ void App::init()
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
         throw std::runtime_error(std::string("[SDL] Couldn't init  : ") + SDL_GetError());
 
-    if (!SDL_SetAppMetadata(app::NAME.data(), app::VERSION.data(), "VkEngineID"))
+    if (!SDL_SetAppMetadata(app::NAME.data(), app::VERSION.data(), "vkeID"))
         SDL_Log("%s", "Could not set app meta data");
 
     m_window = std::make_unique<Window>();

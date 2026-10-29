@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace VkEngine {
+namespace vke {
 
 inline VkSemaphoreCreateInfo semaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0)
 {
@@ -453,4 +453,4 @@ inline VkBufferCreateInfo bufferCreateInfo(uint64_t bufferSize, VkBufferUsageFla
     return bufferCreateInfo;
 }
 
-} // namespace VkEngine
+} // namespace vke

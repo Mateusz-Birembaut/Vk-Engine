@@ -4,7 +4,7 @@
 
 #include <stdexcept>
 
-namespace VkEngine {
+namespace vke {
 
 inline void check(VkResult result, const char* msg)
 {
@@ -13,4 +13,4 @@ inline void check(VkResult result, const char* msg)
     }
 }
 
-} // namespace VkEngine
+} // namespace vke

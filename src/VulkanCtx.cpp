@@ -13,10 +13,10 @@
 #include <VkBootstrap.h>
 
 #include "VkEngine/Helpers.h"
-#include "VkEngine/VkEngineInfo.h"
+#include "VkEngine/vkeInfo.h"
 #include "VkEngine/Window.h"
 
-#ifdef VKENGINE_VALIDATION
+#ifdef vke_VALIDATION
 constexpr bool useValidation = true;
 #else
 constexpr bool useValidation = false;
@@ -247,7 +247,7 @@ void VulkanCtx::initVMA()
     vmaAllocatorCreateInfo.vulkanApiVersion =
         VK_MAKE_API_VERSION(0, app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH);
 
-    VkEngine::check(vmaCreateAllocator(&vmaAllocatorCreateInfo, &m_allocator), "[VulkanCtx] Failed to initialize VMA");
+    vke::check(vmaCreateAllocator(&vmaAllocatorCreateInfo, &m_allocator), "[VulkanCtx] Failed to initialize VMA");
 }
 
 VkDevice VulkanCtx::device() const

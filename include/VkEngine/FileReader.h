@@ -8,7 +8,7 @@
 
 #include "VkEngine/Types.h"
 
-namespace VkEngine {
+namespace vke {
 
 enum ShaderFileError { invalidPath, invalidData, readError, failOpen, fileNotFound, unknownError };
 
@@ -49,4 +49,4 @@ inline std::expected<ShaderCodeData, ShaderFileError> readShader(const std::file
     }
 }
 
-} // namespace VkEngine
+} // namespace vke

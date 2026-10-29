@@ -23,7 +23,7 @@ public:
     void cleanup();
     void drawFrame();
 
-    VkEngine::FrameData& getCurrentFrame();
+    vke::FrameData& getCurrentFrame();
 
 private:
     void initCommands();
@@ -37,16 +37,16 @@ private:
     VulkanCtx* m_ctx{nullptr};
     bool m_swapchainDirty{false};
 
-    VkEngine::FrameData m_frames[FRAMES_IN_FLIGHT];
+    vke::FrameData m_frames[FRAMES_IN_FLIGHT];
     uint64_t m_frameNb{0};
 
     std::vector<VkSemaphore> m_renderSems; // 1 per swapchain image
 
     VkClearColorValue m_clearColorValue{};
-    VkEngine::Texture m_fallbackTexture{};
+    vke::Texture m_fallbackTexture{};
 
-    Handle<VkEngine::GPUMesh> m_testMesh;
-    Handle<VkEngine::GPUMesh> m_testMesh2;
+    Handle<vke::GPUMesh> m_testMesh;
+    Handle<vke::GPUMesh> m_testMesh2;
 
     GPUResources m_gpuResources;
     ResourceDestroyer m_resourceDestroyer;

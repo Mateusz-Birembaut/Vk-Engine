@@ -19,7 +19,7 @@ public:
     VkDescriptorSet descSet() const;
     uint64_t vertBuffAddr() const;
     VkBuffer indexBuffer() const;
-    const VkEngine::GPUMesh* getMesh(const Handle<VkEngine::GPUMesh>& meshHandle) const;
+    const vke::GPUMesh* getMesh(const Handle<vke::GPUMesh>& meshHandle) const;
 
     /**
      * @brief Sets vulkan context and creates a command pool for uploads to VRAM
@@ -36,10 +36,9 @@ public:
      *
      * @return Handle of the created Texture { gpuImage index, gen }
      */
-    Handle<VkEngine::GPUImage> createGpuImage(const VkEngine::CPUImage& cpuImg);
+    Handle<vke::GPUImage> createGpuImage(const vke::CPUImage& cpuImg);
 
-    Handle<VkEngine::GPUMesh>
-    createGpuMesh(std::span<const VkEngine::Vertex> vertices, std::span<const uint32_t> indices);
+    Handle<vke::GPUMesh> createGpuMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices);
 
     /**
      * @brief Create a simple sampler
@@ -74,7 +73,7 @@ private:
      *
      * @attention The Buffer is returned and the caller is responsible for buffer deletion
      */
-    VkEngine::GPUBuffer
+    vke::GPUBuffer
     createBuffer(const uint64_t size, VkBufferUsageFlags usage, const VmaAllocationCreateInfo& allocInfo);
 
     /**
@@ -82,21 +81,20 @@ private:
      *
      * @attention The Buffer is returned and the caller is responsible for buffer deletion
      */
-    VkEngine::GPUBuffer createStagingBuffer(const uint64_t size);
+    vke::GPUBuffer createStagingBuffer(const uint64_t size);
 
     /**
      * @brief Creates a mega buffer
      *
      * @attention The Buffer is returned and the caller is responsible for buffer deletion
      */
-    VkEngine::GPUMegaBuffer createMegaGPUBuffer(const uint64_t capacity, VkBufferUsageFlags usage);
+    vke::GPUMegaBuffer createMegaGPUBuffer(const uint64_t capacity, VkBufferUsageFlags usage);
 
     /**
      * @brief Copies bytes to staging buffer using VMA
      */
-    void copyToStagingBuffer(
-        std::span<const std::byte> bytes, const uint64_t copyOffset, VkEngine::GPUBuffer& stagingBuffer
-    );
+    void
+    copyToStagingBuffer(std::span<const std::byte> bytes, const uint64_t copyOffset, vke::GPUBuffer& stagingBuffer);
 
     /**
      * @brief Records commands to copy image to GPU
@@ -145,19 +143,19 @@ private:
 
         // create transient command buff
         VkCommandBufferAllocateInfo transientBuffInfo =
-            VkEngine::cmdBufferAllocInfo(m_transientBuffCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+            vke::cmdBufferAllocInfo(m_transientBuffCmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
         VkCommandBuffer transientCmdBuff = VK_NULL_HANDLE;
-        VkEngine::check(
+        vke::check(
             vkAllocateCommandBuffers(device, &transientBuffInfo, &transientCmdBuff),
             "[GPUResources] Failed to create transient command buffer"
         );
 
         // begin record
         VkCommandBufferBeginInfo transientBuffBegin =
-            VkEngine::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            vke::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-        VkEngine::check(
+        vke::check(
             vkBeginCommandBuffer(transientCmdBuff, &transientBuffBegin),
             "[GPUResources] Failed to begin mesh transient command buffer"
         );
@@ -165,9 +163,7 @@ private:
         // F holds commands to records
         f(transientCmdBuff);
 
-        VkEngine::check(
-            vkEndCommandBuffer(transientCmdBuff), "[GPUResources] Failed to end mesh transient command buffer"
-        );
+        vke::check(vkEndCommandBuffer(transientCmdBuff), "[GPUResources] Failed to end mesh transient command buffer");
 
         // submit
         VkSubmitInfo submitInfo{
@@ -176,7 +172,7 @@ private:
             .pCommandBuffers = &transientCmdBuff,
         };
 
-        VkEngine::check(
+        vke::check(
             vkQueueSubmit(graphicsQueue, 1, &submitInfo, nullptr),
             "[GPUResources] Failed to submit transient command buffer to the queue"
         );
@@ -185,16 +181,16 @@ private:
         vkFreeCommandBuffers(device, m_transientBuffCmdPool, 1, &transientCmdBuff);
     }
 
-    Pool<VkEngine::GPUImage> m_gpuImgs;
-    Pool<VkEngine::GPUBuffer> m_gpuBuffs;
-    Pool<VkEngine::GPUMesh> m_gpuMeshes;
+    Pool<vke::GPUImage> m_gpuImgs;
+    Pool<vke::GPUBuffer> m_gpuBuffs;
+    Pool<vke::GPUMesh> m_gpuMeshes;
     std::vector<VkSampler> m_samplers;
 
     const uint64_t vertexMegaBuffCapacity{50000000};
-    VkEngine::GPUMegaBuffer m_vertexMegaBuff{};
+    vke::GPUMegaBuffer m_vertexMegaBuff{};
 
     const uint64_t indexMegaBuffCapacity{1000000};
-    VkEngine::GPUMegaBuffer m_indexMegaBuff{};
+    vke::GPUMegaBuffer m_indexMegaBuff{};
 
     const uint32_t m_maxTextureCount{1024};
     const uint32_t m_maxSamplerCount{16};

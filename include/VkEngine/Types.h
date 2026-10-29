@@ -11,7 +11,7 @@
 
 #include "VkEngine/Pool.h"
 
-namespace VkEngine {
+namespace vke {
 
 struct FrameData {
     VkCommandPool commandPool{VK_NULL_HANDLE};
@@ -65,7 +65,7 @@ struct Vertex {
 };
 
 struct Texture {
-    Handle<VkEngine::GPUImage> imageHandle{};
+    Handle<vke::GPUImage> imageHandle{};
     uint32_t samplerIndex{0};
 };
 
@@ -89,4 +89,4 @@ struct PushConstants {
     uint32_t textureIndex{0};
 };
 
-} // namespace VkEngine
+} // namespace vke

@@ -6,15 +6,15 @@
 
 TEST_CASE("Read empty file spv", "[FileReader]")
 {
-    auto resultEmpty = VkEngine::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "empty.spv");
-    REQUIRE(resultEmpty.error() == VkEngine::ShaderFileError::invalidData);
+    auto resultEmpty = vke::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "empty.spv");
+    REQUIRE(resultEmpty.error() == vke::ShaderFileError::invalidData);
 }
 
 TEST_CASE("Read frag shader spv", "[FileReader]")
 {
-    VkEngine::ShaderCodeData data{};
+    vke::ShaderCodeData data{};
     data.codeSize = std::filesystem::file_size(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "shader.frag.spv");
-    auto resultFragShader = VkEngine::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "shader.frag.spv");
+    auto resultFragShader = vke::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "shader.frag.spv");
     REQUIRE((data.codeSize / 4) == resultFragShader.value().codeData.size());
     REQUIRE(resultFragShader.value().codeData[0] == 0x07230203u); // magic number SPIR-V
 }
@@ -31,26 +31,25 @@ TEST_CASE("Read frag shader spv, full content", "[FileReader]")
     std::vector<uint32_t> expected(bytes.size() / 4);
     std::memcpy(expected.data(), bytes.data(), bytes.size());
 
-    auto result = VkEngine::readShader(path);
+    auto result = vke::readShader(path);
     REQUIRE(result.has_value());
     REQUIRE(result.value().codeData == expected);
 }
 
 TEST_CASE("Read on non existing file", "[FileReader]")
 {
-    auto resultFragShader =
-        VkEngine::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "dazdazdazd.frag.spv");
-    REQUIRE(resultFragShader.error() == VkEngine::ShaderFileError::fileNotFound);
+    auto resultFragShader = vke::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "dazdazdazd.frag.spv");
+    REQUIRE(resultFragShader.error() == vke::ShaderFileError::fileNotFound);
 }
 
 TEST_CASE("Read on directory", "[FileReader]")
 {
-    auto resultFragShader = VkEngine::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR});
-    REQUIRE(resultFragShader.error() == VkEngine::ShaderFileError::invalidPath);
+    auto resultFragShader = vke::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR});
+    REQUIRE(resultFragShader.error() == vke::ShaderFileError::invalidPath);
 }
 
 TEST_CASE("Read file with invalid extension", "[FileReader]")
 {
-    auto resultFragShader = VkEngine::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "shader.frag.sdzad");
-    REQUIRE(resultFragShader.error() == VkEngine::ShaderFileError::invalidPath);
+    auto resultFragShader = vke::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "shader.frag.sdzad");
+    REQUIRE(resultFragShader.error() == vke::ShaderFileError::invalidPath);
 }
