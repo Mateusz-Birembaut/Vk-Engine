@@ -13,7 +13,7 @@
 #include <VkBootstrap.h>
 
 #include "VkEngine/Helpers.h"
-#include "VkEngine/vkeInfo.h"
+#include "VkEngine/VkEngineInfo.h"
 #include "VkEngine/Window.h"
 
 #ifdef vke_VALIDATION

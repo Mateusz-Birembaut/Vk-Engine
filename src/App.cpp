@@ -12,7 +12,7 @@
 #include <stdexcept>
 
 #include "VkEngine/Renderer.h"
-#include "VkEngine/vkeInfo.h"
+#include "VkEngine/VkEngineInfo.h"
 #include "VkEngine/VulkanCtx.h"
 #include "VkEngine/Window.h"
 

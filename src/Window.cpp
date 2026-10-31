@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL_vulkan.h>
 
-#include "VkEngine/vkeInfo.h"
+#include "VkEngine/VkEngineInfo.h"
 
 Window::Window()
 {
