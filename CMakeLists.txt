@@ -1,153 +1,101 @@
 cmake_minimum_required(VERSION 3.24)
-
 project(VkEngine VERSION 0.1.0 LANGUAGES CXX)
 
-enable_testing()
-
-option(VkEngine_VENDORED "Use vendored libraries" OFF)
 option(VKENGINE_VALIDATION "Enable Vulkan validation layers" ON)
 
-# -------------------SDL----------------------------
-if(VkEngine_VENDORED)
-    # This assumes you have added SDL as a submodule in vendored/SDL
-    add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
-else()
-    find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3-shared)
-endif()
+# ------------------- Dependencies -------------------
+# SDL3   : found via the SDL3_ROOT environment variable
+# Vulkan : found via the VULKAN_SDK environment variable
+find_package(SDL3 REQUIRED CONFIG COMPONENTS SDL3-shared)
+find_package(Vulkan REQUIRED COMPONENTS glslc)
 
-# -------------------VULKAN----------------------------
-if(VkEngine_VENDORED)
-    add_subdirectory(vendored/Vulkan EXCLUDE_FROM_ALL)
-else()
-    find_package(Vulkan REQUIRED)
-endif()
-
-
-#-------------------VK BOOTSTRAP----------------------------
 include(FetchContent)
-FetchContent_Declare(
-    fetch_vk_bootstrap
+FetchContent_Declare(vk_bootstrap
     GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
     GIT_TAG        v1.4.364
-)
-FetchContent_MakeAvailable(fetch_vk_bootstrap)
-
-#-------------------Catch2----------------------------
-include(FetchContent)
+    GIT_SHALLOW    TRUE)
+FetchContent_Declare(glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG        1.0.3
+    GIT_SHALLOW    TRUE)
 FetchContent_Declare(Catch2
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG v3.7.1)
-FetchContent_MakeAvailable(Catch2)
+    GIT_TAG        v3.7.1
+    GIT_SHALLOW    TRUE)
+FetchContent_MakeAvailable(vk_bootstrap glm Catch2)
 
-#-------------------GLM----------------------------
-include(FetchContent)
-FetchContent_Declare(
-	glm
-	GIT_REPOSITORY	https://github.com/g-truc/glm.git
-	GIT_TAG 1.0.3
-)
-FetchContent_MakeAvailable(glm)
+# ------------------- Helpers -------------------
+function(vke_setup_target target)
+    target_compile_features(${target} PRIVATE cxx_std_23)
+    target_include_directories(${target} PRIVATE include)
+    target_include_directories(${target} SYSTEM PRIVATE external)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wconversion -Wno-missing-field-initializers)
+    endif()
+endfunction()
 
-add_executable(${PROJECT_NAME})
+# ------------------- Engine -------------------
+configure_file(cmake/VkEngineInfo.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/VkEngine/VkEngineInfo.h @ONLY)
 
-add_executable(engine_tests tests/FileReader/fileReaderTests.cpp
-    tests/Pool/PoolTests.cpp)
-target_link_libraries(engine_tests PRIVATE Catch2::Catch2WithMain Vulkan::Vulkan)
-target_include_directories(engine_tests PRIVATE include)
-target_include_directories(engine_tests PRIVATE external/)
-set_property(TARGET engine_tests PROPERTY CXX_STANDARD 23)
+add_executable(VkEngine
+    src/main.cpp
+    src/App.cpp
+    src/Window.cpp
+    src/VulkanCtx.cpp
+    src/Renderer.cpp
+    src/External.cpp
+    src/GPUResources.cpp)
 
-# register each Catch2 TEST_CASE with CTest (VS Code Testing panel)
-list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
-include(Catch)
-catch_discover_tests(engine_tests)
+vke_setup_target(VkEngine)
+target_include_directories(VkEngine PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+target_link_libraries(VkEngine PRIVATE SDL3::SDL3 Vulkan::Vulkan vk-bootstrap::vk-bootstrap glm::glm)
+target_compile_definitions(VkEngine PRIVATE $<$<BOOL:${VKENGINE_VALIDATION}>:VKENGINE_VALIDATION>)
+set_target_properties(VkEngine PROPERTIES COMPILE_WARNING_AS_ERROR ON)
 
-if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE /W4)
-    target_compile_options(engine_tests PRIVATE /W4)
-else()
-    # Partial designated initializers are the usual Vulkan struct initialization idiom.
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wconversion -Wno-missing-field-initializers)
-    target_compile_options(engine_tests PRIVATE -Wall -Wextra -Wconversion -Wno-missing-field-initializers)
-endif()
-
-set_property(TARGET ${PROJECT_NAME} PROPERTY COMPILE_WARNING_AS_ERROR ON)
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
-
-# -------------------VkEngineInfo----------------------------
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VkEngineInfo.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/VkEngine/VkEngineInfo.h
-    @ONLY
-)
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
-
-# -------------------Src/Headers---------------------------
-target_sources( ${PROJECT_NAME}
-	PRIVATE
-		src/main.cpp
-        src/App.cpp
-        src/Window.cpp
-        src/VulkanCtx.cpp
-        src/Renderer.cpp
-        src/External.cpp
-        src/GPUResources.cpp
-
-	PUBLIC
-		FILE_SET HEADERS
-		BASE_DIRS
-			include
-		FILES
-)
-
-target_include_directories(${PROJECT_NAME} PRIVATE external/)
-target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
-target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
-target_link_libraries(${PROJECT_NAME} PRIVATE vk-bootstrap::vk-bootstrap)
-
+# Copy runtime DLLs (SDL3.dll) next to the exe
 if(WIN32)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    add_custom_command(TARGET VkEngine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:SDL3::SDL3>
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>
-        VERBATIM
-    )
+            $<TARGET_RUNTIME_DLLS:VkEngine> $<TARGET_FILE_DIR:VkEngine>
+        COMMAND_EXPAND_LISTS)
 endif()
 
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
-target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<BOOL:${VKENGINE_VALIDATION}>:VKENGINE_VALIDATION>)
-target_compile_definitions(engine_tests PRIVATE FILEREADER_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/FileReader/data")
-
-
-# --- Shaders GLSL to SPIR-V ---
-find_program(GLSLC glslc REQUIRED)
-
-set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Shaders)
+# ------------------- Shaders (GLSL -> SPIR-V) -------------------
 set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Shaders)
+file(GLOB SHADER_SOURCES CONFIGURE_DEPENDS
+    Shaders/*.vert Shaders/*.frag Shaders/*.comp)
 
-file(GLOB SHADER_SOURCES
-    ${SHADER_SOURCE_DIR}/*.vert
-    ${SHADER_SOURCE_DIR}/*.frag
-    ${SHADER_SOURCE_DIR}/*.comp)
-
-foreach(SHADER ${SHADER_SOURCES})
-    get_filename_component(SHADER_NAME ${SHADER} NAME)
-    set(SPV_FILE ${SHADER_BINARY_DIR}/${SHADER_NAME}.spv)
-
+foreach(shader IN LISTS SHADER_SOURCES)
+    get_filename_component(name ${shader} NAME)
+    set(spv ${SHADER_BINARY_DIR}/${name}.spv)
     add_custom_command(
-        OUTPUT ${SPV_FILE}
+        OUTPUT  ${spv}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BINARY_DIR}
-        COMMAND ${GLSLC} ${SHADER} -o ${SPV_FILE}
-        DEPENDS ${SHADER}
-        COMMENT "Compiling shader ${SHADER_NAME}")
-
-    list(APPEND SPV_FILES ${SPV_FILE})
+        COMMAND Vulkan::glslc ${shader} -o ${spv}
+        DEPENDS ${shader}
+        COMMENT "Compiling shader ${name}"
+        VERBATIM)
+    list(APPEND SPV_FILES ${spv})
 endforeach()
 
 add_custom_target(Shaders DEPENDS ${SPV_FILES})
-add_dependencies(${PROJECT_NAME} Shaders) 
+add_dependencies(VkEngine Shaders)
 
+# ------------------- Tests -------------------
+enable_testing()
 
+add_executable(engine_tests
+    tests/FileReader/fileReaderTests.cpp
+    tests/Pool/PoolTests.cpp)
 
+vke_setup_target(engine_tests)
+target_link_libraries(engine_tests PRIVATE Catch2::Catch2WithMain Vulkan::Vulkan)
+target_compile_definitions(engine_tests PRIVATE
+    FILEREADER_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/FileReader/data")
+
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+include(Catch)
+catch_discover_tests(engine_tests)
