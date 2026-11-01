@@ -16,7 +16,7 @@
 #include "VkEngine/VkEngineInfo.h"
 #include "VkEngine/Window.h"
 
-#ifdef vke_VALIDATION
+#ifdef VKENGINE_VALIDATION
 constexpr bool useValidation = true;
 #else
 constexpr bool useValidation = false;
