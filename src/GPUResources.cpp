@@ -160,6 +160,19 @@ vke::GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
     return createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, stagingBufferAllocInfo);
 }
 
+Handle<vke::GPUBuffer> GPUResources::createMappedStorageBuffer(const uint64_t size)
+{
+    VmaAllocationCreateInfo stagingBufferAllocInfo{
+        .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                 VMA_ALLOCATION_CREATE_MAPPED_BIT, // keep memory mapped
+        .usage = VMA_MEMORY_USAGE_AUTO,            // rebar usage possible
+    };
+
+    return m_gpuBuffs.create(createBuffer(
+        size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, stagingBufferAllocInfo
+    ));
+}
+
 vke::GPUMegaBuffer GPUResources::createMegaGPUBuffer(const uint64_t capacity, VkBufferUsageFlags usage)
 {
     vke::GPUMegaBuffer megaBuff{.capacity = capacity};

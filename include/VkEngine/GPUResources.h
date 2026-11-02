@@ -41,6 +41,12 @@ public:
     Handle<vke::GPUMesh> createGpuMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices);
 
     /**
+     * @brief Creates a buffer visible by the host and the device
+     *
+     */
+    Handle<vke::GPUBuffer> createMappedStorageBuffer(const uint64_t size);
+
+    /**
      * @brief Create a simple sampler
      *
      *
