@@ -27,8 +27,8 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
 
     m_gpuResources.init(pVulkanCtx);
 
-    initCommands();
-    initSyncStructs();
+    initPerFrameData();
+    createRenderSems();
     initGraphicsPipeline();
 
     m_clearColorValue.float32[0] = 0.0f; // R
@@ -70,35 +70,29 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
     m_testMesh2 = m_gpuResources.createGpuMesh(vertices2, indices2);
 }
 
-void Renderer::initCommands()
+void Renderer::initPerFrameData()
 {
     VkCommandPoolCreateInfo cmdPoolInfo = vke::cmdPoolCreateInfo(m_ctx->graphicsQueueFamily(), 0);
-
-    for (int Iframe = 0; Iframe < FRAMES_IN_FLIGHT; ++Iframe) {
-        vke::check(
-            vkCreateCommandPool(m_ctx->device(), &cmdPoolInfo, nullptr, &m_frames[Iframe].commandPool),
-            "[Renderer] Failed to create command pool"
-        );
-        m_resourceDestroyer.push(m_frames[Iframe].commandPool);
-
-        VkCommandBufferAllocateInfo cmdBuffInfo =
-            vke::cmdBufferAllocInfo(m_frames[Iframe].commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
-
-        vke::check(
-            vkAllocateCommandBuffers(m_ctx->device(), &cmdBuffInfo, &m_frames[Iframe].commandBuffer),
-            "[Renderer] Failed to create command buffer"
-        );
-        // will be destroyed with its command pool
-    }
-}
-
-void Renderer::initSyncStructs()
-{
     VkFenceCreateInfo fenceCreateInfo = vke::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
     VkSemaphoreCreateInfo semaphoreCreateInfo = vke::semaphoreCreateInfo();
 
-    // one fence and swapchain semaphore per frame in flight
     for (int IFrame = 0; IFrame < FRAMES_IN_FLIGHT; ++IFrame) {
+        // cmd pool and buffer
+        vke::check(
+            vkCreateCommandPool(m_ctx->device(), &cmdPoolInfo, nullptr, &m_frames[IFrame].commandPool),
+            "[Renderer] Failed to create command pool"
+        );
+        m_resourceDestroyer.push(m_frames[IFrame].commandPool);
+
+        VkCommandBufferAllocateInfo cmdBuffInfo =
+            vke::cmdBufferAllocInfo(m_frames[IFrame].commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+
+        vke::check(
+            vkAllocateCommandBuffers(m_ctx->device(), &cmdBuffInfo, &m_frames[IFrame].commandBuffer),
+            "[Renderer] Failed to create command buffer"
+        ); // will be destroyed with its command pool
+
+        // sync objects
         vke::check(
             vkCreateFence(m_ctx->device(), &fenceCreateInfo, nullptr, &m_frames[IFrame].renderFence),
             "[Renderer] Failed to create render fence"
@@ -110,9 +104,10 @@ void Renderer::initSyncStructs()
             "[Renderer] Failed to create swapchain semaphore"
         );
         m_resourceDestroyer.push(m_frames[IFrame].swapchainSem);
-    }
 
-    createRenderSems();
+        // scene data buffer
+        m_frames[IFrame].sceneDataBuffHandle = m_gpuResources.createMappedStorageBuffer(sizeof(vke::SceneData));
+    }
 }
 
 void Renderer::initGraphicsPipeline()
