@@ -127,24 +127,39 @@ void GPUResources::initDescriptorSet(VkDevice device)
     );
 }
 
-vke::GPUBuffer
-GPUResources::createBuffer(const uint64_t size, VkBufferUsageFlags usage, const VmaAllocationCreateInfo& allocInfo)
+vke::GPUBuffer GPUResources::createBuffer(
+    const uint64_t size, VkBufferUsageFlags usage, const VmaAllocationCreateInfo& allocCreateInfo
+)
 {
     vke::GPUBuffer gpuBuff;
     VkBufferCreateInfo stagingBufferCreateInfo = vke::bufferCreateInfo(size, usage);
-
-    vke::check(
-        vmaCreateBuffer(
-            m_ctx->vmaAllocator(), &stagingBufferCreateInfo, &allocInfo, &gpuBuff.vkbuffer, &gpuBuff.allocation, nullptr
-        ),
-        "[GPUResources] Failed to create buffer"
-    );
+    VmaAllocationInfo allocInfo;
 
     if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+        vke::check(
+            vmaCreateBufferWithAlignment(
+                m_ctx->vmaAllocator(), &stagingBufferCreateInfo, &allocCreateInfo,
+                16, // buffer device address must be aligned to 16 bytes to be read by shader
+                &gpuBuff.vkbuffer, &gpuBuff.allocation, &allocInfo
+            ),
+            "[GPUResources] Failed to create aligned buffer"
+        );
         VkBufferDeviceAddressInfoKHR address_info{VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR};
         address_info.buffer = gpuBuff.vkbuffer;
 
         gpuBuff.deviceAddress = vkGetBufferDeviceAddress(m_ctx->device(), &address_info);
+    } else {
+        vke::check(
+            vmaCreateBuffer(
+                m_ctx->vmaAllocator(), &stagingBufferCreateInfo, &allocCreateInfo, &gpuBuff.vkbuffer,
+                &gpuBuff.allocation, &allocInfo
+            ),
+            "[GPUResources] Failed to create buffer"
+        );
+    }
+
+    if (allocCreateInfo.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) {
+        gpuBuff.pMappedData = allocInfo.pMappedData;
     }
 
     return gpuBuff;
