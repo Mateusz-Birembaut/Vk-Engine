@@ -13,11 +13,19 @@
 
 namespace vke {
 
+struct GPUBuffer {
+    VkBuffer vkbuffer{VK_NULL_HANDLE};
+    uint64_t deviceAddress{0};
+    VmaAllocation allocation{VK_NULL_HANDLE};
+    void* pMappedData{nullptr};
+};
+
 struct FrameData {
     VkCommandPool commandPool{VK_NULL_HANDLE};
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
     VkFence renderFence{VK_NULL_HANDLE};
     VkSemaphore swapchainSem{VK_NULL_HANDLE};
+    Handle<GPUBuffer> sceneDataBuffHandle{};
 };
 
 struct ShaderCodeData {
@@ -47,12 +55,6 @@ struct CPUImage {
 struct GPUImage {
     VkImage vkImage{VK_NULL_HANDLE};
     VkImageView vkImageView{VK_NULL_HANDLE};
-    VmaAllocation allocation{VK_NULL_HANDLE};
-};
-
-struct GPUBuffer {
-    VkBuffer vkbuffer{VK_NULL_HANDLE};
-    uint64_t deviceAddress{0};
     VmaAllocation allocation{VK_NULL_HANDLE};
 };
 
