@@ -565,3 +565,8 @@ const vke::GPUMesh* GPUResources::getMesh(const Handle<vke::GPUMesh>& meshHandle
 {
     return m_gpuMeshes.get(meshHandle);
 }
+
+const vke::GPUBuffer* GPUResources::getBuffer(const Handle<vke::GPUBuffer>& buffHandle) const
+{
+    return m_gpuBuffs.get(buffHandle);
+}

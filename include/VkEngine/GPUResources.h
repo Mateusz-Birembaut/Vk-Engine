@@ -20,6 +20,7 @@ public:
     uint64_t vertBuffAddr() const;
     VkBuffer indexBuffer() const;
     const vke::GPUMesh* getMesh(const Handle<vke::GPUMesh>& meshHandle) const;
+    const vke::GPUBuffer* getBuffer(const Handle<vke::GPUBuffer>& buffHandle) const;
 
     /**
      * @brief Sets vulkan context and creates a command pool for uploads to VRAM
