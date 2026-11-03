@@ -26,8 +26,7 @@ public:
     vke::FrameData& getCurrentFrame();
 
 private:
-    void initCommands();
-    void initSyncStructs();
+    void initPerFrameData();
     void initGraphicsPipeline();
 
     void createRenderSems();
