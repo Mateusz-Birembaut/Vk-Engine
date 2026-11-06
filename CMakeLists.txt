@@ -47,7 +47,9 @@ add_executable(VkEngine
     src/VulkanCtx.cpp
     src/Renderer.cpp
     src/External.cpp
-    src/GPUResources.cpp)
+    src/GPUResources.cpp
+    src/Camera.cpp
+    src/CameraController.cpp)
 
 vke_setup_target(VkEngine)
 target_include_directories(VkEngine PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
