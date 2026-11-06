@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
@@ -11,10 +11,14 @@ public:
 
     ~Window();
 
-    VkExtent2D getSizeInPixels();
+    bool isCapturingMouse() const;
+    void setMouseCapture(bool enable);
 
-    VkSurfaceKHR createSurface(VkInstance instance, const struct VkAllocationCallbacks* pallocator = nullptr);
+    VkExtent2D getSizeInPixels() const;
+
+    VkSurfaceKHR createSurface(VkInstance instance, const struct VkAllocationCallbacks* pallocator = nullptr) const;
 
 private:
-    SDL_Window* m_window = nullptr;
+    SDL_Window* m_window{nullptr};
+    bool m_capturingMouse{true};
 };

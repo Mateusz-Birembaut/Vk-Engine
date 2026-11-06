@@ -3,8 +3,6 @@
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_scalar_block_layout : require
 
-layout (location = 0) out vec2 uv;
-
 struct Vertex {
     vec3 position;
     float uv_x;
@@ -13,22 +11,32 @@ struct Vertex {
     vec4 color;
 };
 
+layout(buffer_reference, scalar) readonly buffer SceneData { 
+    mat4 view;
+    mat4 proj;
+    uint64_t vertBuffAddress;
+};
+
 layout(buffer_reference, scalar) readonly buffer VertexBuffer { Vertex vertices[]; };
 
 layout ( push_constant ) uniform constants
 {
-    uint64_t vertBuffAddr;
+    uint64_t sceneDataBufferAddr;
     uint samplerId;
     uint textureId;
 } pc;
 
+layout (location = 0) out vec2 uv;
 
 void main() {
-    VertexBuffer vbuff = VertexBuffer(pc.vertBuffAddr);
+    SceneData sData = SceneData(pc.sceneDataBufferAddr);
+    VertexBuffer vbuff = VertexBuffer(sData.vertBuffAddress);
 
     Vertex vert = vbuff.vertices[gl_VertexIndex];
 
-    gl_Position = vec4(vert.position, 1.0);
+    mat4 model = mat4(1.0);
+    vec4 finalPosition =  sData.proj * sData.view * model * vec4(vert.position, 1.0); 
+    gl_Position = finalPosition;
 
     uv = vec2(vert.uv_x, vert.uv_y);
 }   

@@ -263,7 +263,7 @@ void Renderer::recreateSwapchain()
 
 // no early return between acquire and submit
 // the swapchain semaphore would be left signaled and next acquire would fail
-void Renderer::drawFrame()
+void Renderer::drawFrame(const vke::RenderView& RenderView)
 {
     if (m_swapchainDirty) {
         recreateSwapchain();
@@ -273,6 +273,7 @@ void Renderer::drawFrame()
     auto& frameData = getCurrentFrame();
     auto device = m_ctx->device();
     VkSwapchainKHR swapChain = m_ctx->swapchain();
+    auto* sceneBuffer = m_gpuResources.getBuffer(frameData.sceneDataBuffHandle);
 
     vkWaitForFences(device, 1, &frameData.renderFence, VK_TRUE, UINT64_MAX);
 
@@ -290,6 +291,13 @@ void Renderer::drawFrame()
     } else {
         vke::check(acquireImg, "[Renderer] Failed to acquire swapchain image");
     }
+
+    // copy scene data to buffer
+    vke::SceneData sceneData{
+        .view = RenderView.view, .proj = RenderView.proj, .vertBuffAddress = m_gpuResources.vertBuffAddr()
+    };
+
+    memcpy(sceneBuffer->pMappedData, &sceneData, sizeof(vke::SceneData));
 
     VkCommandPool cmdPool = frameData.commandPool;
     VkCommandBuffer cmdBuff = frameData.commandBuffer;
@@ -363,7 +371,7 @@ void Renderer::drawFrame()
     vkCmdSetScissor(cmdBuff, 0, 1, &scissor);
 
     vke::PushConstants pushConstants{
-        .vertBuffAddress = m_gpuResources.vertBuffAddr(),
+        .sceneDataBufferAddr = sceneBuffer->deviceAddress,
         .samplerIndex = m_fallbackTexture.samplerIndex,
         .textureIndex = m_fallbackTexture.imageHandle.index
     };

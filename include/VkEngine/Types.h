@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
@@ -86,9 +87,20 @@ struct GPUMegaBuffer {
 };
 
 struct PushConstants {
-    uint64_t vertBuffAddress{0};
+    uint64_t sceneDataBufferAddr{0};
     uint32_t samplerIndex{0};
     uint32_t textureIndex{0};
+};
+
+struct RenderView {
+    glm::mat4 view{1.0f};
+    glm::mat4 proj{1.0f};
+};
+
+struct SceneData {
+    glm::mat4 view{1.0f};
+    glm::mat4 proj{1.0f};
+    uint64_t vertBuffAddress{0};
 };
 
 } // namespace vke

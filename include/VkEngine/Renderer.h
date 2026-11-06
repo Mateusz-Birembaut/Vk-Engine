@@ -21,7 +21,7 @@ public:
 
     void init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFolderPath);
     void cleanup();
-    void drawFrame();
+    void drawFrame(const vke::RenderView& RenderView);
 
     vke::FrameData& getCurrentFrame();
 

@@ -4,7 +4,7 @@
 
 layout ( push_constant ) uniform constants
 {
-    uint64_t vertBuffAddr;
+    uint64_t sceneDataBufferAddr;
     uint samplerId;
     uint textureId;
 } pc;
