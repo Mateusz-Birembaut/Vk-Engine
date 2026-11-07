@@ -66,9 +66,9 @@ if(WIN32)
 endif()
 
 # ------------------- Shaders (GLSL -> SPIR-V) -------------------
-set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Shaders)
+set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Resources/Shaders)
 file(GLOB SHADER_SOURCES CONFIGURE_DEPENDS
-    Shaders/*.vert Shaders/*.frag Shaders/*.comp)
+    Resources/Shaders/*.vert Resources/Shaders/*.frag Resources/Shaders/*.comp)
 
 foreach(shader IN LISTS SHADER_SOURCES)
     get_filename_component(name ${shader} NAME)
