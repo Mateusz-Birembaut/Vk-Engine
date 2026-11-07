@@ -86,6 +86,15 @@ endforeach()
 add_custom_target(Shaders DEPENDS ${SPV_FILES})
 add_dependencies(VkEngine Shaders)
 
+# ------------------- Models -------------------
+add_custom_command(TARGET VkEngine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Models"
+        "$<TARGET_FILE_DIR:VkEngine>/Resources/Models"
+    COMMENT "Copying model resources"
+    VERBATIM)
+
+
 # ------------------- Tests -------------------
 enable_testing()
 
