@@ -37,6 +37,6 @@ private:
 
     float m_fov{glm::radians(45.0f)};
     float m_aspectRatio{16.0f / 9.0f};
-    float m_near{1.0f};
+    float m_near{0.1f};
     float m_far{100.0f};
 };
