@@ -21,7 +21,9 @@ public:
 
     void init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFolderPath);
     void cleanup();
-    void drawFrame(const vke::RenderView& RenderView);
+    void drawFrame(const std::span<vke::RenderItem>& renderItems, const vke::RenderView& RenderView);
+
+    Handle<vke::GPUMesh> createMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices);
 
     vke::FrameData& getCurrentFrame();
 

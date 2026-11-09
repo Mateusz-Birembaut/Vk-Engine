@@ -90,6 +90,7 @@ struct PushConstants {
     uint64_t sceneDataBufferAddr{0};
     uint32_t samplerIndex{0};
     uint32_t textureIndex{0};
+    glm::mat4 model{1.0f};
 };
 
 struct RenderView {
@@ -103,9 +104,14 @@ struct SceneData {
     uint64_t vertBuffAddress{0};
 };
 
-} // namespace vke
+struct RenderItem {
+    Handle<GPUMesh> meshHandle{};
+    glm::mat4 model{1.0f};
+};
+
 struct Mesh {
     std::vector<Vertex> vertices{};
     std::vector<uint32_t> indices{};
 };
 
+} // namespace vke

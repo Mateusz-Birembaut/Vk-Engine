@@ -44,30 +44,7 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
 
     Handle<vke::GPUImage> whitePixelImgHandle = m_gpuResources.createGpuImage(whitePixel);
     uint32_t whitePixelSamplerId = m_gpuResources.getOrCreateSampler(); // for now create a basic sampler
-
-    std::vector<vke::Vertex> vertices{
-        vke::Vertex{.position = {-0.5f, -0.5f, 0.0f}},
-        vke::Vertex{.position = {0.5f, -0.5f, 0.0f}},
-        vke::Vertex{.position = {0.0f, 0.5f, 0.0f}},
-    };
-    std::vector<uint32_t> indices{0, 1, 2};
-
-    m_testMesh = m_gpuResources.createGpuMesh(vertices, indices);
     m_fallbackTexture = {whitePixelImgHandle, whitePixelSamplerId};
-
-    std::vector<vke::Vertex> vertices2{
-        vke::Vertex{.position = {0.0f, 0.8f, 0.0f}},       vke::Vertex{.position = {0.283f, 0.206f, 0.0f}},
-        vke::Vertex{.position = {0.761f, 0.247f, 0.0f}},   vke::Vertex{.position = {0.333f, -0.108f, 0.0f}},
-        vke::Vertex{.position = {0.470f, -0.647f, 0.0f}},  vke::Vertex{.position = {0.0f, -0.35f, 0.0f}},
-        vke::Vertex{.position = {-0.470f, -0.647f, 0.0f}}, vke::Vertex{.position = {-0.333f, -0.108f, 0.0f}},
-        vke::Vertex{.position = {-0.761f, 0.247f, 0.0f}},  vke::Vertex{.position = {-0.283f, 0.206f, 0.0f}},
-        vke::Vertex{.position = {0.0f, 0.0f, 0.0f}},
-    };
-    std::vector<uint32_t> indices2{
-        10, 1, 0, 10, 2, 1, 10, 3, 2, 10, 4, 3, 10, 5, 4, 10, 6, 5, 10, 7, 6, 10, 8, 7, 10, 9, 8, 10, 0, 9,
-    };
-
-    m_testMesh2 = m_gpuResources.createGpuMesh(vertices2, indices2);
 }
 
 void Renderer::initPerFrameData()
@@ -263,7 +240,7 @@ void Renderer::recreateSwapchain()
 
 // no early return between acquire and submit
 // the swapchain semaphore would be left signaled and next acquire would fail
-void Renderer::drawFrame(const vke::RenderView& RenderView)
+void Renderer::drawFrame(const std::span<vke::RenderItem>& renderItems, const vke::RenderView& RenderView)
 {
     if (m_swapchainDirty) {
         recreateSwapchain();
@@ -373,24 +350,22 @@ void Renderer::drawFrame(const vke::RenderView& RenderView)
     vke::PushConstants pushConstants{
         .sceneDataBufferAddr = sceneBuffer->deviceAddress,
         .samplerIndex = m_fallbackTexture.samplerIndex,
-        .textureIndex = m_fallbackTexture.imageHandle.index
+        .textureIndex = m_fallbackTexture.imageHandle.index,
     };
 
-    vkCmdPushConstants(
-        cmdBuff, m_graphicsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-        sizeof(vke::PushConstants), &pushConstants
-    );
+    for (const auto& renderItem : renderItems) {
+        pushConstants.model = renderItem.model;
 
-    vkCmdBindIndexBuffer(cmdBuff, m_gpuResources.indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdPushConstants(
+            cmdBuff, m_graphicsPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+            sizeof(vke::PushConstants), &pushConstants
+        );
 
-    const vke::GPUMesh* mesh = m_gpuResources.getMesh(m_testMesh);
-    if (mesh) {
-        vkCmdDrawIndexed(cmdBuff, mesh->indexCount, 1, mesh->firstIndex, mesh->baseVertex, 0);
-    }
-
-    const vke::GPUMesh* mesh2 = m_gpuResources.getMesh(m_testMesh2);
-    if (mesh2) {
-        vkCmdDrawIndexed(cmdBuff, mesh2->indexCount, 1, mesh2->firstIndex, mesh2->baseVertex, 0);
+        vkCmdBindIndexBuffer(cmdBuff, m_gpuResources.indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        const vke::GPUMesh* mesh = m_gpuResources.getMesh(renderItem.meshHandle);
+        if (mesh) {
+            vkCmdDrawIndexed(cmdBuff, mesh->indexCount, 1, mesh->firstIndex, mesh->baseVertex, 0);
+        }
     }
 
     vkCmdEndRendering(cmdBuff);
@@ -432,4 +407,9 @@ void Renderer::drawFrame(const vke::RenderView& RenderView)
         throw std::runtime_error("[Renderer] present failed");
 
     ++m_frameNb;
+}
+
+Handle<vke::GPUMesh> Renderer::createMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices)
+{
+    return m_gpuResources.createGpuMesh(vertices, indices);
 }

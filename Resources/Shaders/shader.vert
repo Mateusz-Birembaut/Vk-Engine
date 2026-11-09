@@ -24,6 +24,7 @@ layout ( push_constant ) uniform constants
     uint64_t sceneDataBufferAddr;
     uint samplerId;
     uint textureId;
+    mat4 model;
 } pc;
 
 layout (location = 0) out vec2 uv;
@@ -34,8 +35,7 @@ void main() {
 
     Vertex vert = vbuff.vertices[gl_VertexIndex];
 
-    mat4 model = mat4(1.0);
-    vec4 finalPosition =  sData.proj * sData.view * model * vec4(vert.position, 1.0); 
+    vec4 finalPosition = sData.proj * sData.view * pc.model * vec4(vert.position, 1.0);
     gl_Position = finalPosition;
 
     uv = vec2(vert.uv_x, vert.uv_y);
