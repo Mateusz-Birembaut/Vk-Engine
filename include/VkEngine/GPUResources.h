@@ -193,10 +193,10 @@ private:
     Pool<vke::GPUMesh> m_gpuMeshes;
     std::vector<VkSampler> m_samplers;
 
-    const uint64_t vertexMegaBuffCapacity{50000000};
+    const uint64_t vertexMegaBuffCapacity{2000000000}; //  approx 2GO
     vke::GPUMegaBuffer m_vertexMegaBuff{};
 
-    const uint64_t indexMegaBuffCapacity{1000000};
+    const uint64_t indexMegaBuffCapacity{200000000};
     vke::GPUMegaBuffer m_indexMegaBuff{};
 
     const uint32_t m_maxTextureCount{1024};

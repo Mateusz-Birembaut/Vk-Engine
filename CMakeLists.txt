@@ -49,7 +49,8 @@ add_executable(VkEngine
     src/External.cpp
     src/GPUResources.cpp
     src/Camera.cpp
-    src/CameraController.cpp)
+    src/CameraController.cpp
+    src/GltfLoader.cpp)
 
 vke_setup_target(VkEngine)
 target_include_directories(VkEngine PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)

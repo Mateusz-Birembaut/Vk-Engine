@@ -18,6 +18,7 @@
 
 #include "VkEngine/CameraController.h"
 #include "VkEngine/FileReader.h"
+#include "VkEngine/GltfLoader.h"
 #include "VkEngine/Renderer.h"
 #include "VkEngine/VkEngineInfo.h"
 #include "VkEngine/VulkanCtx.h"
@@ -58,28 +59,40 @@ void App::run()
 
     std::filesystem::path exeDir = SDL_GetBasePath();
     // const auto modelPath = exeDir / "Resources" / "Models" / "Box" / "Box.gltf";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "Box.glb";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
     const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
-    const auto sceneMeshes = vke::testGltf(modelPath);
+    // const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
+    const auto impScene = vke::loadGltf(modelPath);
+
+    // stores for each mesh the handles of its primitives
+    std::vector<std::vector<Handle<vke::GPUMesh>>> meshHandles(impScene.meshes.size());
+
+    // upload each primitive for each mesh
+    for (uint32_t IMesh = 0; IMesh < impScene.meshes.size(); IMesh++) {
+        const vke::Mesh& mesh = impScene.meshes[IMesh];
+
+        for (uint32_t IPrim = 0; IPrim < mesh.primitives.size(); IPrim++) {
+            const vke::Primitive& prim = mesh.primitives[IPrim];
+
+            meshHandles[IMesh].push_back(m_renderer->createMesh(prim.vertices, prim.indices));
+        }
+    }
+
+    std::vector<vke::RenderItem> renderItems;
+    renderItems.reserve(impScene.nodes.size());
+
+    //
+    for (uint32_t INode = 0; INode < impScene.nodes.size(); INode++) {
+        const auto& node = impScene.nodes[INode];
+        const auto& meshPrims = meshHandles[node.meshIndex];
+
+        for (uint32_t IPrimHandles = 0; IPrimHandles < meshPrims.size(); IPrimHandles++) {
+            renderItems.emplace_back(meshPrims[IPrimHandles], node.transform);
+        }
+    }
 
     uint64_t previousTime = SDL_GetTicksNS();
     VkExtent2D previousExtent{};
-
-    std::vector<Handle<vke::GPUMesh>> handles;
-    std::vector<vke::RenderItem> renderItems;
-
-    for (size_t idMesh = 0; idMesh < sceneMeshes.size(); ++idMesh) {
-        handles.push_back(m_renderer->createMesh(sceneMeshes[idMesh].vertices, sceneMeshes[idMesh].indices));
-    }
-
-    for (size_t idHandle = 0; idHandle < handles.size(); ++idHandle) {
-        renderItems.push_back(
-            vke::RenderItem{
-                .meshHandle = handles[idHandle],
-                .model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.0f * static_cast<float>(idHandle))),
-            }
-        );
-    }
 
     while (m_running) {
         SDL_Event e;

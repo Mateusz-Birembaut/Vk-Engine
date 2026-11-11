@@ -109,9 +109,4 @@ struct RenderItem {
     glm::mat4 model{1.0f};
 };
 
-struct Mesh {
-    std::vector<Vertex> vertices{};
-    std::vector<uint32_t> indices{};
-};
-
 } // namespace vke

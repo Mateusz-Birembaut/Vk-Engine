@@ -1,15 +1,47 @@
 #pragma once
 
+#include <glm/mat4x4.hpp>
+
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <tiny_gltf_v3.h>
 
 #include "VkEngine/Types.h"
 
 namespace vke {
 
+struct Primitive {
+    std::vector<Vertex> vertices{};
+    std::vector<uint32_t> indices{};
+    int32_t material{-1}; // -1 absent like in gltf
+};
+
+struct Mesh {
+    std::vector<Primitive> primitives;
+};
+
+struct Node {
+    int32_t meshIndex{-1}; // -1 absent like in gltf
+    glm::mat4 transform{1.0f};
+};
+
+struct ImportedScene {
+    std::vector<Mesh> meshes;
+    std::vector<Node> nodes;
+};
+
+ImportedScene loadGltf(const std::filesystem::path& path);
+
+std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path);
+void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes);
+void fillNodesData(const tg3_model& model, std::vector<Node>& impSceneNodes);
+void traverseNodes(
+    const tg3_model& model, const tg3_node& node, const glm::mat4& parentTransform, std::vector<Node>& impSceneNodes
+);
+
 template <typename SRC, size_t Count>
-std::vector<glm::vec<Count, float>> readPrimitive(const tg3_model& model, const tg3_accessor& acc)
+std::vector<glm::vec<Count, float>> readPrimitiveAttribute(const tg3_model& model, const tg3_accessor& acc)
 {
     auto bufferView = model.buffer_views[acc.buffer_view];
     auto buffer = model.buffers[bufferView.buffer];
@@ -65,7 +97,5 @@ template <typename SRC> std::vector<uint32_t> readIndices(const tg3_model& model
     }
     return indices;
 }
-
-std::vector<Mesh> loadGltf(const std::filesystem::path& path);
 
 } // namespace vke
