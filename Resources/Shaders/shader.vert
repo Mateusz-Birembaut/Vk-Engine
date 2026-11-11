@@ -28,6 +28,7 @@ layout ( push_constant ) uniform constants
 } pc;
 
 layout (location = 0) out vec2 uv;
+layout (location = 1) out vec3 normal;
 
 void main() {
     SceneData sData = SceneData(pc.sceneDataBufferAddr);
@@ -38,5 +39,6 @@ void main() {
     vec4 finalPosition = sData.proj * sData.view * pc.model * vec4(vert.position, 1.0);
     gl_Position = finalPosition;
 
+    normal = vert.normal;
     uv = vec2(vert.uv_x, vert.uv_y);
 }   
