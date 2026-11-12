@@ -6,7 +6,9 @@ layout ( push_constant ) uniform constants
 {
     uint64_t sceneDataBufferAddr;
     uint samplerId;
-    uint textureId;
+    uint baseColorTextureIndex;
+    vec4 baseColorFactor;
+    mat4 model;
 } pc;
 
 layout(set = 0, binding = 0) uniform sampler samplers[];
@@ -18,12 +20,12 @@ layout (location = 1) in vec3 normal;
 layout(location = 0) out vec4 fragColor;
 
 void main() {
-/*     vec4 color = texture(
+    vec4 baseColor = texture(
         sampler2D(
-            textures[nonuniformEXT(pc.textureId)],
+            textures[nonuniformEXT(pc.baseColorTextureIndex)],
             samplers[nonuniformEXT(pc.samplerId)])
         , uv);
 
-    fragColor = color; */
-    fragColor = vec4(normal + 0.5, 1.0f); 
+    fragColor = baseColor * pc.baseColorFactor; 
+    //fragColor = vec4(normal + 0.5, 1.0f); 
 }

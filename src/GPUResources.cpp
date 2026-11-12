@@ -283,8 +283,13 @@ Handle<vke::GPUImage> GPUResources::createTexture(const vke::CPUImage& cpuImg)
         m_ctx->vmaAllocator(), stagingBuffer.vkbuffer, stagingBuffer.allocation
     ); // safe to destroy since waited before
 
+    const auto imgView = gpuImage.vkImageView;
+    const Handle<vke::GPUImage> imgHandle = m_gpuImgs.create(std::move(gpuImage)); // add img to pool
+
+    // update descriptor set at imgHandle index
+
     VkDescriptorImageInfo descImageInfo{
-        .imageView = gpuImage.vkImageView,
+        .imageView = imgView,
         .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
 
@@ -292,7 +297,7 @@ Handle<vke::GPUImage> GPUResources::createTexture(const vke::CPUImage& cpuImg)
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = m_descSet,
         .dstBinding = 1,
-        .dstArrayElement = 0,
+        .dstArrayElement = imgHandle.index,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
         .pImageInfo = &descImageInfo,
@@ -300,7 +305,7 @@ Handle<vke::GPUImage> GPUResources::createTexture(const vke::CPUImage& cpuImg)
 
     vkUpdateDescriptorSets(device, 1, &descSetWrite, 0, nullptr);
 
-    return m_gpuImgs.create(std::move(gpuImage));
+    return imgHandle;
 }
 
 Handle<vke::GPUMesh>

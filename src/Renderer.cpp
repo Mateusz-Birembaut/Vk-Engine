@@ -379,10 +379,12 @@ void Renderer::drawFrame(const std::span<vke::RenderItem>& renderItems, const vk
     vke::PushConstants pushConstants{
         .sceneDataBufferAddr = sceneBuffer->deviceAddress,
         .samplerIndex = m_fallbackTexture.samplerIndex,
-        .textureIndex = m_fallbackTexture.imageHandle.index,
+        .baseColorTextureIndex = m_fallbackTexture.imageHandle.index,
     };
 
     for (const auto& renderItem : renderItems) {
+        pushConstants.baseColorTextureIndex = renderItem.baseColorHandle.index;
+        pushConstants.baseColorFactor = renderItem.baseColorFactor;
         pushConstants.model = renderItem.model;
 
         vkCmdPushConstants(
@@ -441,4 +443,9 @@ void Renderer::drawFrame(const std::span<vke::RenderItem>& renderItems, const vk
 Handle<vke::GPUMesh> Renderer::createMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices)
 {
     return m_gpuResources.createGpuMesh(vertices, indices);
+}
+
+Handle<vke::GPUImage> Renderer::createTexture(const vke::CPUImage& cpuImg)
+{
+    return m_gpuResources.createTexture(cpuImg);
 }

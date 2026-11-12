@@ -89,7 +89,8 @@ struct GPUMegaBuffer {
 struct PushConstants {
     uint64_t sceneDataBufferAddr{0};
     uint32_t samplerIndex{0};
-    uint32_t textureIndex{0};
+    uint32_t baseColorTextureIndex{0};
+    glm::vec4 baseColorFactor{1.0f, 1.0f, 1.0f, 1.0f};
     glm::mat4 model{1.0f};
 };
 
@@ -105,8 +106,10 @@ struct SceneData {
 };
 
 struct RenderItem {
-    Handle<GPUMesh> meshHandle{};
     glm::mat4 model{1.0f};
+    glm::vec4 baseColorFactor{1.0f, 1.0f, 1.0f, 1.0f};
+    Handle<GPUMesh> meshHandle{};
+    Handle<GPUImage> baseColorHandle{};
 };
 
 } // namespace vke

@@ -25,6 +25,8 @@ public:
 
     Handle<vke::GPUMesh> createMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices);
 
+    Handle<vke::GPUImage> createTexture(const vke::CPUImage& cpuImg);
+
     vke::FrameData& getCurrentFrame();
 
 private:

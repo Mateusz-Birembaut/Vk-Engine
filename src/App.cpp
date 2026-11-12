@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <iostream>
 #include <numbers>
+#include <stb_image.h>
 #include <stdexcept>
 
 #include "VkEngine/CameraController.h"
@@ -60,12 +61,16 @@ void App::run()
     std::filesystem::path exeDir = SDL_GetBasePath();
     // const auto modelPath = exeDir / "Resources" / "Models" / "Box" / "Box.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
+    const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
-    const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
     const auto impScene = vke::loadGltf(modelPath);
 
     // stores for each mesh the handles of its primitives
     std::vector<std::vector<Handle<vke::GPUMesh>>> meshHandles(impScene.meshes.size());
+
+    // stores each image handles
+    std::vector<Handle<vke::GPUImage>> imageHandles(impScene.images.size());
 
     // upload each primitive for each mesh
     for (uint32_t IMesh = 0; IMesh < impScene.meshes.size(); IMesh++) {
@@ -78,16 +83,52 @@ void App::run()
         }
     }
 
+    for (uint32_t IImage = 0; IImage < impScene.images.size(); IImage++) {
+        const auto& image = impScene.images[IImage];
+
+        vke::CPUImage imgData{};
+        imgData.data = stbi_load(image.path.string().c_str(), &imgData.width, &imgData.height, &imgData.channels, 4);
+
+        if (imgData.data) {
+            imgData.channels = 4;
+            imageHandles[IImage] = m_renderer->createTexture(imgData);
+        } else {
+            throw std::runtime_error("[APP] Couldn't read image data");
+        }
+    }
+
     std::vector<vke::RenderItem> renderItems;
     renderItems.reserve(impScene.nodes.size());
 
-    //
     for (uint32_t INode = 0; INode < impScene.nodes.size(); INode++) {
         const auto& node = impScene.nodes[INode];
-        const auto& meshPrims = meshHandles[node.meshIndex];
 
-        for (uint32_t IPrimHandles = 0; IPrimHandles < meshPrims.size(); IPrimHandles++) {
-            renderItems.emplace_back(meshPrims[IPrimHandles], node.transform);
+        if (node.meshIndex == -1 || node.meshIndex >= impScene.meshes.size()) {
+            continue;
+        }
+
+        const auto& mesh = impScene.meshes[node.meshIndex];
+        const auto& meshHandlesPrims = meshHandles[node.meshIndex];
+
+        for (uint32_t IPrimHandles = 0; IPrimHandles < meshHandlesPrims.size(); IPrimHandles++) {
+            // there is as mush primiive handles as mesh primitives so should be ok
+            const auto& prim = mesh.primitives[IPrimHandles];
+            const auto& primMaterial = impScene.materials[prim.material];
+
+            if (primMaterial.baseColorTextureIndex == -1) {
+                renderItems.emplace_back(
+                    node.transform, primMaterial.baseColorFactor, meshHandlesPrims[IPrimHandles],
+                    Handle<vke::GPUImage>{}
+                );
+            } else {
+                uint32_t baseColorTexIndex = static_cast<uint32_t>(primMaterial.baseColorTextureIndex);
+
+                renderItems.emplace_back(
+                    node.transform, primMaterial.baseColorFactor, meshHandlesPrims[IPrimHandles],
+                    imageHandles[baseColorTexIndex]
+                );
+            }
+            // 0 equals to fallback texture
         }
     }
 
