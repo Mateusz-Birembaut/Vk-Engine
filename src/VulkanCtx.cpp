@@ -104,6 +104,7 @@ void VulkanCtx::init(Window* pWindow)
                         .request_validation_layers(useValidation)
                         .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT)
                         .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT)
+                        .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT)
                         .set_debug_callback(debugCallback)
                         .require_api_version(app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH)
                         .build();
