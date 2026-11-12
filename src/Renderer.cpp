@@ -42,7 +42,7 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
         .width = 1, .height = 1, .channels = 4, .data = reinterpret_cast<unsigned char*>(&whitePixelData)
     };
 
-    Handle<vke::GPUImage> whitePixelImgHandle = m_gpuResources.createGpuImage(whitePixel);
+    Handle<vke::GPUImage> whitePixelImgHandle = m_gpuResources.createTexture(whitePixel);
     uint32_t whitePixelSamplerId = m_gpuResources.getOrCreateSampler(); // for now create a basic sampler
     m_fallbackTexture = {whitePixelImgHandle, whitePixelSamplerId};
 }
@@ -138,6 +138,8 @@ void Renderer::initGraphicsPipeline()
 
     VkPipelineMultisampleStateCreateInfo msSampleStateCreateInfo = vke::multisampleStateCreateInfo();
 
+    VkPipelineDepthStencilStateCreateInfo depthStateCreateInfo = vke::depthStateCreateInfo();
+
     VkPipelineColorBlendAttachmentState colorBlendState = vke::colorBlendAttachmentState();
     VkPipelineColorBlendStateCreateInfo colorBlendInfo = vke::colorBlendStateCreateInfo(&colorBlendState);
 
@@ -160,7 +162,8 @@ void Renderer::initGraphicsPipeline()
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &fragShaderPushConstants;
 
-    VkPipelineRenderingCreateInfo pipelineRenderingInfo = vke::pipelineRenderingCreateInfo(&imgFormat);
+    VkPipelineRenderingCreateInfo pipelineRenderingInfo =
+        vke::pipelineRenderingCreateInfo(&imgFormat, VK_FORMAT_D32_SFLOAT); // TODO ask for best format
 
     vke::check(
         vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_graphicsPipelineLayout),
@@ -169,7 +172,7 @@ void Renderer::initGraphicsPipeline()
 
     VkGraphicsPipelineCreateInfo graphicsPipelineInfo = vke::graphicsPipelineCreateInfo(
         2, shaderStages, &vertexStageInfo, &assemblyInfo, &viewportStateInfo, &rasterInfo, &msSampleStateCreateInfo,
-        &colorBlendInfo, &dynamicStateInfo, m_graphicsPipelineLayout, &pipelineRenderingInfo
+        &depthStateCreateInfo, &colorBlendInfo, &dynamicStateInfo, m_graphicsPipelineLayout, &pipelineRenderingInfo
     );
 
     vke::check(
@@ -236,6 +239,8 @@ void Renderer::recreateSwapchain()
     m_ctx->createSwapchain();
     cleanupRenderSems();
     createRenderSems();
+
+    m_gpuResources.recreateDepthBuffer();
 }
 
 // no early return between acquire and submit
@@ -289,7 +294,11 @@ void Renderer::drawFrame(const std::span<vke::RenderItem>& renderItems, const vk
     VkImageView imgView = m_ctx->swapchainViews()[imgId];
     VkSemaphore& renderSemaphore = m_renderSems[imgId];
 
+    const vke::GPUImage* depthBuffer = m_gpuResources.getDepthBuffer();
+
     VkImageSubresourceRange imgSubresourceRange = vke::imgSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkImageSubresourceRange depthImgSubresourceRange = vke::imgSubresourceRange(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     // only the stage writing the swapchain image waits for the acquire
     // earlier stages can start before the image is available
@@ -300,22 +309,42 @@ void Renderer::drawFrame(const std::span<vke::RenderItem>& renderItems, const vk
     // ----------------- barrier to render -----------------
     // layout will be updated after the wait semaphore as the wait semaphore blocks the gpu at the stage
     // COLOR_ATTACHMENT_OUTPUT
-    VkImageMemoryBarrier2 undefinedToColorAttachment = vke::imageMemoryBarrier(
-        img, imgSubresourceRange, VK_IMAGE_LAYOUT_UNDEFINED, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_ACCESS_2_NONE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT
-    );
 
-    VkDependencyInfo dependencyInfo = vke::dependencyInfo(&undefinedToColorAttachment);
+    std::array<VkImageMemoryBarrier2, 2> imgBarriers{
+        vke::imageMemoryBarrier(
+            img, imgSubresourceRange, VK_IMAGE_LAYOUT_UNDEFINED, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_ACCESS_2_NONE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT
+        ),
+
+        vke::imageMemoryBarrier(
+            depthBuffer->vkImage, depthImgSubresourceRange, VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+        ),
+    };
+
+    VkDependencyInfo dependencyInfo =
+        vke::dependencyInfo(static_cast<uint32_t>(imgBarriers.size()), imgBarriers.data());
 
     vkCmdPipelineBarrier2(cmdBuff, &dependencyInfo);
 
-    VkClearValue clearValue{};
-    clearValue.color = m_clearColorValue;
+    VkClearValue colorClearValue{};
+    colorClearValue.color = m_clearColorValue;
+
+    VkClearValue depthClearValue{};
+    depthClearValue.depthStencil = m_clearDepthValue;
 
     VkRenderingAttachmentInfo colorAttachmentInfo = vke::renderingAttachmentInfo(
-        imgView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, clearValue, VK_ATTACHMENT_LOAD_OP_CLEAR,
+        imgView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, colorClearValue, VK_ATTACHMENT_LOAD_OP_CLEAR,
         VK_ATTACHMENT_STORE_OP_STORE
+    );
+
+    VkRenderingAttachmentInfo depthAttachmentInfo = vke::renderingAttachmentInfo(
+        depthBuffer->vkImageView, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, depthClearValue,
+        VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE
     );
 
     VkExtent2D swapchainExtent = m_ctx->swapchainExtent();
@@ -332,7 +361,7 @@ void Renderer::drawFrame(const std::span<vke::RenderItem>& renderItems, const vk
     scissor.extent = swapchainExtent;
     scissor.offset = {0, 0};
 
-    VkRenderingInfo rederingInfo = vke::renderingInfo(&colorAttachmentInfo, scissor);
+    VkRenderingInfo rederingInfo = vke::renderingInfo(&colorAttachmentInfo, &depthAttachmentInfo, scissor);
 
     // ----------------- rendering -----------------
     vkCmdBeginRendering(cmdBuff, &rederingInfo);
@@ -377,7 +406,7 @@ void Renderer::drawFrame(const std::span<vke::RenderItem>& renderItems, const vk
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_NONE, 0
     );
 
-    VkDependencyInfo dependencyInfo2 = vke::dependencyInfo(&colorToPresentBarrier);
+    VkDependencyInfo dependencyInfo2 = vke::dependencyInfo(1, &colorToPresentBarrier);
 
     vkCmdPipelineBarrier2(cmdBuff, &dependencyInfo2);
 

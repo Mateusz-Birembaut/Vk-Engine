@@ -19,6 +19,7 @@ public:
     VkDescriptorSet descSet() const;
     uint64_t vertBuffAddr() const;
     VkBuffer indexBuffer() const;
+    const vke::GPUImage* getDepthBuffer() const;
     const vke::GPUMesh* getMesh(const Handle<vke::GPUMesh>& meshHandle) const;
     const vke::GPUBuffer* getBuffer(const Handle<vke::GPUBuffer>& buffHandle) const;
 
@@ -37,7 +38,7 @@ public:
      *
      * @return Handle of the created Texture { gpuImage index, gen }
      */
-    Handle<vke::GPUImage> createGpuImage(const vke::CPUImage& cpuImg);
+    Handle<vke::GPUImage> createTexture(const vke::CPUImage& cpuImg);
 
     Handle<vke::GPUMesh> createGpuMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices);
 
@@ -56,6 +57,8 @@ public:
      */
     uint32_t getOrCreateSampler();
 
+    void recreateDepthBuffer();
+
     /**
      * @brief Frees all the memory of "Alive" slots in each pool and destroys every sampler.
      *
@@ -72,6 +75,8 @@ private:
     void initDescriptorSetLayout(VkDevice device);
 
     void initDescriptorSet(VkDevice device);
+
+    void cleanupDepthBuffer();
 
     /**
      * @brief Creates a new GPUBuffer of the specified size
@@ -96,6 +101,9 @@ private:
      * @attention The Buffer is returned and the caller is responsible for buffer deletion
      */
     vke::GPUMegaBuffer createMegaGPUBuffer(const uint64_t capacity, VkBufferUsageFlags usage);
+
+    vke::GPUImage
+    create2dGpuImage(VkFormat format, VkExtent2D extent, VkImageUsageFlags usage, VkImageAspectFlags aspectFlags);
 
     /**
      * @brief Copies bytes to staging buffer using VMA
@@ -192,6 +200,8 @@ private:
     Pool<vke::GPUBuffer> m_gpuBuffs;
     Pool<vke::GPUMesh> m_gpuMeshes;
     std::vector<VkSampler> m_samplers;
+
+    vke::GPUImage m_depthBuffer{};
 
     const uint64_t vertexMegaBuffCapacity{2000000000}; //  approx 2GO
     vke::GPUMegaBuffer m_vertexMegaBuff{};

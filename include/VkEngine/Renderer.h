@@ -44,6 +44,7 @@ private:
     std::vector<VkSemaphore> m_renderSems; // 1 per swapchain image
 
     VkClearColorValue m_clearColorValue{};
+    VkClearDepthStencilValue m_clearDepthValue{.depth = 1.0f, .stencil = 0};
     vke::Texture m_fallbackTexture{};
 
     Handle<vke::GPUMesh> m_testMesh;

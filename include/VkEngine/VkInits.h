@@ -130,15 +130,13 @@ inline VkImageSubresourceRange imgSubresourceRange(VkImageAspectFlags aspectMask
     return subImage;
 }
 
-inline VkDependencyInfo dependencyInfo(VkImageMemoryBarrier2* imgMemBarrier)
+inline VkDependencyInfo dependencyInfo(uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier2* pImgMemBarrier)
 {
-    VkDependencyInfo dependencyInfo{};
-    dependencyInfo.imageMemoryBarrierCount = 1;
-    dependencyInfo.pImageMemoryBarriers = imgMemBarrier;
-    dependencyInfo.pNext = nullptr;
-    dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-
-    return dependencyInfo;
+    return VkDependencyInfo{
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = imageMemoryBarrierCount,
+        .pImageMemoryBarriers = pImgMemBarrier,
+    };
 }
 
 inline VkImageMemoryBarrier2 imageMemoryBarrier(
@@ -167,12 +165,12 @@ inline VkImageMemoryBarrier2 imageMemoryBarrier(
     return imgMemBarrier;
 }
 
-inline VkPipelineRenderingCreateInfo pipelineRenderingCreateInfo(VkFormat* colorFormat)
+inline VkPipelineRenderingCreateInfo pipelineRenderingCreateInfo(VkFormat* colorFormat, VkFormat depthFormat)
 {
     VkPipelineRenderingCreateInfo info{};
     info.colorAttachmentCount = 1;
     info.pColorAttachmentFormats = colorFormat;
-    info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+    info.depthAttachmentFormat = depthFormat;
     info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
     info.viewMask = 0;
 
@@ -277,6 +275,18 @@ inline VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo()
     return info;
 }
 
+inline VkPipelineDepthStencilStateCreateInfo depthStateCreateInfo()
+{
+    return VkPipelineDepthStencilStateCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+        .depthTestEnable = VK_TRUE,
+        .depthWriteEnable = VK_TRUE,
+        .depthCompareOp = VK_COMPARE_OP_LESS,
+        .depthBoundsTestEnable = VK_FALSE,
+        .stencilTestEnable = VK_FALSE,
+    };
+}
+
 inline VkPipelineColorBlendAttachmentState colorBlendAttachmentState()
 {
     VkPipelineColorBlendAttachmentState state{};
@@ -333,6 +343,7 @@ inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo(
     VkPipelineVertexInputStateCreateInfo* vertexStateInfo, VkPipelineInputAssemblyStateCreateInfo* assemblyStateInfo,
     VkPipelineViewportStateCreateInfo* viewportInfo, VkPipelineRasterizationStateCreateInfo* rasterStateInfo,
     VkPipelineMultisampleStateCreateInfo* multisampleStateInfo,
+    VkPipelineDepthStencilStateCreateInfo* depthStateCreateInfo,
     VkPipelineColorBlendStateCreateInfo* colorBlendStateInfo, VkPipelineDynamicStateCreateInfo* dynamicStateInfo,
     VkPipelineLayout pipelineLayout, VkPipelineRenderingCreateInfo* renderingCreateInfo
 )
@@ -347,7 +358,7 @@ inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo(
     info.pViewportState = viewportInfo;
     info.pRasterizationState = rasterStateInfo;
     info.pMultisampleState = multisampleStateInfo;
-    info.pDepthStencilState = nullptr;
+    info.pDepthStencilState = depthStateCreateInfo;
     info.pColorBlendState = colorBlendStateInfo;
     info.pDynamicState = dynamicStateInfo;
 
@@ -382,7 +393,9 @@ inline VkRenderingAttachmentInfo renderingAttachmentInfo(
     return info;
 }
 
-inline VkRenderingInfo renderingInfo(VkRenderingAttachmentInfo* colorAttachmentInfo, VkRect2D renderArea)
+inline VkRenderingInfo renderingInfo(
+    VkRenderingAttachmentInfo* colorAttachmentInfo, VkRenderingAttachmentInfo* depthAttachInfo, VkRect2D renderArea
+)
 {
     VkRenderingInfo info{};
     info.colorAttachmentCount = 1;
@@ -390,7 +403,7 @@ inline VkRenderingInfo renderingInfo(VkRenderingAttachmentInfo* colorAttachmentI
     info.flags = 0;
     info.layerCount = 1;
     info.viewMask = 0;
-    info.pDepthAttachment = nullptr;
+    info.pDepthAttachment = depthAttachInfo;
     info.pStencilAttachment = nullptr;
     info.renderArea = renderArea;
 
@@ -400,44 +413,36 @@ inline VkRenderingInfo renderingInfo(VkRenderingAttachmentInfo* colorAttachmentI
     return info;
 }
 
-inline VkImageCreateInfo img2DCreateInfo(uint32_t width, uint32_t height)
+inline VkImageCreateInfo img2DCreateInfo(VkFormat format, VkExtent2D extent, VkImageUsageFlags usage)
 {
-    VkImageCreateInfo imgCreateInfo{};
-
-    imgCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-    imgCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-    imgCreateInfo.extent = {.width = width, .height = height, .depth = 1};
-
-    imgCreateInfo.mipLevels = 1;
-    imgCreateInfo.arrayLayers = 1;
-    imgCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-
-    imgCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imgCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    imgCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imgCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-    imgCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imgCreateInfo.pNext = nullptr;
-
-    return imgCreateInfo;
+    return VkImageCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = format,
+        .extent = {.width = extent.width, .height = extent.height, .depth = 1},
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = usage,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
 }
 
-inline VkImageViewCreateInfo imgView2DCreateInfo(VkImage image)
+inline VkImageViewCreateInfo imgView2DCreateInfo(VkImage image, VkFormat format, VkImageAspectFlags aspectMask)
 {
-    VkImageViewCreateInfo imgViewCreateInfo{};
-    imgViewCreateInfo.image = image;
-    imgViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imgViewCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-    imgViewCreateInfo.subresourceRange = {
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-        .levelCount = 1,
-        .layerCount = 1,
+    return VkImageViewCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = format,
+        .subresourceRange = {
+            .aspectMask = aspectMask,
+            .levelCount = 1,
+            .layerCount = 1,
+        },
     };
-
-    imgViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    imgViewCreateInfo.pNext = nullptr;
-    return imgViewCreateInfo;
 }
 
 inline VkBufferCreateInfo bufferCreateInfo(uint64_t bufferSize, VkBufferUsageFlags usage)

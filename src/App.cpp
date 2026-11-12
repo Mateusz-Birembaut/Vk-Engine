@@ -60,8 +60,8 @@ void App::run()
     std::filesystem::path exeDir = SDL_GetBasePath();
     // const auto modelPath = exeDir / "Resources" / "Models" / "Box" / "Box.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
-    const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
+    const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
     const auto impScene = vke::loadGltf(modelPath);
 
     // stores for each mesh the handles of its primitives

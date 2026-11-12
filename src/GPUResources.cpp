@@ -32,6 +32,8 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
     initDescriptorSetLayout(device);
     initDescriptorSet(device);
 
+    recreateDepthBuffer();
+
     m_vertexMegaBuff = createMegaGPUBuffer(
         vertexMegaBuffCapacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
                                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
@@ -205,30 +207,67 @@ vke::GPUMegaBuffer GPUResources::createMegaGPUBuffer(const uint64_t capacity, Vk
     return megaBuff;
 }
 
-Handle<vke::GPUImage> GPUResources::createGpuImage(const vke::CPUImage& cpuImg)
+vke::GPUImage
+GPUResources::create2dGpuImage(VkFormat format, VkExtent2D extent, VkImageUsageFlags usage, VkImageAspectFlags aspect)
 {
     const auto device = m_ctx->device();
 
-    // image and view creation
-    VkImageCreateInfo whiteTextureCreateInfo = vke::img2DCreateInfo(cpuImg.width, cpuImg.height);
+    VkImageCreateInfo imCreateInfo = vke::img2DCreateInfo(format, extent, usage);
+    VmaAllocationCreateInfo imgAllocInfo{.usage = VMA_MEMORY_USAGE_AUTO};
 
     vke::GPUImage gpuImage;
 
-    VmaAllocationCreateInfo imgAllocInfo{.usage = VMA_MEMORY_USAGE_AUTO};
-
     vke::check(
         vmaCreateImage(
-            m_ctx->vmaAllocator(), &whiteTextureCreateInfo, &imgAllocInfo, &gpuImage.vkImage, &gpuImage.allocation,
-            nullptr
+            m_ctx->vmaAllocator(), &imCreateInfo, &imgAllocInfo, &gpuImage.vkImage, &gpuImage.allocation, nullptr
         ),
         "[GPUResources] VMA Failed to create image"
     );
 
-    VkImageViewCreateInfo whiteTextureViewCreateInfo = vke::imgView2DCreateInfo(gpuImage.vkImage);
+    VkImageViewCreateInfo imgView = vke::imgView2DCreateInfo(gpuImage.vkImage, format, aspect);
 
     vke::check(
-        vkCreateImageView(device, &whiteTextureViewCreateInfo, nullptr, &gpuImage.vkImageView),
+        vkCreateImageView(device, &imgView, nullptr, &gpuImage.vkImageView),
         "[GPUResources] Failed to create image view for white texture"
+    );
+
+    return gpuImage;
+}
+
+void GPUResources::recreateDepthBuffer()
+{
+    cleanupDepthBuffer();
+
+    // TODO : check for best format
+    m_depthBuffer = create2dGpuImage(
+        VK_FORMAT_D32_SFLOAT, m_ctx->swapchainExtent(), VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_IMAGE_ASPECT_DEPTH_BIT
+    );
+}
+
+void GPUResources::cleanupDepthBuffer()
+{
+    if (m_depthBuffer.vkImage) {
+        const auto device = m_ctx->device();
+        const auto vmaAllocator = m_ctx->vmaAllocator();
+        vkDestroyImageView(device, m_depthBuffer.vkImageView, nullptr);
+        vmaDestroyImage(vmaAllocator, m_depthBuffer.vkImage, m_depthBuffer.allocation);
+    }
+}
+
+Handle<vke::GPUImage> GPUResources::createTexture(const vke::CPUImage& cpuImg)
+{
+    const auto device = m_ctx->device();
+
+    VkExtent3D imgExtent{
+        .width = static_cast<uint32_t>(cpuImg.width), .height = static_cast<uint32_t>(cpuImg.height), .depth = 1
+    };
+
+    // image and view creation
+    // TODO : check for best format
+    vke::GPUImage gpuImage = create2dGpuImage(
+        VK_FORMAT_R8G8B8A8_SRGB, {.width = imgExtent.width, .height = imgExtent.height},
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT
     );
 
     // staging buffer to hold texture data
@@ -236,12 +275,8 @@ Handle<vke::GPUImage> GPUResources::createGpuImage(const vke::CPUImage& cpuImg)
 
     copyToStagingBuffer(cpuImg.bytes(), 0, stagingBuffer);
 
-    VkExtent3D imdExtend{
-        .width = static_cast<uint32_t>(cpuImg.width), .height = static_cast<uint32_t>(cpuImg.height), .depth = 1
-    };
-
     immediateSubmit([&](VkCommandBuffer transientCmdBuff) {
-        recordImgCopyCmds(transientCmdBuff, stagingBuffer.vkbuffer, imdExtend, gpuImage.vkImage);
+        recordImgCopyCmds(transientCmdBuff, stagingBuffer.vkbuffer, imgExtent, gpuImage.vkImage);
     });
 
     vmaDestroyBuffer(
@@ -539,6 +574,8 @@ void GPUResources::cleanup()
 
     vkDestroyDescriptorSetLayout(device, m_descSetLayout, nullptr);
     vkDestroyDescriptorPool(device, m_descPool, nullptr);
+
+    cleanupDepthBuffer();
 }
 
 VkDescriptorSetLayout GPUResources::descSetLayout() const
@@ -569,4 +606,9 @@ const vke::GPUMesh* GPUResources::getMesh(const Handle<vke::GPUMesh>& meshHandle
 const vke::GPUBuffer* GPUResources::getBuffer(const Handle<vke::GPUBuffer>& buffHandle) const
 {
     return m_gpuBuffs.get(buffHandle);
+}
+
+const vke::GPUImage* GPUResources::getDepthBuffer() const
+{
+    return &m_depthBuffer;
 }
