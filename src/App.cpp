@@ -63,7 +63,9 @@ void App::run()
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
-    const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "city.glb";
+    const auto modelPath = exeDir / "Resources" / "Models" / "Cartoon_City_Free.glb";
     const auto impScene = vke::loadGltf(modelPath);
 
     // stores for each mesh the handles of its primitives
@@ -154,20 +156,23 @@ void App::run()
     while (m_running) {
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_EVENT_QUIT) {
-                m_running = false;
-            }
-
             if (e.type == SDL_EVENT_KEY_DOWN) {
                 if (e.key.scancode == SDL_SCANCODE_ESCAPE) {
                     m_window->setMouseCapture(false);
+
                 } else if (e.key.scancode == SDL_SCANCODE_RETURN) {
                     m_window->setMouseCapture(true);
                 }
-            }
-
-            if (e.type == SDL_EVENT_MOUSE_MOTION && m_window->isCapturingMouse()) {
+            } else if (e.type == SDL_EVENT_MOUSE_MOTION && m_window->isCapturingMouse()) {
                 m_cameraController->handleMouseMotion(e.motion.xrel, e.motion.yrel);
+
+            } else if (e.type == SDL_EVENT_WINDOW_MINIMIZED) {
+                m_window->setMinimized(true);
+
+            } else if (e.type == SDL_EVENT_WINDOW_RESTORED) {
+                m_window->setMinimized(false);
+            } else if (e.type == SDL_EVENT_QUIT) {
+                m_running = false;
             }
         }
 
@@ -182,16 +187,18 @@ void App::run()
             break;
 
         // update game state, draw the current frame
-        m_renderer->drawFrame(renderItems, m_cameraController->renderView());
+        if (!m_window->isMinimized()) {
+            m_renderer->drawFrame(renderItems, m_cameraController->renderView());
 
-        // update after swapchain recreation
-        VkExtent2D currentExtent = m_ctx->swapchainExtent();
-        if (currentExtent.width != 0 && currentExtent.height != 0 &&
-            (currentExtent.height != previousExtent.height || currentExtent.width != previousExtent.width)) {
-            previousExtent = currentExtent;
-            m_cameraController->updateAspectRatio(
-                static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height)
-            );
+            // update after swapchain recreation
+            VkExtent2D currentExtent = m_ctx->swapchainExtent();
+            if (currentExtent.width != 0 && currentExtent.height != 0 &&
+                (currentExtent.height != previousExtent.height || currentExtent.width != previousExtent.width)) {
+                previousExtent = currentExtent;
+                m_cameraController->updateAspectRatio(
+                    static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height)
+                );
+            }
         }
     }
 }

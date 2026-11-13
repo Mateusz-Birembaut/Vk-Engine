@@ -12,7 +12,9 @@ public:
     ~Window();
 
     bool isCapturingMouse() const;
+    bool isMinimized() const;
     void setMouseCapture(bool enable);
+    void setMinimized(bool minimized);
 
     VkExtent2D getSizeInPixels() const;
 
@@ -21,4 +23,5 @@ public:
 private:
     SDL_Window* m_window{nullptr};
     bool m_capturingMouse{true};
+    bool m_minimized{false};
 };

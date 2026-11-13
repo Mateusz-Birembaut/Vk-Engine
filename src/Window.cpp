@@ -10,6 +10,9 @@ Window::Window()
 {
     m_window = SDL_CreateWindow(app::NAME.data(), 1920, 1080, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
     setMouseCapture(m_capturingMouse);
+
+    auto windowsFlags = SDL_GetWindowFlags(m_window);
+    m_minimized = windowsFlags & SDL_WINDOW_MINIMIZED;
 }
 
 Window::~Window()
@@ -26,6 +29,16 @@ void Window::setMouseCapture(bool isCapturingMouse)
 {
     m_capturingMouse = isCapturingMouse;
     SDL_SetWindowRelativeMouseMode(m_window, m_capturingMouse);
+}
+
+void Window::setMinimized(bool minimized)
+{
+    m_minimized = minimized;
+}
+
+bool Window::isMinimized() const
+{
+    return m_minimized;
 }
 
 VkExtent2D Window::getSizeInPixels() const
