@@ -7,15 +7,16 @@
 TEST_CASE("Read empty file spv", "[FileReader]")
 {
     auto resultEmpty = vke::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "empty.spv");
-    REQUIRE(resultEmpty.error() == vke::ShaderFileError::invalidData);
+    REQUIRE(resultEmpty.error() == vke::FileError::invalidData);
 }
 
 TEST_CASE("Read frag shader spv", "[FileReader]")
 {
-    vke::ShaderCodeData data{};
-    data.codeSize = std::filesystem::file_size(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "shader.frag.spv");
-    auto resultFragShader = vke::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "shader.frag.spv");
-    REQUIRE((data.codeSize / 4) == resultFragShader.value().codeData.size());
+    const auto path = std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "shader.frag.spv";
+    const auto fileSize = std::filesystem::file_size(path);
+    auto resultFragShader = vke::readShader(path);
+    REQUIRE(resultFragShader.has_value());
+    REQUIRE((fileSize / 4) == resultFragShader.value().codeData.size());
     REQUIRE(resultFragShader.value().codeData[0] == 0x07230203u); // magic number SPIR-V
 }
 
@@ -39,17 +40,17 @@ TEST_CASE("Read frag shader spv, full content", "[FileReader]")
 TEST_CASE("Read on non existing file", "[FileReader]")
 {
     auto resultFragShader = vke::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "dazdazdazd.frag.spv");
-    REQUIRE(resultFragShader.error() == vke::ShaderFileError::fileNotFound);
+    REQUIRE(resultFragShader.error() == vke::FileError::fileNotFound);
 }
 
 TEST_CASE("Read on directory", "[FileReader]")
 {
     auto resultFragShader = vke::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR});
-    REQUIRE(resultFragShader.error() == vke::ShaderFileError::invalidPath);
+    REQUIRE(resultFragShader.error() == vke::FileError::invalidPath);
 }
 
 TEST_CASE("Read file with invalid extension", "[FileReader]")
 {
     auto resultFragShader = vke::readShader(std::filesystem::path{FILEREADER_TEST_DATA_DIR} / "shader.frag.sdzad");
-    REQUIRE(resultFragShader.error() == vke::ShaderFileError::invalidPath);
+    REQUIRE(resultFragShader.error() == vke::FileError::invalidPath);
 }

@@ -29,11 +29,6 @@ struct FrameData {
     Handle<GPUBuffer> sceneDataBuffHandle{};
 };
 
-struct ShaderCodeData {
-    size_t codeSize{0}; // must be a multiple of 4
-    std::vector<uint32_t> codeData;
-};
-
 struct CPUImage {
     int width{0};
     int height{0};

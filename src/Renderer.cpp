@@ -119,9 +119,9 @@ void Renderer::initGraphicsPipeline()
     vke::ShaderCodeData fragCode = readFragShader.value();
 
     VkShaderModuleCreateInfo vertexShaderModuleInfo =
-        vke::shaderModuleCreateInfo(vertCode.codeSize, vertCode.codeData.data());
+        vke::shaderModuleCreateInfo(vertCode.codeData.size() * 4, vertCode.codeData.data());
     VkShaderModuleCreateInfo fragShaderModuleInfo =
-        vke::shaderModuleCreateInfo(fragCode.codeSize, fragCode.codeData.data());
+        vke::shaderModuleCreateInfo(fragCode.codeData.size() * 4, fragCode.codeData.data());
 
     VkPipelineShaderStageCreateInfo shaderStages[2];
     shaderStages[0] = vke::shaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, &vertexShaderModuleInfo);
