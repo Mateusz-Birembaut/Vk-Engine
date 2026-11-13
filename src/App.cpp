@@ -60,8 +60,8 @@ void App::run()
 
     std::filesystem::path exeDir = SDL_GetBasePath();
     // const auto modelPath = exeDir / "Resources" / "Models" / "Box" / "Box.gltf";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
-    const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
+    const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
     const auto impScene = vke::loadGltf(modelPath);
@@ -84,14 +84,20 @@ void App::run()
     }
 
     for (uint32_t IImage = 0; IImage < impScene.images.size(); IImage++) {
-        const auto& image = impScene.images[IImage];
+        const auto& imageData = impScene.images[IImage];
 
         vke::CPUImage imgData{};
-        imgData.data = stbi_load(image.path.string().c_str(), &imgData.width, &imgData.height, &imgData.channels, 4);
+
+        // TODO do not use prefered channels
+        imgData.data = stbi_load_from_memory(
+            imageData.bytes.data(), static_cast<int>(imageData.bytes.size()), &imgData.width, &imgData.height,
+            &imgData.channels, 4
+        );
 
         if (imgData.data) {
             imgData.channels = 4;
             imageHandles[IImage] = m_renderer->createTexture(imgData);
+            stbi_image_free(imgData.data);
         } else {
             throw std::runtime_error("[APP] Couldn't read image data");
         }
@@ -113,21 +119,31 @@ void App::run()
         for (uint32_t IPrimHandles = 0; IPrimHandles < meshHandlesPrims.size(); IPrimHandles++) {
             // there is as mush primiive handles as mesh primitives so should be ok
             const auto& prim = mesh.primitives[IPrimHandles];
-            const auto& primMaterial = impScene.materials[prim.material];
 
-            if (primMaterial.baseColorTextureIndex == -1) {
+            if (prim.material != -1) {
+                const auto& primMaterial = impScene.materials[prim.material];
+
+                if (primMaterial.baseColorTextureIndex == -1) {
+                    renderItems.emplace_back(
+                        node.transform, primMaterial.baseColorFactor, meshHandlesPrims[IPrimHandles],
+                        Handle<vke::GPUImage>{}
+                    );
+                } else {
+                    uint32_t baseColorTextureIndex = static_cast<uint32_t>(primMaterial.baseColorTextureIndex);
+                    uint32_t imageIndex = impScene.textures[baseColorTextureIndex].imgIndex;
+
+                    renderItems.emplace_back(
+                        node.transform, primMaterial.baseColorFactor, meshHandlesPrims[IPrimHandles],
+                        imageHandles[imageIndex]
+                    );
+                }
+            } else {
                 renderItems.emplace_back(
-                    node.transform, primMaterial.baseColorFactor, meshHandlesPrims[IPrimHandles],
+                    node.transform, glm::vec4{1.0f, 1.0f, 1.0f, 1.0f}, meshHandlesPrims[IPrimHandles],
                     Handle<vke::GPUImage>{}
                 );
-            } else {
-                uint32_t baseColorTexIndex = static_cast<uint32_t>(primMaterial.baseColorTextureIndex);
-
-                renderItems.emplace_back(
-                    node.transform, primMaterial.baseColorFactor, meshHandlesPrims[IPrimHandles],
-                    imageHandles[baseColorTexIndex]
-                );
             }
+
             // 0 equals to fallback texture
         }
     }

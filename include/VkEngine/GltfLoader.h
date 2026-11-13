@@ -11,6 +11,8 @@
 
 namespace vke {
 
+struct FileData;
+
 struct Primitive {
     std::vector<Vertex> vertices{};
     std::vector<uint32_t> indices{};
@@ -24,10 +26,6 @@ struct Mesh {
 struct Node {
     int32_t meshIndex{-1}; // -1 absent like in gltf
     glm::mat4 transform{1.0f};
-};
-
-struct Image {
-    const std::filesystem::path path{};
 };
 
 struct Sampler {
@@ -53,7 +51,7 @@ struct Material {
 struct ImportedScene {
     std::vector<Mesh> meshes;
     std::vector<Node> nodes;
-    std::vector<Image> images;
+    std::vector<FileData> images;
     std::vector<Sampler> samplers;
     std::vector<GltfTexture> textures;
     std::vector<Material> materials;
@@ -65,7 +63,7 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
 
 void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes);
 void fillNodesData(const tg3_model& model, std::vector<Node>& impSceneNodes);
-void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<Image>& impSceneImgs);
+void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<FileData>& impSceneImgs);
 void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampler);
 void fillTexturesData(const tg3_model& model, std::vector<GltfTexture>& impSceneTextures);
 void fillMaterialData(const tg3_model& model, std::vector<Material>& impSceneMaterials);

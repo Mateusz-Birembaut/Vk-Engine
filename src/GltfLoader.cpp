@@ -3,9 +3,11 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
+#include <stb_image.h>
 #include <tiny_gltf_v3.h>
 #include <utility>
 
+#include "VkEngine/FileReader.h"
 #include "VkEngine/Types.h"
 
 namespace vke {
@@ -155,7 +157,7 @@ void fillNodesData(const tg3_model& model, std::vector<Node>& impSceneNodes)
     }
 }
 
-void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<Image>& impSceneImgs)
+void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<FileData>& impSceneImgs)
 {
     impSceneImgs.reserve(model.images_count);
 
@@ -163,7 +165,23 @@ void fillImagesData(const tg3_model& model, const std::filesystem::path& path, s
         const auto& image = model.images[IImage];
         if (image.uri.len != 0) {
             std::filesystem::path pathImage = path / image.uri.data;
-            impSceneImgs.push_back(Image{.path = pathImage});
+
+            auto imgData = readFile(pathImage);
+            if (!imgData.has_value()) {
+                throw std::runtime_error("[GltfLoader] Couldn't read image bytes");
+            }
+
+            impSceneImgs.push_back(std::move(imgData.value()));
+        } else {
+            const auto& bufferView = model.buffer_views[image.buffer_view];
+            const auto& buffer = model.buffers[bufferView.buffer];
+
+            FileData imgData{};
+            imgData.bytes.resize(bufferView.byte_length);
+
+            std::memcpy(imgData.bytes.data(), &buffer.data.data[bufferView.byte_offset], bufferView.byte_length);
+
+            impSceneImgs.push_back(std::move(imgData));
         }
     }
 }
