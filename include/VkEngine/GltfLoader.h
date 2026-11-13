@@ -130,4 +130,6 @@ template <typename SRC> std::vector<uint32_t> readIndices(const tg3_model& model
     return indices;
 }
 
+std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& acc);
+
 } // namespace vke

@@ -16,6 +16,7 @@ layout(set = 0, binding = 1) uniform texture2D textures[];
 
 layout (location = 0) in vec2 uv;
 layout (location = 1) in vec3 normal;
+layout (location = 2) in vec4 vertColor;
 
 layout(location = 0) out vec4 fragColor;
 
@@ -26,6 +27,6 @@ void main() {
             samplers[nonuniformEXT(pc.samplerId)])
         , uv);
 
-    fragColor = baseColor * pc.baseColorFactor; 
+    fragColor = vertColor * baseColor * pc.baseColorFactor; 
     //fragColor = vec4(normal + 0.5, 1.0f); 
 }

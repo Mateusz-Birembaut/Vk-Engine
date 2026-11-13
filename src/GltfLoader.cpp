@@ -61,6 +61,7 @@ void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes)
             int32_t positionPrim = -1;
             int32_t normalPrim = -1;
             int32_t uvPrim = -1;
+            int32_t colorPrim = -1;
 
             // get indices of attributes
             for (uint32_t IAttr = 0; IAttr < attributeCount; IAttr++) {
@@ -72,6 +73,8 @@ void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes)
                     normalPrim = attribute.value;
                 } else if (strcmp(attribute.key.data, "TEXCOORD_0") == 0) {
                     uvPrim = attribute.value;
+                } else if (strcmp(attribute.key.data, "COLOR_0") == 0) {
+                    colorPrim = attribute.value;
                 }
             }
 
@@ -80,6 +83,7 @@ void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes)
             std::vector<glm::vec3> positions = readPrimitiveAttribute<float, 3>(model, vertexAcc);
             std::vector<glm::vec2> uvs;
             std::vector<glm::vec3> normals;
+            std::vector<glm::vec4> colors;
 
             if (normalPrim != -1) {
                 const auto& normalAcc = model.accessors[normalPrim];
@@ -99,6 +103,12 @@ void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes)
                         uvs = readPrimitiveAttribute<uint16_t, 2>(model, uvAcc);
                         break;
                 }
+            }
+
+            if (colorPrim != -1) {
+                const auto& colorAcc = model.accessors[colorPrim];
+
+                colors = readColors(model, colorAcc);
             }
 
             const auto& indexAcc = model.accessors[indicesPrim];
@@ -126,6 +136,9 @@ void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes)
                 if (uvPrim != -1) {
                     primitive.vertices[i].uv_x = uvs[i].x;
                     primitive.vertices[i].uv_y = uvs[i].y;
+                }
+                if (colorPrim != -1) {
+                    primitive.vertices[i].color = colors[i];
                 }
             }
 
@@ -265,6 +278,46 @@ void traverseNodes(
     for (uint32_t i = 0; i < tgNode.children_count; i++) {
         traverseNodes(model, model.nodes[tgNode.children[i]], localTransform, impSceneNodes);
     }
+}
+
+std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& colorAcc)
+{
+    std::vector<glm::vec4> colors;
+
+    if (colorAcc.type == TG3_TYPE_VEC4) {
+        switch (colorAcc.component_type) {
+            case TG3_COMPONENT_TYPE_FLOAT:
+                colors = readPrimitiveAttribute<float, 4>(model, colorAcc);
+                break;
+            case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
+                colors = readPrimitiveAttribute<uint8_t, 4>(model, colorAcc);
+                break;
+            case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
+                colors = readPrimitiveAttribute<uint16_t, 4>(model, colorAcc);
+                break;
+        }
+    } else if (colorAcc.type == TG3_TYPE_VEC3) {
+        std::vector<glm::vec3> colorsV3;
+
+        switch (colorAcc.component_type) {
+            case TG3_COMPONENT_TYPE_FLOAT:
+                colorsV3 = readPrimitiveAttribute<float, 3>(model, colorAcc);
+                break;
+            case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
+                colorsV3 = readPrimitiveAttribute<uint8_t, 3>(model, colorAcc);
+                break;
+            case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
+                colorsV3 = readPrimitiveAttribute<uint16_t, 3>(model, colorAcc);
+                break;
+        }
+
+        colors.reserve(colorsV3.size());
+        for (const auto& colorV3 : colorsV3) {
+            colors.emplace_back(colorV3, 1.0f);
+        }
+    }
+
+    return colors;
 }
 
 ImportedScene vke::loadGltf(const std::filesystem::path& path)

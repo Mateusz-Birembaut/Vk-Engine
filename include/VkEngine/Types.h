@@ -59,7 +59,7 @@ struct Vertex {
     float uv_x{0.0f};
     glm::vec3 normal{};
     float uv_y{0.0f};
-    glm::vec4 color{};
+    glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 };
 
 struct Texture {

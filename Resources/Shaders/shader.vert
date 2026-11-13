@@ -30,6 +30,7 @@ layout ( push_constant ) uniform constants
 
 layout (location = 0) out vec2 uv;
 layout (location = 1) out vec3 normal;
+layout (location = 2) out vec4 vertColor;
 
 void main() {
     SceneData sData = SceneData(pc.sceneDataBufferAddr);
@@ -42,4 +43,5 @@ void main() {
 
     normal = vert.normal;
     uv = vec2(vert.uv_x, vert.uv_y);
+    vertColor = vert.color;
 }   
