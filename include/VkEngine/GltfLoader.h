@@ -36,7 +36,7 @@ struct Sampler {
 
 struct Image {
     FileData data;
-    ColorSpace colorSpace;
+    ColorSpace colorSpace{SRGB};
 };
 
 struct GltfTexture {
