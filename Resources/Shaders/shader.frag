@@ -10,7 +10,7 @@ struct Material{
     uint baseColorTextureIndex;
     uint baseColorTextureSampler;
     uint metallicRoughnessTextureIndex;
-    uint metallicRoughnessTextureSample;
+    uint metallicRoughnessTextureSampler;
     float metallicFactor;
     float roughnessFactor;
 };
