@@ -81,12 +81,28 @@ struct GPUMegaBuffer {
     GPUBuffer gpuBuffer{};
 };
 
-struct PushConstants {
-    uint64_t sceneDataBufferAddr{0};
-    uint32_t samplerIndex{0};
-    uint32_t baseColorTextureIndex{0};
+struct GPUMaterial {
     glm::vec4 baseColorFactor{1.0f, 1.0f, 1.0f, 1.0f};
+    uint32_t baseColorTextureIndex{};
+    uint32_t baseColorTextureSampler{};
+    uint32_t metallicRoughnessTextureIndex{};
+    uint32_t metallicRoughnessTextureSampler{};
+    float metallicFactor{1.0f};
+    float roughnessFactor{1.0f};
+};
+
+struct GPUMaterialInfo {
+    glm::vec4 baseColorFactor{1.0f, 1.0f, 1.0f, 1.0f};
+    Texture baseColorTexture{};
+    Texture metallicRoughnessTexture{};
+    float metallicFactor{1.0f};
+    float roughnessFactor{1.0f};
+};
+
+struct PushConstants {
     glm::mat4 model{1.0f};
+    uint64_t sceneDataBufferAddr{0};
+    uint32_t materialIndex{0};
 };
 
 struct RenderView {
@@ -98,13 +114,13 @@ struct SceneData {
     glm::mat4 view{1.0f};
     glm::mat4 proj{1.0f};
     uint64_t vertBuffAddress{0};
+    uint64_t materialBuffAdress{0};
 };
 
 struct RenderItem {
     glm::mat4 model{1.0f};
-    glm::vec4 baseColorFactor{1.0f, 1.0f, 1.0f, 1.0f};
     Handle<GPUMesh> meshHandle{};
-    Handle<GPUImage> baseColorHandle{};
+    Handle<GPUMaterial> materialHandle{};
 };
 
 } // namespace vke

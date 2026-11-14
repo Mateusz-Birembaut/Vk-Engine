@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <vector>
 
+#include "VkEngine/GltfLoader.h"
 #include "VkEngine/Helpers.h"
 #include "VkEngine/Pool.h"
 #include "VkEngine/Types.h"
@@ -18,6 +19,7 @@ public:
     VkDescriptorSetLayout descSetLayout() const;
     VkDescriptorSet descSet() const;
     uint64_t vertBuffAddr() const;
+    uint64_t matBuffAddr() const;
     VkBuffer indexBuffer() const;
     const vke::GPUImage* getDepthBuffer() const;
     const vke::GPUMesh* getMesh(const Handle<vke::GPUMesh>& meshHandle) const;
@@ -41,6 +43,8 @@ public:
     Handle<vke::GPUImage> createTexture(const vke::CPUImage& cpuImg);
 
     Handle<vke::GPUMesh> createGpuMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices);
+
+    Handle<vke::GPUMaterial> createMaterial(const vke::GPUMaterialInfo& matInfo);
 
     /**
      * @brief Creates a buffer visible by the host and the device
@@ -200,6 +204,7 @@ private:
     Pool<vke::GPUBuffer> m_gpuBuffs;
     Pool<vke::GPUMesh> m_gpuMeshes;
     std::vector<VkSampler> m_samplers;
+    Pool<vke::GPUMaterial> m_gpuMaterials;
 
     vke::GPUImage m_depthBuffer{};
 
@@ -208,6 +213,9 @@ private:
 
     const uint64_t indexMegaBuffCapacity{200000000};
     vke::GPUMegaBuffer m_indexMegaBuff{};
+
+    const uint64_t materialMegaBufferCapacity{sizeof(vke::GPUMaterial) * 10000};
+    vke::GPUMegaBuffer m_materialMegaBuffer{};
 
     const uint32_t m_maxTextureCount{1024};
     const uint32_t m_maxSamplerCount{16};

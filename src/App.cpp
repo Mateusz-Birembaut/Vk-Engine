@@ -60,12 +60,12 @@ void App::run()
 
     std::filesystem::path exeDir = SDL_GetBasePath();
     // const auto modelPath = exeDir / "Resources" / "Models" / "Box" / "Box.gltf";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
+    const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "city.glb";
-    const auto modelPath = exeDir / "Resources" / "Models" / "Cartoon_City_Free.glb";
+    //  const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
+    //  const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
+    //  const auto modelPath = exeDir / "Resources" / "Models" / "city.glb";
+    //  const auto modelPath = exeDir / "Resources" / "Models" / "Cartoon_City_Free.glb";
     const auto impScene = vke::loadGltf(modelPath);
 
     // stores for each mesh the handles of its primitives
@@ -73,6 +73,9 @@ void App::run()
 
     // stores each image handles
     std::vector<Handle<vke::GPUImage>> imageHandles(impScene.images.size());
+
+    // stores each material handles
+    std::vector<Handle<vke::GPUMaterial>> matHandles(impScene.materials.size());
 
     // upload each primitive for each mesh
     for (uint32_t IMesh = 0; IMesh < impScene.meshes.size(); IMesh++) {
@@ -85,6 +88,7 @@ void App::run()
         }
     }
 
+    // upload each image
     for (uint32_t IImage = 0; IImage < impScene.images.size(); IImage++) {
         const auto& imageData = impScene.images[IImage];
 
@@ -105,6 +109,47 @@ void App::run()
         }
     }
 
+    // upload each materials
+    for (uint32_t IMaterial = 0; IMaterial < impScene.materials.size(); IMaterial++) {
+        const auto& gltfMaterial = impScene.materials[IMaterial];
+
+        vke::GPUMaterialInfo materialCreateInfo{
+            .baseColorFactor = gltfMaterial.baseColorFactor,
+            .metallicFactor = gltfMaterial.metallicFactor,
+            .roughnessFactor = gltfMaterial.roughnessFactor,
+        };
+
+        if (gltfMaterial.baseColorTextureIndex == -1) {
+            materialCreateInfo.baseColorTexture = m_renderer->fallbackTexture();
+        } else {
+            int32_t imageIndex = impScene.textures[gltfMaterial.baseColorTextureIndex].imgIndex;
+            // int32_t samplerIndex = impScene.textures[gltfMaterial.baseColorTextureIndex].samplerIndex;
+            if (imageIndex >= 0) {
+                materialCreateInfo.baseColorTexture = {
+                    .imageHandle = imageHandles[imageIndex], .samplerIndex = 0 /*TODO : upload samplers*/
+                };
+            } else {
+                materialCreateInfo.baseColorTexture = m_renderer->fallbackTexture();
+            }
+        }
+
+        if (gltfMaterial.metallicRoughnessTextureIndex == -1) {
+            materialCreateInfo.metallicRoughnessTexture = m_renderer->fallbackTexture();
+        } else {
+            int32_t imageIndex = impScene.textures[gltfMaterial.metallicRoughnessTextureIndex].imgIndex;
+            // int32_t samplerIndex = impScene.textures[gltfMaterial.metallicRoughnessTextureIndex].samplerIndex;
+            if (imageIndex >= 0) {
+                materialCreateInfo.metallicRoughnessTexture = {
+                    .imageHandle = imageHandles[imageIndex], .samplerIndex = 0 /*TODO : upload samplers*/
+                };
+            } else {
+                materialCreateInfo.metallicRoughnessTexture = m_renderer->fallbackTexture();
+            }
+        }
+
+        matHandles[IMaterial] = m_renderer->createMaterial(materialCreateInfo);
+    }
+
     std::vector<vke::RenderItem> renderItems;
     renderItems.reserve(impScene.nodes.size());
 
@@ -123,26 +168,11 @@ void App::run()
             const auto& prim = mesh.primitives[IPrimHandles];
 
             if (prim.material != -1) {
-                const auto& primMaterial = impScene.materials[prim.material];
+                renderItems.emplace_back(node.transform, meshHandlesPrims[IPrimHandles], matHandles[prim.material]);
 
-                if (primMaterial.baseColorTextureIndex == -1) {
-                    renderItems.emplace_back(
-                        node.transform, primMaterial.baseColorFactor, meshHandlesPrims[IPrimHandles],
-                        Handle<vke::GPUImage>{}
-                    );
-                } else {
-                    uint32_t baseColorTextureIndex = static_cast<uint32_t>(primMaterial.baseColorTextureIndex);
-                    uint32_t imageIndex = impScene.textures[baseColorTextureIndex].imgIndex;
-
-                    renderItems.emplace_back(
-                        node.transform, primMaterial.baseColorFactor, meshHandlesPrims[IPrimHandles],
-                        imageHandles[imageIndex]
-                    );
-                }
             } else {
                 renderItems.emplace_back(
-                    node.transform, glm::vec4{1.0f, 1.0f, 1.0f, 1.0f}, meshHandlesPrims[IPrimHandles],
-                    Handle<vke::GPUImage>{}
+                    node.transform, meshHandlesPrims[IPrimHandles], m_renderer->fallbackMaterial()
                 );
             }
 

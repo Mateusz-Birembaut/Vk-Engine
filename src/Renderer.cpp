@@ -45,6 +45,10 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
     Handle<vke::GPUImage> whitePixelImgHandle = m_gpuResources.createTexture(whitePixel);
     uint32_t whitePixelSamplerId = m_gpuResources.getOrCreateSampler(); // for now create a basic sampler
     m_fallbackTexture = {whitePixelImgHandle, whitePixelSamplerId};
+
+    m_fallbackMaterial = m_gpuResources.createMaterial(
+        {.baseColorTexture = m_fallbackTexture, .metallicRoughnessTexture = m_fallbackTexture}
+    );
 }
 
 void Renderer::initPerFrameData()
@@ -202,6 +206,16 @@ vke::FrameData& Renderer::getCurrentFrame()
     return m_frames[m_frameNb % FRAMES_IN_FLIGHT];
 }
 
+vke::Texture Renderer::fallbackTexture() const
+{
+    return m_fallbackTexture;
+}
+
+Handle<vke::GPUMaterial> Renderer::fallbackMaterial() const
+{
+    return m_fallbackMaterial;
+}
+
 void Renderer::cleanup()
 {
     if (!m_ctx)
@@ -276,7 +290,10 @@ void Renderer::drawFrame(const std::span<vke::RenderItem>& renderItems, const vk
 
     // copy scene data to buffer
     vke::SceneData sceneData{
-        .view = RenderView.view, .proj = RenderView.proj, .vertBuffAddress = m_gpuResources.vertBuffAddr()
+        .view = RenderView.view,
+        .proj = RenderView.proj,
+        .vertBuffAddress = m_gpuResources.vertBuffAddr(),
+        .materialBuffAdress = m_gpuResources.matBuffAddr(),
     };
 
     memcpy(sceneBuffer->pMappedData, &sceneData, sizeof(vke::SceneData));
@@ -378,13 +395,10 @@ void Renderer::drawFrame(const std::span<vke::RenderItem>& renderItems, const vk
 
     vke::PushConstants pushConstants{
         .sceneDataBufferAddr = sceneBuffer->deviceAddress,
-        .samplerIndex = m_fallbackTexture.samplerIndex,
-        .baseColorTextureIndex = m_fallbackTexture.imageHandle.index,
     };
 
     for (const auto& renderItem : renderItems) {
-        pushConstants.baseColorTextureIndex = renderItem.baseColorHandle.index;
-        pushConstants.baseColorFactor = renderItem.baseColorFactor;
+        pushConstants.materialIndex = renderItem.materialHandle.index; // TODO check for validity before this
         pushConstants.model = renderItem.model;
 
         vkCmdPushConstants(
@@ -448,4 +462,9 @@ Handle<vke::GPUMesh> Renderer::createMesh(std::span<const vke::Vertex> vertices,
 Handle<vke::GPUImage> Renderer::createTexture(const vke::CPUImage& cpuImg)
 {
     return m_gpuResources.createTexture(cpuImg);
+}
+
+Handle<vke::GPUMaterial> Renderer::createMaterial(const vke::GPUMaterialInfo& material)
+{
+    return m_gpuResources.createMaterial(material);
 }

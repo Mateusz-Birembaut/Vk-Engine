@@ -27,7 +27,12 @@ public:
 
     Handle<vke::GPUImage> createTexture(const vke::CPUImage& cpuImg);
 
+    Handle<vke::GPUMaterial> createMaterial(const vke::GPUMaterialInfo& material);
+
     vke::FrameData& getCurrentFrame();
+
+    vke::Texture fallbackTexture() const;
+    Handle<vke::GPUMaterial> fallbackMaterial() const;
 
 private:
     void initPerFrameData();
@@ -48,9 +53,7 @@ private:
     VkClearColorValue m_clearColorValue{};
     VkClearDepthStencilValue m_clearDepthValue{.depth = 1.0f, .stencil = 0};
     vke::Texture m_fallbackTexture{};
-
-    Handle<vke::GPUMesh> m_testMesh;
-    Handle<vke::GPUMesh> m_testMesh2;
+    Handle<vke::GPUMaterial> m_fallbackMaterial{};
 
     GPUResources m_gpuResources;
     ResourceDestroyer m_resourceDestroyer;

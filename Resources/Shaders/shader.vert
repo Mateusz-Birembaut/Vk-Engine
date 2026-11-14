@@ -11,22 +11,22 @@ struct Vertex {
     vec4 color;
 };
 
-layout(buffer_reference, scalar) readonly buffer SceneData { 
-    mat4 view;
-    mat4 proj;
-    uint64_t vertBuffAddress;
-};
-
 layout(buffer_reference, scalar) readonly buffer VertexBuffer { Vertex vertices[]; };
 
 layout ( push_constant ) uniform constants
 {
-    uint64_t sceneDataBufferAddr;
-    uint samplerId;
-    uint baseColorTextureIndex;
-    vec4 baseColorFactor;
     mat4 model;
+    uint64_t sceneDataBufferAddr;
+    uint materialIndex;
 } pc;
+
+layout(buffer_reference, scalar) readonly buffer SceneData { 
+    mat4 view;
+    mat4 proj;
+    uint64_t vertBuffAddress;
+    uint64_t matBuffAddress;
+};
+
 
 layout (location = 0) out vec2 uv;
 layout (location = 1) out vec3 normal;

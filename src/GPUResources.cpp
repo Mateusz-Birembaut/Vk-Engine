@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <vk_mem_alloc.h>
 
+#include "VkEngine/GltfLoader.h"
 #include "VkEngine/Helpers.h"
 #include "VkEngine/VkInits.h"
 
@@ -41,6 +42,11 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
 
     m_indexMegaBuff =
         createMegaGPUBuffer(indexMegaBuffCapacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    m_materialMegaBuffer = createMegaGPUBuffer(
+        materialMegaBufferCapacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+    );
 }
 
 void GPUResources::initDescriptorPool(VkDevice device)
@@ -369,6 +375,66 @@ GPUResources::createGpuMesh(std::span<const vke::Vertex> vertices, std::span<con
     return m_gpuMeshes.create(std::move(gpuMesh));
 }
 
+Handle<vke::GPUMaterial> GPUResources::createMaterial(const vke::GPUMaterialInfo& matInfo)
+{
+    vke::GPUMaterial gpuMat{
+        .baseColorFactor = matInfo.baseColorFactor,
+        .baseColorTextureIndex = matInfo.baseColorTexture.imageHandle.index,
+        .baseColorTextureSampler = matInfo.baseColorTexture.samplerIndex,
+        .metallicRoughnessTextureIndex = matInfo.metallicRoughnessTexture.imageHandle.index,
+        .metallicRoughnessTextureSampler = matInfo.metallicRoughnessTexture.samplerIndex,
+        .metallicFactor = matInfo.metallicFactor,
+        .roughnessFactor = matInfo.roughnessFactor,
+    };
+
+    auto bytes = std::as_bytes(std::span<vke::GPUMaterial>{&gpuMat, 1});
+
+    vke::GPUBuffer stagingBuffer = createStagingBuffer(bytes.size_bytes());
+
+    copyToStagingBuffer(bytes, 0, stagingBuffer);
+
+    const auto materialHandle = m_gpuMaterials.create(std::move(gpuMat));
+
+    VkBufferCopy materialCopyRegion{
+        .srcOffset = 0,
+        .dstOffset = sizeof(vke::GPUMaterial) * materialHandle.index,
+        .size = bytes.size_bytes(),
+    };
+
+    immediateSubmit([&](VkCommandBuffer transientCmdBuff) {
+        vkCmdCopyBuffer(
+            transientCmdBuff, stagingBuffer.vkbuffer, m_materialMegaBuffer.gpuBuffer.vkbuffer, 1, &materialCopyRegion
+        );
+
+        VkBufferMemoryBarrier2 transferBarrier{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT,
+            .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+            .dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .buffer = m_materialMegaBuffer.gpuBuffer.vkbuffer,
+            .offset = materialCopyRegion.dstOffset,
+            .size = materialCopyRegion.size,
+        };
+
+        VkDependencyInfo transferDependencyInfo{
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .bufferMemoryBarrierCount = 1,
+            .pBufferMemoryBarriers = &transferBarrier,
+        };
+
+        vkCmdPipelineBarrier2(transientCmdBuff, &transferDependencyInfo);
+    });
+
+    vmaDestroyBuffer(
+        m_ctx->vmaAllocator(), stagingBuffer.vkbuffer, stagingBuffer.allocation
+    ); // safe to destroy since waited before
+
+    return materialHandle;
+}
+
 uint32_t GPUResources::getOrCreateSampler()
 {
     const auto device = m_ctx->device();
@@ -550,6 +616,7 @@ void GPUResources::cleanup()
     const auto vmaAllocator = m_ctx->vmaAllocator();
     const auto vertexBlock = m_vertexMegaBuff.block;
     const auto indexBlock = m_indexMegaBuff.block;
+    const auto materialBlock = m_materialMegaBuffer.block;
 
     vkDestroyCommandPool(device, m_transientBuffCmdPool, nullptr);
 
@@ -573,9 +640,11 @@ void GPUResources::cleanup()
 
     vmaDestroyVirtualBlock(vertexBlock);
     vmaDestroyVirtualBlock(indexBlock);
+    vmaDestroyVirtualBlock(materialBlock);
 
     vmaDestroyBuffer(vmaAllocator, m_vertexMegaBuff.gpuBuffer.vkbuffer, m_vertexMegaBuff.gpuBuffer.allocation);
     vmaDestroyBuffer(vmaAllocator, m_indexMegaBuff.gpuBuffer.vkbuffer, m_indexMegaBuff.gpuBuffer.allocation);
+    vmaDestroyBuffer(vmaAllocator, m_materialMegaBuffer.gpuBuffer.vkbuffer, m_materialMegaBuffer.gpuBuffer.allocation);
 
     vkDestroyDescriptorSetLayout(device, m_descSetLayout, nullptr);
     vkDestroyDescriptorPool(device, m_descPool, nullptr);
@@ -596,6 +665,11 @@ VkDescriptorSet GPUResources::descSet() const
 uint64_t GPUResources::vertBuffAddr() const
 {
     return m_vertexMegaBuff.gpuBuffer.deviceAddress;
+}
+
+uint64_t GPUResources::matBuffAddr() const
+{
+    return m_materialMegaBuffer.gpuBuffer.deviceAddress;
 }
 
 VkBuffer GPUResources::indexBuffer() const
