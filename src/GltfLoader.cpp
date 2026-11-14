@@ -243,10 +243,7 @@ void fillMaterialData(
             uint32_t modelTextureIndex = tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index;
             uint32_t modelImageIndex = model.textures[modelTextureIndex].source;
 
-            const auto& image = model.images[modelImageIndex];
-            image;
-
-            if (modelImageIndex >= 0 && modelImageIndex < impSceneImgs.size()) {
+            if (modelImageIndex < impSceneImgs.size()) {
                 impSceneImgs[modelImageIndex].colorSpace = LINEAR;
             }
         }
