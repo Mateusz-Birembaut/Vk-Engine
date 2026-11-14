@@ -65,7 +65,7 @@ void App::run()
     //  const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
     //  const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
     //  const auto modelPath = exeDir / "Resources" / "Models" / "city.glb";
-    //  const auto modelPath = exeDir / "Resources" / "Models" / "Cartoon_City_Free.glb";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "Cartoon_City_Free.glb";
     const auto impScene = vke::loadGltf(modelPath);
 
     // stores for each mesh the handles of its primitives

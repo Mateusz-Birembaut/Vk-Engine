@@ -6,7 +6,7 @@
 
 vke::RenderView CameraController::renderView() const
 {
-    return {m_camera.view(), m_camera.proj()};
+    return {m_camera.view(), m_camera.proj(), m_camera.pos()};
 }
 
 void CameraController::updateAspectRatio(float newAspectRatio)

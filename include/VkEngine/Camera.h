@@ -12,6 +12,7 @@ public:
 
     glm::mat4 view() const;
     glm::mat4 proj() const;
+    glm::vec3 pos() const;
 
     glm::vec3 fwrd() const;
     glm::vec3 right() const;

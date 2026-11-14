@@ -23,14 +23,17 @@ layout ( push_constant ) uniform constants
 layout(buffer_reference, scalar) readonly buffer SceneData { 
     mat4 view;
     mat4 proj;
+    vec3 cameraPos;
+    vec3 sunLightDir;
+    vec3 sunLightColor;
     uint64_t vertBuffAddress;
     uint64_t matBuffAddress;
 };
 
-
 layout (location = 0) out vec2 uv;
-layout (location = 1) out vec3 normal;
-layout (location = 2) out vec4 vertColor;
+layout (location = 1) out vec3 N;
+layout (location = 2) out vec4 vColor;
+layout (location = 3) out vec3 wPos;
 
 void main() {
     SceneData sData = SceneData(pc.sceneDataBufferAddr);
@@ -41,7 +44,11 @@ void main() {
     vec4 finalPosition = sData.proj * sData.view * pc.model * vec4(vert.position, 1.0);
     gl_Position = finalPosition;
 
-    normal = vert.normal;
+    mat4 normalMatrix = transpose(inverse(pc.model));
+
+    // for now compute normal matrix  in shader, TODO : if support of non uniform scales is maintained, move this to CPU on a per draw basis
+    N = normalize((normalMatrix * vec4(vert.normal, 0.0)).xyz); 
     uv = vec2(vert.uv_x, vert.uv_y);
-    vertColor = vert.color;
+    vColor = vert.color;
+    wPos = vec3(pc.model * vec4(vert.position, 1.0));
 }   

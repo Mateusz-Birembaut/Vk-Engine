@@ -292,6 +292,7 @@ void Renderer::drawFrame(const std::span<vke::RenderItem>& renderItems, const vk
     vke::SceneData sceneData{
         .view = RenderView.view,
         .proj = RenderView.proj,
+        .cameraPos = RenderView.pos,
         .vertBuffAddress = m_gpuResources.vertBuffAddr(),
         .materialBuffAdress = m_gpuResources.matBuffAddr(),
     };

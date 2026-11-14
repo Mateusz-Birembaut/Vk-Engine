@@ -24,6 +24,11 @@ glm::mat4 Camera::proj() const
     return m_proj;
 }
 
+glm::vec3 Camera::pos() const
+{
+    return m_pos;
+}
+
 glm::vec3 Camera::fwrd() const
 {
     const float x = std::cos(m_pitch) * std::cos(m_yaw);
