@@ -26,6 +26,7 @@ layout(buffer_reference, scalar) readonly buffer SceneData {
     vec3 cameraPos;
     vec3 sunLightDir;
     vec3 sunLightColor;
+    float sunIntensity;
     uint64_t vertBuffAddress;
     uint64_t matBuffAddress;
 };

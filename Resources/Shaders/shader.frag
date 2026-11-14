@@ -32,6 +32,7 @@ layout(buffer_reference, scalar) readonly buffer SceneData {
     vec3 cameraPos;
     vec3 sunLightDir;
     vec3 sunLightColor;
+    float sunIntensity;
     uint64_t vertBuffAddress;
     uint64_t matBuffAddress;
 };
@@ -71,14 +72,17 @@ void main() {
 
     // radiance for directionnal light like the sun
     vec3 wi = -sData.sunLightDir;
-    float attenuation = 1.0; // no attenuation for sun
-    vec3 radiance = sData.sunLightColor * attenuation;
+    float attenuation = 1.0f; // no attenuation for sun
+    vec3 radiance = sData.sunLightColor * sData.sunIntensity * attenuation;
 
     float cosTheta = max(dot(N, wi), 0.0);
 
     vec3 Lo = cookTerrance_brdf * radiance * cosTheta;
 
-    fragColor = vec4(Lo, surfaceColor.a);
+    float ambientFactor = 0.13; // later use a cubemap for now is ok 
+    vec3 ambient = surfaceColor.xyz * ambientFactor;
+
+    fragColor = vec4(Lo + ambient, surfaceColor.a);
 
 /*     
     vec4 metallicRoughness = texture(
