@@ -170,7 +170,7 @@ void fillNodesData(const tg3_model& model, std::vector<Node>& impSceneNodes)
     }
 }
 
-void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<FileData>& impSceneImgs)
+void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<Image>& impSceneImgs)
 {
     impSceneImgs.reserve(model.images_count);
 
@@ -181,20 +181,21 @@ void fillImagesData(const tg3_model& model, const std::filesystem::path& path, s
 
             auto imgData = readFile(pathImage);
             if (!imgData.has_value()) {
+                // for now error TODO : add fallback texture here ?
                 throw std::runtime_error("[GltfLoader] Couldn't read image bytes");
             }
 
-            impSceneImgs.push_back(std::move(imgData.value()));
+            auto& img = impSceneImgs.emplace_back();
+            img.data = std::move(imgData.value());
+
         } else {
             const auto& bufferView = model.buffer_views[image.buffer_view];
             const auto& buffer = model.buffers[bufferView.buffer];
 
-            FileData imgData{};
-            imgData.bytes.resize(bufferView.byte_length);
+            auto& img = impSceneImgs.emplace_back();
 
-            std::memcpy(imgData.bytes.data(), &buffer.data.data[bufferView.byte_offset], bufferView.byte_length);
-
-            impSceneImgs.push_back(std::move(imgData));
+            const auto* begin = &buffer.data.data[bufferView.byte_offset];
+            img.data.bytes.assign(begin, begin + bufferView.byte_length);
         }
     }
 }
@@ -228,12 +229,27 @@ void fillTexturesData(const tg3_model& model, std::vector<GltfTexture>& impScene
     }
 }
 
-void fillMaterialData(const tg3_model& model, std::vector<Material>& impSceneMaterials)
+void fillMaterialData(
+    const tg3_model& model, std::vector<Material>& impSceneMaterials, std::vector<Image>& impSceneImgs
+)
 {
     impSceneMaterials.reserve(model.materials_count);
 
     for (uint32_t IMaterial = 0; IMaterial < model.materials_count; IMaterial++) {
         const auto& tgMaterial = model.materials[IMaterial];
+
+        // if image is used in metallic_roughness_texture then update its color space
+        if (tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index != -1) {
+            uint32_t modelTextureIndex = tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index;
+            uint32_t modelImageIndex = model.textures[modelTextureIndex].source;
+
+            const auto& image = model.images[modelImageIndex];
+            image;
+
+            if (modelImageIndex >= 0 && modelImageIndex < impSceneImgs.size()) {
+                impSceneImgs[modelImageIndex].colorSpace = LINEAR;
+            }
+        }
 
         impSceneMaterials.push_back(
             Material{
@@ -341,7 +357,7 @@ ImportedScene vke::loadGltf(const std::filesystem::path& path)
 
     fillTexturesData(*model.get(), impScene.textures);
 
-    fillMaterialData(*model.get(), impScene.materials);
+    fillMaterialData(*model.get(), impScene.materials, impScene.images);
 
     return impScene;
 }

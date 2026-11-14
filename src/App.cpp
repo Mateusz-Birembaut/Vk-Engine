@@ -60,8 +60,8 @@ void App::run()
 
     std::filesystem::path exeDir = SDL_GetBasePath();
     // const auto modelPath = exeDir / "Resources" / "Models" / "Box" / "Box.gltf";
-    const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
+    const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
     //  const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
     //  const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
     //  const auto modelPath = exeDir / "Resources" / "Models" / "city.glb";
@@ -90,20 +90,20 @@ void App::run()
 
     // upload each image
     for (uint32_t IImage = 0; IImage < impScene.images.size(); IImage++) {
-        const auto& imageData = impScene.images[IImage];
+        const auto& img = impScene.images[IImage];
 
-        vke::CPUImage imgData{};
+        vke::CPUImage cpuImage{.colorSpace = img.colorSpace};
 
         // TODO do not use prefered channels
-        imgData.data = stbi_load_from_memory(
-            imageData.bytes.data(), static_cast<int>(imageData.bytes.size()), &imgData.width, &imgData.height,
-            &imgData.channels, 4
+        cpuImage.data = stbi_load_from_memory(
+            img.data.bytes.data(), static_cast<int>(img.data.bytes.size()), &cpuImage.width, &cpuImage.height,
+            &cpuImage.channels, 4
         );
 
-        if (imgData.data) {
-            imgData.channels = 4;
-            imageHandles[IImage] = m_renderer->createTexture(imgData);
-            stbi_image_free(imgData.data);
+        if (cpuImage.data) {
+            cpuImage.channels = 4;
+            imageHandles[IImage] = m_renderer->createTexture(cpuImage);
+            stbi_image_free(cpuImage.data);
         } else {
             throw std::runtime_error("[APP] Couldn't read image data");
         }

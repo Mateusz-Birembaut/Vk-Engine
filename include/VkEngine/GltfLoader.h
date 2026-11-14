@@ -7,11 +7,10 @@
 #include <optional>
 #include <tiny_gltf_v3.h>
 
+#include "VkEngine/FileReader.h"
 #include "VkEngine/Types.h"
 
 namespace vke {
-
-struct FileData;
 
 struct Primitive {
     std::vector<Vertex> vertices{};
@@ -35,6 +34,11 @@ struct Sampler {
     int32_t wrapT;
 };
 
+struct Image {
+    FileData data;
+    ColorSpace colorSpace;
+};
+
 struct GltfTexture {
     int32_t imgIndex{0};
     int32_t samplerIndex{0};
@@ -51,7 +55,7 @@ struct Material {
 struct ImportedScene {
     std::vector<Mesh> meshes;
     std::vector<Node> nodes;
-    std::vector<FileData> images;
+    std::vector<Image> images;
     std::vector<Sampler> samplers;
     std::vector<GltfTexture> textures;
     std::vector<Material> materials;
@@ -63,10 +67,12 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
 
 void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes);
 void fillNodesData(const tg3_model& model, std::vector<Node>& impSceneNodes);
-void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<FileData>& impSceneImgs);
+void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<Image>& impSceneImgs);
 void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampler);
 void fillTexturesData(const tg3_model& model, std::vector<GltfTexture>& impSceneTextures);
-void fillMaterialData(const tg3_model& model, std::vector<Material>& impSceneMaterials);
+void fillMaterialData(
+    const tg3_model& model, std::vector<Material>& impSceneMaterials, std::vector<Image>& impSceneImgs
+);
 
 void traverseNodes(
     const tg3_model& model, const tg3_node& node, const glm::mat4& parentTransform, std::vector<Node>& impSceneNodes

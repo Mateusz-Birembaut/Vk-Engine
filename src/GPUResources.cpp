@@ -269,10 +269,12 @@ Handle<vke::GPUImage> GPUResources::createTexture(const vke::CPUImage& cpuImg)
         .width = static_cast<uint32_t>(cpuImg.width), .height = static_cast<uint32_t>(cpuImg.height), .depth = 1
     };
 
+    VkFormat format = (cpuImg.colorSpace == vke::RGB) ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+
     // image and view creation
-    // TODO : check for best format
+    // TODO : check for best format (only color space changes for now)
     vke::GPUImage gpuImage = create2dGpuImage(
-        VK_FORMAT_R8G8B8A8_SRGB, {.width = imgExtent.width, .height = imgExtent.height},
+        format, {.width = imgExtent.width, .height = imgExtent.height},
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT
     );
 

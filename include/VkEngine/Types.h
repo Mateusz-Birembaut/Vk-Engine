@@ -29,11 +29,14 @@ struct FrameData {
     Handle<GPUBuffer> sceneDataBuffHandle{};
 };
 
+enum ColorSpace { RGB, LINEAR };
+
 struct CPUImage {
     int width{0};
     int height{0};
     int channels{4};
     unsigned char* data{nullptr};
+    ColorSpace colorSpace{RGB};
 
     /// @return Size of image in bytes
     size_t sizeBytes() const
