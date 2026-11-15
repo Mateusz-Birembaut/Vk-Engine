@@ -32,7 +32,7 @@ public:
     void init(VulkanCtx* pVulkanCtx);
 
     /**
-     * @brief Create a 2D R8G8B8A8_SRGB image stored vram for the given img data
+     * @brief Create a 2D R8G8B8A8_SRGB image stored in VRAM for the given img data
      *
      * @attention Image channels must be 4, blocks CPU (waits for upload to end)
      *
@@ -42,8 +42,34 @@ public:
      */
     Handle<vke::GPUImage> createTexture(const vke::CPUImage& cpuImg);
 
+    /**
+     * @brief Create a Mesh stored in VRAM for the given vertices and indices
+     *
+     * Vertices are stored in a VRAM buffer containing all vertices, same for indices.
+     *
+     * First allocate memory in a VMA virtual block (each buffer has it's own block),
+     * doing this checks whether we have the space for the upload
+     * and where to upload (what index offset / vertex offset)
+     *
+     * Upload to VRAM using a staging buffer
+     *
+     * @attention blocks CPU (waits for upload to end)
+     *
+     * @return Handle of the created Mesh { gpuImage index, gen }
+     */
     Handle<vke::GPUMesh> createGpuMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices);
 
+    /**
+     * @brief Create a Material stored in VRAM containing PBR data
+     *
+     * Material is added to the pool first to know where to rewrite
+     * then data is written via staging buffer
+     *
+     * @attention blocks CPU (waits for upload to end)
+     *
+     * @return Handle of the created Material { gpuImage index, gen }
+     *
+     */
     Handle<vke::GPUMaterial> createMaterial(const vke::GPUMaterialInfo& matInfo);
 
     /**
@@ -215,7 +241,7 @@ private:
     vke::GPUMegaBuffer m_indexMegaBuff{};
 
     const uint64_t materialMegaBufferCapacity{sizeof(vke::GPUMaterial) * 10000};
-    vke::GPUMegaBuffer m_materialMegaBuffer{};
+    vke::GPUBuffer m_materialMegaBuffer{};
 
     const uint32_t m_maxTextureCount{1024};
     const uint32_t m_maxSamplerCount{16};
