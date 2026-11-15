@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL_keyboard.h>
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/vec3.hpp>
 
 vke::RenderView CameraController::renderView() const

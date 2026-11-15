@@ -1,5 +1,6 @@
 #include "VkEngine/GltfLoader.h"
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
