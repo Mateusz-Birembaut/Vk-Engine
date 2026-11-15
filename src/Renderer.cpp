@@ -87,7 +87,7 @@ void Renderer::initPerFrameData()
         m_resourceDestroyer.push(m_frames[IFrame].swapchainSem);
 
         // scene data buffer
-        m_frames[IFrame].sceneDataBuffHandle = m_gpuResources.createMappedStorageBuffer(sizeof(vke::SceneData));
+        m_frames[IFrame].sceneDataBuffHandle = m_gpuResources.createMappedBuffer(sizeof(vke::SceneData));
     }
 }
 

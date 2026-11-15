@@ -43,9 +43,11 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
     m_indexMegaBuff =
         createMegaGPUBuffer(indexMegaBuffCapacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-    m_materialMegaBuffer = createMegaGPUBuffer(
-        materialMegaBufferCapacity, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+    m_materialMegaBuffer = createBuffer(
+        materialMegaBufferCapacity,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        {.usage = VMA_MEMORY_USAGE_AUTO}
     );
 }
 
@@ -183,7 +185,7 @@ vke::GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
     return createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, stagingBufferAllocInfo);
 }
 
-Handle<vke::GPUBuffer> GPUResources::createMappedStorageBuffer(const uint64_t size)
+Handle<vke::GPUBuffer> GPUResources::createMappedBuffer(const uint64_t size)
 {
     VmaAllocationCreateInfo stagingBufferAllocInfo{
         .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -395,6 +397,7 @@ Handle<vke::GPUMaterial> GPUResources::createMaterial(const vke::GPUMaterialInfo
 
     copyToStagingBuffer(bytes, 0, stagingBuffer);
 
+    // create mat handle here to know at which index to write its data
     const auto materialHandle = m_gpuMaterials.create(std::move(gpuMat));
 
     VkBufferCopy materialCopyRegion{
@@ -405,7 +408,7 @@ Handle<vke::GPUMaterial> GPUResources::createMaterial(const vke::GPUMaterialInfo
 
     immediateSubmit([&](VkCommandBuffer transientCmdBuff) {
         vkCmdCopyBuffer(
-            transientCmdBuff, stagingBuffer.vkbuffer, m_materialMegaBuffer.gpuBuffer.vkbuffer, 1, &materialCopyRegion
+            transientCmdBuff, stagingBuffer.vkbuffer, m_materialMegaBuffer.vkbuffer, 1, &materialCopyRegion
         );
 
         VkBufferMemoryBarrier2 transferBarrier{
@@ -416,7 +419,7 @@ Handle<vke::GPUMaterial> GPUResources::createMaterial(const vke::GPUMaterialInfo
             .dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .buffer = m_materialMegaBuffer.gpuBuffer.vkbuffer,
+            .buffer = m_materialMegaBuffer.vkbuffer,
             .offset = materialCopyRegion.dstOffset,
             .size = materialCopyRegion.size,
         };
@@ -618,7 +621,6 @@ void GPUResources::cleanup()
     const auto vmaAllocator = m_ctx->vmaAllocator();
     const auto vertexBlock = m_vertexMegaBuff.block;
     const auto indexBlock = m_indexMegaBuff.block;
-    const auto materialBlock = m_materialMegaBuffer.block;
 
     vkDestroyCommandPool(device, m_transientBuffCmdPool, nullptr);
 
@@ -642,11 +644,11 @@ void GPUResources::cleanup()
 
     vmaDestroyVirtualBlock(vertexBlock);
     vmaDestroyVirtualBlock(indexBlock);
-    vmaDestroyVirtualBlock(materialBlock);
 
     vmaDestroyBuffer(vmaAllocator, m_vertexMegaBuff.gpuBuffer.vkbuffer, m_vertexMegaBuff.gpuBuffer.allocation);
     vmaDestroyBuffer(vmaAllocator, m_indexMegaBuff.gpuBuffer.vkbuffer, m_indexMegaBuff.gpuBuffer.allocation);
-    vmaDestroyBuffer(vmaAllocator, m_materialMegaBuffer.gpuBuffer.vkbuffer, m_materialMegaBuffer.gpuBuffer.allocation);
+
+    vmaDestroyBuffer(vmaAllocator, m_materialMegaBuffer.vkbuffer, m_materialMegaBuffer.allocation);
 
     vkDestroyDescriptorSetLayout(device, m_descSetLayout, nullptr);
     vkDestroyDescriptorPool(device, m_descPool, nullptr);
@@ -671,7 +673,7 @@ uint64_t GPUResources::vertBuffAddr() const
 
 uint64_t GPUResources::matBuffAddr() const
 {
-    return m_materialMegaBuffer.gpuBuffer.deviceAddress;
+    return m_materialMegaBuffer.deviceAddress;
 }
 
 VkBuffer GPUResources::indexBuffer() const
