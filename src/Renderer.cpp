@@ -31,10 +31,10 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
     createRenderSems();
     initGraphicsPipeline();
 
-    m_clearColorValue.float32[0] = 0.0f; // R
-    m_clearColorValue.float32[1] = 0.2f; // G
-    m_clearColorValue.float32[2] = 0.4f; // B
-    m_clearColorValue.float32[3] = 1.0f; // A
+    m_clearColorValue.float32[0] = 0.0f;      // R (0.0)
+    m_clearColorValue.float32[1] = 0.033105f; // G (0.2 sRGB)
+    m_clearColorValue.float32[2] = 0.132868f; // B (0.4 sRGB)
+    m_clearColorValue.float32[3] = 1.0f;      // A
 
     // for now load fallback texture here
     uint32_t whitePixelData = 0xFFFFFFFF; // RGBA

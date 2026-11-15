@@ -195,7 +195,7 @@ void VulkanCtx::createSwapchain()
     auto swap_ret =
         swapchainBuilder.set_old_swapchain(m_swapchain)
             .set_desired_format(
-                VkSurfaceFormatKHR{.format = VK_FORMAT_B8G8R8A8_UNORM, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}
+                VkSurfaceFormatKHR{.format = VK_FORMAT_B8G8R8A8_SRGB, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}
             )
             .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
             .set_desired_extent(extent.width, extent.height)
