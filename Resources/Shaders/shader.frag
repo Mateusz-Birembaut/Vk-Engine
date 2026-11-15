@@ -73,6 +73,10 @@ vec3 F_S(vec3 H, vec3 V, vec3 F0){
     return F0 + (1 - F0) * pow(1 - (max(dot(H, V), 0.0)), 5);
 };
 
+vec3 reinhardToneMapping(vec3 v){
+    return v / (1.0f + v);
+}
+
 void main() {
     SceneData sData = SceneData(pc.sceneDataBufferAddr);
     MaterialBuffer mbuff = MaterialBuffer(sData.matBuffAddress);
@@ -139,7 +143,7 @@ void main() {
     float cosTheta = max(dot(N, L), 0.0);
     vec3 Lo = brdf * radiance * cosTheta;
 
-    fragColor = vec4(Lo + ambient, surfaceColor.a);
+    fragColor = vec4(reinhardToneMapping(Lo + ambient), surfaceColor.a);
 
     //fragColor = vec4(normal * 0.5 + 0.5, 1.0f); 
 }
