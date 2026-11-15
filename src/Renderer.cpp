@@ -31,20 +31,16 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
     createRenderSems();
     initGraphicsPipeline();
 
-    m_clearColorValue.float32[0] = 0.0f;      // R (0.0)
-    m_clearColorValue.float32[1] = 0.033105f; // G (0.2 sRGB)
-    m_clearColorValue.float32[2] = 0.132868f; // B (0.4 sRGB)
-    m_clearColorValue.float32[3] = 1.0f;      // A
-
     // for now load fallback texture here
     uint32_t whitePixelData = 0xFFFFFFFF; // RGBA
     vke::CPUImage whitePixel{
         .width = 1, .height = 1, .channels = 4, .data = reinterpret_cast<unsigned char*>(&whitePixelData)
     };
 
-    Handle<vke::GPUImage> whitePixelImgHandle = m_gpuResources.createTexture(whitePixel);
-    uint32_t whitePixelSamplerId = m_gpuResources.getOrCreateSampler(); // for now create a basic sampler
-    m_fallbackTexture = {whitePixelImgHandle, whitePixelSamplerId};
+    Handle<vke::GPUImage> fallBackImageHandle = m_gpuResources.createTexture(whitePixel);
+    uint32_t fallBackSamplerIndex = m_gpuResources.getOrCreateSampler(); // for now create a basic sampler
+
+    m_fallbackTexture = {fallBackImageHandle, fallBackSamplerIndex};
 
     m_fallbackMaterial = m_gpuResources.createMaterial(
         {.baseColorTexture = m_fallbackTexture, .metallicRoughnessTexture = m_fallbackTexture}

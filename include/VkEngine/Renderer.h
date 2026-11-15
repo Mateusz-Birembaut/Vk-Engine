@@ -50,8 +50,16 @@ private:
 
     std::vector<VkSemaphore> m_renderSems; // 1 per swapchain image
 
-    VkClearColorValue m_clearColorValue{};
+    VkClearColorValue m_clearColorValue{
+        .float32 = {
+            0.0f,      // R (0.0)
+            0.033105f, // G (0.2 sRGB)
+            0.132868f, // B (0.4 sRGB)
+            1.0f,      // A
+        }
+    };
     VkClearDepthStencilValue m_clearDepthValue{.depth = 1.0f, .stencil = 0};
+
     vke::Texture m_fallbackTexture{};
     Handle<vke::GPUMaterial> m_fallbackMaterial{};
 

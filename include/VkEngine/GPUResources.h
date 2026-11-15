@@ -229,8 +229,9 @@ private:
     Pool<vke::GPUImage> m_gpuImgs;
     Pool<vke::GPUBuffer> m_gpuBuffs;
     Pool<vke::GPUMesh> m_gpuMeshes;
-    std::vector<VkSampler> m_samplers;
     Pool<vke::GPUMaterial> m_gpuMaterials;
+
+    std::vector<VkSampler> m_samplers;
 
     vke::GPUImage m_depthBuffer{};
 
