@@ -61,7 +61,7 @@ void App::run()
 
     std::filesystem::path exeDir = SDL_GetBasePath();
     // const auto modelPath = exeDir / "Resources" / "Models" / "Box" / "Box.gltf";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "AntiqueCamera.glb";
     const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "london_loop.glb";
@@ -79,10 +79,10 @@ void App::run()
 
     // upload each primitive for each mesh
     for (uint32_t IMesh = 0; IMesh < impScene.meshes.size(); IMesh++) {
-        const vke::Mesh& mesh = impScene.meshes[IMesh];
+        const vke::gltf::Mesh& mesh = impScene.meshes[IMesh];
 
         for (uint32_t IPrim = 0; IPrim < mesh.primitives.size(); IPrim++) {
-            const vke::Primitive& prim = mesh.primitives[IPrim];
+            const vke::gltf::Primitive& prim = mesh.primitives[IPrim];
 
             meshHandles[IMesh].push_back(m_renderer->createMesh(prim.vertices, prim.indices));
         }

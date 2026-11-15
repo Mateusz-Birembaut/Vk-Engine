@@ -12,6 +12,7 @@
 
 namespace vke {
 
+namespace gltf {
 struct Primitive {
     std::vector<Vertex> vertices{};
     std::vector<uint32_t> indices{};
@@ -39,7 +40,7 @@ struct Image {
     ColorSpace colorSpace{SRGB};
 };
 
-struct GltfTexture {
+struct Texture {
     int32_t imgIndex{0};
     int32_t samplerIndex{0};
 };
@@ -57,25 +58,27 @@ struct ImportedScene {
     std::vector<Node> nodes;
     std::vector<Image> images;
     std::vector<Sampler> samplers;
-    std::vector<GltfTexture> textures;
+    std::vector<Texture> textures;
     std::vector<Material> materials;
 };
+}; // namespace gltf
 
-ImportedScene loadGltf(const std::filesystem::path& path);
+gltf::ImportedScene loadGltf(const std::filesystem::path& path);
 
 std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path);
 
-void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes);
-void fillNodesData(const tg3_model& model, std::vector<Node>& impSceneNodes);
-void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<Image>& impSceneImgs);
-void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampler);
-void fillTexturesData(const tg3_model& model, std::vector<GltfTexture>& impSceneTextures);
+void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMeshes);
+void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNodes);
+void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<gltf::Image>& impSceneImgs);
+void fillSamplerData(const tg3_model& model, std::vector<gltf::Sampler>& impSceneSampler);
+void fillTexturesData(const tg3_model& model, std::vector<gltf::Texture>& impSceneTextures);
 void fillMaterialData(
-    const tg3_model& model, std::vector<Material>& impSceneMaterials, std::vector<Image>& impSceneImgs
+    const tg3_model& model, std::vector<gltf::Material>& impSceneMaterials, std::vector<gltf::Image>& impSceneImgs
 );
 
 void traverseNodes(
-    const tg3_model& model, const tg3_node& node, const glm::mat4& parentTransform, std::vector<Node>& impSceneNodes
+    const tg3_model& model, const tg3_node& node, const glm::mat4& parentTransform,
+    std::vector<gltf::Node>& impSceneNodes
 );
 
 template <typename SRC, size_t Count>
@@ -97,18 +100,18 @@ std::vector<glm::vec<Count, float>> readPrimitiveAttribute(const tg3_model& mode
 
     glm::vec<Count, SRC> value{};
 
-    for (size_t i = 0; i < elementCount; i++) {
-        std::memcpy(&value, &buffer.data.data[byteOffset + i * byteStride], bytesSrc);
+    for (size_t IElement = 0; IElement < elementCount; IElement++) {
+        std::memcpy(&value, &buffer.data.data[byteOffset + IElement * byteStride], bytesSrc);
 
         data.push_back(static_cast<glm::vec<Count, float>>(value));
 
         if (acc.normalized) {
             if constexpr (std::is_signed_v<SRC>) {
-                for (glm::length_t j = 0; j < Count; j++) {
-                    data[i][j] = std::max(data[i][j] / std::numeric_limits<SRC>::max(), -1.0f);
+                for (glm::length_t IValue = 0; IValue < Count; IValue++) {
+                    data[IElement][IValue] = std::max(data[IElement][IValue] / std::numeric_limits<SRC>::max(), -1.0f);
                 }
             } else {
-                data[i] /= static_cast<float>(std::numeric_limits<SRC>::max());
+                data[IElement] /= static_cast<float>(std::numeric_limits<SRC>::max());
             }
         }
     }
@@ -120,17 +123,17 @@ template <typename SRC> std::vector<uint32_t> readIndices(const tg3_model& model
     auto bufferView = model.buffer_views[acc.buffer_view];
     auto buffer = model.buffers[bufferView.buffer];
 
-    size_t elementCount = static_cast<size_t>(acc.count);
+    size_t indexCount = static_cast<size_t>(acc.count);
 
     std::vector<uint32_t> indices;
-    indices.reserve(elementCount);
+    indices.reserve(indexCount);
 
     size_t byteOffset = static_cast<size_t>(bufferView.byte_offset + acc.byte_offset);
     size_t bytePerIndex = sizeof(SRC);
 
     SRC value{};
-    for (size_t i = 0; i < elementCount; i++) {
-        std::memcpy(&value, &buffer.data.data[byteOffset + i * bytePerIndex], bytePerIndex);
+    for (size_t IIndex = 0; IIndex < indexCount; IIndex++) {
+        std::memcpy(&value, &buffer.data.data[byteOffset + IIndex * bytePerIndex], bytePerIndex);
         indices.push_back(static_cast<uint32_t>(value));
     }
     return indices;

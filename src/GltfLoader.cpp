@@ -27,8 +27,8 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
 
     tg3_error_code err = tg3_parse_file(model.get(), errors.get(), pathCstr, pathSize, &opts);
     if (err != TG3_OK) {
-        for (uint32_t i = 0; i < errors.count(); i++) {
-            const tg3_error_entry* errEntry = errors.entry(i);
+        for (uint32_t IError = 0; IError < errors.count(); IError++) {
+            const tg3_error_entry* errEntry = errors.entry(IError);
             fprintf(stderr, "[%d] %s\n", (int) errEntry->severity, errEntry->message ? errEntry->message : "(null)");
         }
         return std::nullopt;
@@ -37,21 +37,21 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
     return model;
 }
 
-void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes)
+void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMeshes)
 {
-    uint32_t meshesCount = model.meshes_count;
+    uint32_t meshCount = model.meshes_count;
 
-    impSceneMeshes.reserve(meshesCount);
+    impSceneMeshes.reserve(meshCount);
 
-    for (uint32_t IMesh = 0; IMesh < meshesCount; ++IMesh) {
-        vke::Mesh mesh{};
+    for (uint32_t IMesh = 0; IMesh < meshCount; ++IMesh) {
+        vke::gltf::Mesh mesh{};
         const tg3_mesh& tgMesh = model.meshes[IMesh];
 
         uint32_t primitivesCount = model.meshes[IMesh].primitives_count;
         mesh.primitives.reserve(primitivesCount);
 
         for (uint32_t IPrim = 0; IPrim < primitivesCount; ++IPrim) {
-            vke::Primitive primitive{};
+            vke::gltf::Primitive primitive{};
 
             const tg3_primitive& tgPrim = tgMesh.primitives[IPrim];
 
@@ -129,29 +129,29 @@ void fillMeshesData(const tg3_model& model, std::vector<Mesh>& impSceneMeshes)
             primitive.vertices.resize(positions.size());
 
             // fill vertices data
-            for (size_t i = 0; i < positions.size(); i++) {
-                primitive.vertices[i].position = positions[i];
+            for (size_t IVertex = 0; IVertex < positions.size(); IVertex++) {
+                primitive.vertices[IVertex].position = positions[IVertex];
                 if (normalPrim != -1) {
-                    primitive.vertices[i].normal = normals[i];
+                    primitive.vertices[IVertex].normal = normals[IVertex];
                 }
                 if (uvPrim != -1) {
-                    primitive.vertices[i].uv_x = uvs[i].x;
-                    primitive.vertices[i].uv_y = uvs[i].y;
+                    primitive.vertices[IVertex].uv_x = uvs[IVertex].x;
+                    primitive.vertices[IVertex].uv_y = uvs[IVertex].y;
                 }
                 if (colorPrim != -1) {
-                    primitive.vertices[i].color = colors[i];
+                    primitive.vertices[IVertex].color = colors[IVertex];
                 }
             }
 
             // add primitive to mesh
-            mesh.primitives.push_back(std::move(primitive)); // prevent copy with move
+            mesh.primitives.push_back(std::move(primitive));
         }
 
-        impSceneMeshes.push_back(std::move(mesh)); // add mesh to scene meshes, prevent copy with move
+        impSceneMeshes.push_back(std::move(mesh));
     }
 }
 
-void fillNodesData(const tg3_model& model, std::vector<Node>& impSceneNodes)
+void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNodes)
 {
     impSceneNodes.reserve(model.nodes_count);
 
@@ -171,7 +171,7 @@ void fillNodesData(const tg3_model& model, std::vector<Node>& impSceneNodes)
     }
 }
 
-void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<Image>& impSceneImgs)
+void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<gltf::Image>& impSceneImgs)
 {
     impSceneImgs.reserve(model.images_count);
 
@@ -201,14 +201,14 @@ void fillImagesData(const tg3_model& model, const std::filesystem::path& path, s
     }
 }
 
-void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampler)
+void fillSamplerData(const tg3_model& model, std::vector<gltf::Sampler>& impSceneSampler)
 {
     impSceneSampler.reserve(model.samplers_count);
 
     for (uint32_t ISampler = 0; ISampler < model.samplers_count; ISampler++) {
         const auto& sampler = model.samplers[ISampler];
         impSceneSampler.push_back(
-            Sampler{
+            gltf::Sampler{
                 .minFilter = sampler.min_filter,
                 .magFilter = sampler.mag_filter,
                 .wrapS = sampler.wrap_s,
@@ -218,7 +218,7 @@ void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampl
     }
 }
 
-void fillTexturesData(const tg3_model& model, std::vector<GltfTexture>& impSceneTextures)
+void fillTexturesData(const tg3_model& model, std::vector<gltf::Texture>& impSceneTextures)
 {
     impSceneTextures.reserve(model.textures_count);
 
@@ -226,12 +226,12 @@ void fillTexturesData(const tg3_model& model, std::vector<GltfTexture>& impScene
         const auto& texture = model.textures[ITexture];
         // if source -1 still aded but not handled
         // if sampler -1 use a default sampler with repeat both on axis
-        impSceneTextures.push_back(GltfTexture{.imgIndex = texture.source, .samplerIndex = texture.sampler});
+        impSceneTextures.push_back(gltf::Texture{.imgIndex = texture.source, .samplerIndex = texture.sampler});
     }
 }
 
 void fillMaterialData(
-    const tg3_model& model, std::vector<Material>& impSceneMaterials, std::vector<Image>& impSceneImgs
+    const tg3_model& model, std::vector<gltf::Material>& impSceneMaterials, std::vector<gltf::Image>& impSceneImgs
 )
 {
     impSceneMaterials.reserve(model.materials_count);
@@ -250,7 +250,7 @@ void fillMaterialData(
         }
 
         impSceneMaterials.push_back(
-            Material{
+            gltf::Material{
                 .baseColorFactor = glm::vec4(glm::make_vec4(tgMaterial.pbr_metallic_roughness.base_color_factor)),
                 .baseColorTextureIndex = tgMaterial.pbr_metallic_roughness.base_color_texture.index,
                 .metallicFactor = static_cast<float>(tgMaterial.pbr_metallic_roughness.metallic_factor),
@@ -262,7 +262,8 @@ void fillMaterialData(
 }
 
 void traverseNodes(
-    const tg3_model& model, const tg3_node& tgNode, const glm::mat4& parentTransform, std::vector<Node>& impSceneNodes
+    const tg3_model& model, const tg3_node& tgNode, const glm::mat4& parentTransform,
+    std::vector<gltf::Node>& impSceneNodes
 )
 {
     glm::mat4 localTransform{1.0f};
@@ -289,8 +290,8 @@ void traverseNodes(
         impSceneNodes.emplace_back(tgNode.mesh, localTransform);
     }
 
-    for (uint32_t i = 0; i < tgNode.children_count; i++) {
-        traverseNodes(model, model.nodes[tgNode.children[i]], localTransform, impSceneNodes);
+    for (uint32_t IChild = 0; IChild < tgNode.children_count; IChild++) {
+        traverseNodes(model, model.nodes[tgNode.children[IChild]], localTransform, impSceneNodes);
     }
 }
 
@@ -334,11 +335,11 @@ std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& co
     return colors;
 }
 
-ImportedScene vke::loadGltf(const std::filesystem::path& path)
+gltf::ImportedScene vke::loadGltf(const std::filesystem::path& path)
 {
-    ImportedScene impScene{};
+    gltf::ImportedScene impScene{};
 
-    // load tiny gltf 3 model from path
+    // load tiny gltf 3 model from path, RAII wrapper
     auto modelLoaded = loadGltfModel(path);
     if (!modelLoaded.has_value()) {
         return {};
