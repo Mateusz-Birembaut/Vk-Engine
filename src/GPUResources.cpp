@@ -7,9 +7,10 @@
 #include <stdexcept>
 #include <vk_mem_alloc.h>
 
-#include "VkEngine/GltfLoader.h"
 #include "VkEngine/Helpers.h"
 #include "VkEngine/VkInits.h"
+
+namespace vke {
 
 void GPUResources::init(VulkanCtx* pVulkanCtx)
 {
@@ -22,9 +23,9 @@ void GPUResources::init(VulkanCtx* pVulkanCtx)
 
     // setup command pool for transfers
     VkCommandPoolCreateInfo transientBuffCmdPoolInfo =
-        vke::cmdPoolCreateInfo(m_ctx->graphicsQueueFamily(), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+        cmdPoolCreateInfo(m_ctx->graphicsQueueFamily(), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
-    vke::check(
+    check(
         vkCreateCommandPool(device, &transientBuffCmdPoolInfo, nullptr, &m_transientBuffCmdPool),
         "[GPUResources] Init : Failed to create command pool for transient buffers"
     );
@@ -72,7 +73,7 @@ void GPUResources::initDescriptorPool(VkDevice device)
         .pPoolSizes = poolSizes.data(),
     };
 
-    vke::check(
+    check(
         vkCreateDescriptorPool(device, &poolInfo, nullptr, &m_descPool),
         "[GPUResources] Failed to create descriptor pool"
     );
@@ -116,7 +117,7 @@ void GPUResources::initDescriptorSetLayout(VkDevice device)
         .pBindings = layoutBindings.data(),
     };
 
-    vke::check(
+    check(
         vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &m_descSetLayout),
         "[GPUResources] Failed to create descriptor set layout"
     );
@@ -131,22 +132,22 @@ void GPUResources::initDescriptorSet(VkDevice device)
         .pSetLayouts = &m_descSetLayout,
     };
 
-    vke::check(
+    check(
         vkAllocateDescriptorSets(device, &descSetAllocInfo, &m_descSet),
         "[GPUResources] Failed to allocate descriptor set"
     );
 }
 
-vke::GPUBuffer GPUResources::createBuffer(
+GPUBuffer GPUResources::createBuffer(
     const uint64_t size, VkBufferUsageFlags usage, const VmaAllocationCreateInfo& allocCreateInfo
 )
 {
-    vke::GPUBuffer gpuBuff;
-    VkBufferCreateInfo stagingBufferCreateInfo = vke::bufferCreateInfo(size, usage);
+    GPUBuffer gpuBuff;
+    VkBufferCreateInfo stagingBufferCreateInfo = bufferCreateInfo(size, usage);
     VmaAllocationInfo allocInfo;
 
     if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-        vke::check(
+        check(
             vmaCreateBufferWithAlignment(
                 m_ctx->vmaAllocator(), &stagingBufferCreateInfo, &allocCreateInfo,
                 16, // buffer device address must be aligned to 16 bytes to be read by shader
@@ -159,7 +160,7 @@ vke::GPUBuffer GPUResources::createBuffer(
 
         gpuBuff.deviceAddress = vkGetBufferDeviceAddress(m_ctx->device(), &address_info);
     } else {
-        vke::check(
+        check(
             vmaCreateBuffer(
                 m_ctx->vmaAllocator(), &stagingBufferCreateInfo, &allocCreateInfo, &gpuBuff.vkbuffer,
                 &gpuBuff.allocation, &allocInfo
@@ -175,7 +176,7 @@ vke::GPUBuffer GPUResources::createBuffer(
     return gpuBuff;
 }
 
-vke::GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
+GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
 {
     VmaAllocationCreateInfo stagingBufferAllocInfo{
         .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
@@ -185,7 +186,7 @@ vke::GPUBuffer GPUResources::createStagingBuffer(const uint64_t size)
     return createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, stagingBufferAllocInfo);
 }
 
-Handle<vke::GPUBuffer> GPUResources::createMappedBuffer(const uint64_t size)
+Handle<GPUBuffer> GPUResources::createMappedBuffer(const uint64_t size)
 {
     VmaAllocationCreateInfo stagingBufferAllocInfo{
         .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -198,16 +199,16 @@ Handle<vke::GPUBuffer> GPUResources::createMappedBuffer(const uint64_t size)
     ));
 }
 
-vke::GPUMegaBuffer GPUResources::createMegaGPUBuffer(const uint64_t capacity, VkBufferUsageFlags usage)
+GPUMegaBuffer GPUResources::createMegaGPUBuffer(const uint64_t capacity, VkBufferUsageFlags usage)
 {
-    vke::GPUMegaBuffer megaBuff{.capacity = capacity};
+    GPUMegaBuffer megaBuff{.capacity = capacity};
 
     VmaAllocationCreateInfo megaBuffVmaAllocInfo{.usage = VMA_MEMORY_USAGE_AUTO};
 
     megaBuff.gpuBuffer = createBuffer(capacity, usage, megaBuffVmaAllocInfo);
 
     VmaVirtualBlockCreateInfo megaBuffBlockInfo{.size = capacity};
-    vke::check(
+    check(
         vmaCreateVirtualBlock(&megaBuffBlockInfo, &megaBuff.block),
         "[GPUResources] Failed to create virtual block for vertex Mega Buffer"
     );
@@ -215,26 +216,26 @@ vke::GPUMegaBuffer GPUResources::createMegaGPUBuffer(const uint64_t capacity, Vk
     return megaBuff;
 }
 
-vke::GPUImage
+GPUImage
 GPUResources::create2dGpuImage(VkFormat format, VkExtent2D extent, VkImageUsageFlags usage, VkImageAspectFlags aspect)
 {
     const auto device = m_ctx->device();
 
-    VkImageCreateInfo imCreateInfo = vke::img2DCreateInfo(format, extent, usage);
+    VkImageCreateInfo imCreateInfo = img2DCreateInfo(format, extent, usage);
     VmaAllocationCreateInfo imgAllocInfo{.usage = VMA_MEMORY_USAGE_AUTO};
 
-    vke::GPUImage gpuImage;
+    GPUImage gpuImage;
 
-    vke::check(
+    check(
         vmaCreateImage(
             m_ctx->vmaAllocator(), &imCreateInfo, &imgAllocInfo, &gpuImage.vkImage, &gpuImage.allocation, nullptr
         ),
         "[GPUResources] VMA Failed to create image"
     );
 
-    VkImageViewCreateInfo imgView = vke::imgView2DCreateInfo(gpuImage.vkImage, format, aspect);
+    VkImageViewCreateInfo imgView = imgView2DCreateInfo(gpuImage.vkImage, format, aspect);
 
-    vke::check(
+    check(
         vkCreateImageView(device, &imgView, nullptr, &gpuImage.vkImageView),
         "[GPUResources] Failed to create image view for white texture"
     );
@@ -263,7 +264,7 @@ void GPUResources::cleanupDepthBuffer()
     }
 }
 
-Handle<vke::GPUImage> GPUResources::createTexture(const vke::CPUImage& cpuImg)
+Handle<GPUImage> GPUResources::createTexture(const ImageDesc& cpuImg)
 {
     const auto device = m_ctx->device();
 
@@ -271,17 +272,17 @@ Handle<vke::GPUImage> GPUResources::createTexture(const vke::CPUImage& cpuImg)
         .width = static_cast<uint32_t>(cpuImg.width), .height = static_cast<uint32_t>(cpuImg.height), .depth = 1
     };
 
-    VkFormat format = (cpuImg.colorSpace == vke::SRGB) ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormat format = (cpuImg.colorSpace == SRGB) ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
 
     // image and view creation
     // TODO : check for best format (only color space changes for now)
-    vke::GPUImage gpuImage = create2dGpuImage(
+    GPUImage gpuImage = create2dGpuImage(
         format, {.width = imgExtent.width, .height = imgExtent.height},
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT
     );
 
     // staging buffer to hold texture data
-    vke::GPUBuffer stagingBuffer = createStagingBuffer(cpuImg.sizeBytes());
+    GPUBuffer stagingBuffer = createStagingBuffer(cpuImg.sizeBytes());
 
     copyToStagingBuffer(cpuImg.bytes(), 0, stagingBuffer);
 
@@ -294,7 +295,7 @@ Handle<vke::GPUImage> GPUResources::createTexture(const vke::CPUImage& cpuImg)
     ); // safe to destroy since waited before
 
     const auto imgView = gpuImage.vkImageView;
-    const Handle<vke::GPUImage> imgHandle = m_gpuImgs.create(std::move(gpuImage)); // add img to pool
+    const Handle<GPUImage> imgHandle = m_gpuImgs.create(std::move(gpuImage)); // add img to pool
 
     // update descriptor set at imgHandle index
 
@@ -318,10 +319,9 @@ Handle<vke::GPUImage> GPUResources::createTexture(const vke::CPUImage& cpuImg)
     return imgHandle;
 }
 
-Handle<vke::GPUMesh>
-GPUResources::createGpuMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices)
+Handle<GPUMesh> GPUResources::createGpuMesh(std::span<const Vertex> vertices, std::span<const uint32_t> indices)
 {
-    vke::GPUMesh gpuMesh;
+    GPUMesh gpuMesh;
     gpuMesh.indexCount = static_cast<uint32_t>(indices.size());
 
     // virtual allocate (checks for size available)
@@ -330,7 +330,7 @@ GPUResources::createGpuMesh(std::span<const vke::Vertex> vertices, std::span<con
     };
 
     uint64_t allocVertexOffset{}; // in byte
-    vke::check(
+    check(
         vmaVirtualAllocate(
             m_vertexMegaBuff.block, &vertexVirtualAllocInfo, &gpuMesh.vAllocVertices, &allocVertexOffset
         ),
@@ -338,20 +338,20 @@ GPUResources::createGpuMesh(std::span<const vke::Vertex> vertices, std::span<con
     );
 
     // get the index from the offset in byte
-    gpuMesh.baseVertex = static_cast<uint32_t>(allocVertexOffset / sizeof(vke::Vertex));
+    gpuMesh.baseVertex = static_cast<uint32_t>(allocVertexOffset / sizeof(Vertex));
 
     VmaVirtualAllocationCreateInfo indexVirtualAllocInfo{
         .size = indices.size() * sizeof(uint32_t),
     };
 
     uint64_t allocIndexOffset{}; // in byte
-    vke::check(
+    check(
         vmaVirtualAllocate(m_indexMegaBuff.block, &indexVirtualAllocInfo, &gpuMesh.vAllocIndices, &allocIndexOffset),
         "[GPUResources] Failed to allocate virtual memory for indices"
     );
     gpuMesh.firstIndex = static_cast<uint32_t>(allocIndexOffset / sizeof(uint32_t));
 
-    vke::GPUBuffer stagingBuffer = createStagingBuffer(vertices.size_bytes() + indices.size_bytes());
+    GPUBuffer stagingBuffer = createStagingBuffer(vertices.size_bytes() + indices.size_bytes());
 
     copyToStagingBuffer(std::as_bytes(vertices), 0, stagingBuffer);
     copyToStagingBuffer(std::as_bytes(indices), vertices.size_bytes(), stagingBuffer);
@@ -379,9 +379,9 @@ GPUResources::createGpuMesh(std::span<const vke::Vertex> vertices, std::span<con
     return m_gpuMeshes.create(std::move(gpuMesh));
 }
 
-Handle<vke::GPUMaterial> GPUResources::createMaterial(const vke::GPUMaterialInfo& matInfo)
+Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
 {
-    vke::GPUMaterial gpuMat{
+    GPUMaterial gpuMat{
         .baseColorFactor = matInfo.baseColorFactor,
         .baseColorTextureIndex = matInfo.baseColorTexture.imageHandle.index,
         .baseColorTextureSampler = matInfo.baseColorTexture.samplerIndex,
@@ -391,9 +391,9 @@ Handle<vke::GPUMaterial> GPUResources::createMaterial(const vke::GPUMaterialInfo
         .roughnessFactor = matInfo.roughnessFactor,
     };
 
-    auto bytes = std::as_bytes(std::span<vke::GPUMaterial>{&gpuMat, 1});
+    auto bytes = std::as_bytes(std::span<GPUMaterial>{&gpuMat, 1});
 
-    vke::GPUBuffer stagingBuffer = createStagingBuffer(bytes.size_bytes());
+    GPUBuffer stagingBuffer = createStagingBuffer(bytes.size_bytes());
 
     copyToStagingBuffer(bytes, 0, stagingBuffer);
 
@@ -402,7 +402,7 @@ Handle<vke::GPUMaterial> GPUResources::createMaterial(const vke::GPUMaterialInfo
 
     VkBufferCopy materialCopyRegion{
         .srcOffset = 0,
-        .dstOffset = sizeof(vke::GPUMaterial) * materialHandle.index,
+        .dstOffset = sizeof(GPUMaterial) * materialHandle.index,
         .size = bytes.size_bytes(),
     };
 
@@ -455,7 +455,7 @@ uint32_t GPUResources::getOrCreateSampler()
     };
 
     VkSampler sampler = nullptr;
-    vke::check(vkCreateSampler(device, &samplerInfo, nullptr, &sampler), "[GPUResources] Failed to create sampler");
+    check(vkCreateSampler(device, &samplerInfo, nullptr, &sampler), "[GPUResources] Failed to create sampler");
 
     uint32_t samplerIndex = static_cast<uint32_t>(m_samplers.size());
     m_samplers.push_back(sampler);
@@ -478,10 +478,10 @@ uint32_t GPUResources::getOrCreateSampler()
 }
 
 void GPUResources::copyToStagingBuffer(
-    std::span<const std::byte> bytes, const uint64_t copyOffset, vke::GPUBuffer& stagingBuffer
+    std::span<const std::byte> bytes, const uint64_t copyOffset, GPUBuffer& stagingBuffer
 )
 {
-    vke::check(
+    check(
         vmaCopyMemoryToAllocation(
             m_ctx->vmaAllocator(), bytes.data(), stagingBuffer.allocation, copyOffset, bytes.size_bytes()
         ),
@@ -628,16 +628,16 @@ void GPUResources::cleanup()
         vkDestroySampler(device, sampler, nullptr);
     }
 
-    m_gpuImgs.releaseAllAlive([this, device, vmaAllocator](vke::GPUImage& gpuImage) {
+    m_gpuImgs.releaseAllAlive([this, device, vmaAllocator](GPUImage& gpuImage) {
         vkDestroyImageView(device, gpuImage.vkImageView, nullptr);
         vmaDestroyImage(vmaAllocator, gpuImage.vkImage, gpuImage.allocation);
     });
 
-    m_gpuBuffs.releaseAllAlive([this, vmaAllocator](vke::GPUBuffer& gpuBuff) {
+    m_gpuBuffs.releaseAllAlive([this, vmaAllocator](GPUBuffer& gpuBuff) {
         vmaDestroyBuffer(vmaAllocator, gpuBuff.vkbuffer, gpuBuff.allocation);
     });
 
-    m_gpuMeshes.releaseAllAlive([this, vertexBlock, indexBlock](vke::GPUMesh& gpuMesh) {
+    m_gpuMeshes.releaseAllAlive([this, vertexBlock, indexBlock](GPUMesh& gpuMesh) {
         vmaVirtualFree(vertexBlock, gpuMesh.vAllocVertices);
         vmaVirtualFree(indexBlock, gpuMesh.vAllocIndices);
     });
@@ -681,17 +681,19 @@ VkBuffer GPUResources::indexBuffer() const
     return m_indexMegaBuff.gpuBuffer.vkbuffer;
 }
 
-const vke::GPUMesh* GPUResources::getMesh(const Handle<vke::GPUMesh>& meshHandle) const
+const GPUMesh* GPUResources::getMesh(const Handle<GPUMesh>& meshHandle) const
 {
     return m_gpuMeshes.get(meshHandle);
 }
 
-const vke::GPUBuffer* GPUResources::getBuffer(const Handle<vke::GPUBuffer>& buffHandle) const
+const GPUBuffer* GPUResources::getBuffer(const Handle<GPUBuffer>& buffHandle) const
 {
     return m_gpuBuffs.get(buffHandle);
 }
 
-const vke::GPUImage* GPUResources::getDepthBuffer() const
+const GPUImage* GPUResources::getDepthBuffer() const
 {
     return &m_depthBuffer;
 }
+
+} // namespace vke

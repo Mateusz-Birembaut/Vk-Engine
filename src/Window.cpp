@@ -6,6 +6,8 @@
 
 #include "VkEngine/VkEngineInfo.h"
 
+namespace vke {
+
 Window::Window()
 {
     m_window = SDL_CreateWindow(app::NAME.data(), 1920, 1080, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
@@ -60,3 +62,5 @@ VkSurfaceKHR Window::createSurface(VkInstance instance, const struct VkAllocatio
 
     return vkSurface;
 }
+
+} // namespace vke

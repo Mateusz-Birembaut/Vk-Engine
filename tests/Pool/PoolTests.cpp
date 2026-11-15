@@ -8,7 +8,7 @@
 TEST_CASE("Create pool", "[Pool]")
 {
     constexpr uint32_t size = 10;
-    Pool<std::string> pool(size);
+    vke::Pool<std::string> pool(size);
 
     const std::vector<uint32_t> expectedFreeSlots = {};
 
@@ -22,7 +22,7 @@ TEST_CASE("Create pool", "[Pool]")
 
 TEST_CASE("Created item can be retrieved", "[Pool]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto handle = pool.create(std::string{"item"});
 
     REQUIRE(pool.get(handle) != nullptr);
@@ -31,18 +31,18 @@ TEST_CASE("Created item can be retrieved", "[Pool]")
 
 TEST_CASE("Default handle is never valid", "[Pool]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
 
-    REQUIRE(pool.get(Handle<std::string>{}) == nullptr);
+    REQUIRE(pool.get(vke::Handle<std::string>{}) == nullptr);
 
     pool.create(std::string{"item"});
 
-    REQUIRE(pool.get(Handle<std::string>{}) == nullptr);
+    REQUIRE(pool.get(vke::Handle<std::string>{}) == nullptr);
 }
 
 TEST_CASE("Handles to slots that were never created are invalid", "[Pool]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     pool.create(std::string{"item"});
 
     REQUIRE(pool.get({1, 1}) == nullptr);
@@ -52,7 +52,7 @@ TEST_CASE("Handles to slots that were never created are invalid", "[Pool]")
 
 TEST_CASE("Each create gets its own slot", "[Pool]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto first = pool.create(std::string{"first"});
     const auto second = pool.create(std::string{"second"});
 
@@ -63,7 +63,7 @@ TEST_CASE("Each create gets its own slot", "[Pool]")
 
 TEST_CASE("Pool can grow past its reserved capacity", "[Pool]")
 {
-    Pool<std::string> pool(1);
+    vke::Pool<std::string> pool(1);
     const auto first = pool.create(std::string{"first"});
     const auto second = pool.create(std::string{"second"});
 
@@ -77,7 +77,7 @@ TEST_CASE("Pool can grow past its reserved capacity", "[Pool]")
 
 TEST_CASE("Retire returns the stored object", "[Pool][retire]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto handle = pool.create(std::string{"item"});
 
     const auto retired = pool.retire(handle);
@@ -88,7 +88,7 @@ TEST_CASE("Retire returns the stored object", "[Pool][retire]")
 
 TEST_CASE("Retired handle is no longer accessible", "[Pool][retire]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto handle = pool.create(std::string{"item"});
 
     pool.retire(handle);
@@ -98,7 +98,7 @@ TEST_CASE("Retired handle is no longer accessible", "[Pool][retire]")
 
 TEST_CASE("Retired slot is not reused before free", "[Pool][retire]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto retiredHandle = pool.create(std::string{"retired"});
     pool.retire(retiredHandle);
 
@@ -110,7 +110,7 @@ TEST_CASE("Retired slot is not reused before free", "[Pool][retire]")
 
 TEST_CASE("Retiring the same handle twice fails the second time", "[Pool][retire]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto handle = pool.create(std::string{"item"});
 
     REQUIRE(pool.retire(handle).has_value());
@@ -119,10 +119,10 @@ TEST_CASE("Retiring the same handle twice fails the second time", "[Pool][retire
 
 TEST_CASE("Retiring an invalid handle returns nothing", "[Pool][retire]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto handle = pool.create(std::string{"item"});
 
-    REQUIRE_FALSE(pool.retire(Handle<std::string>{}).has_value());
+    REQUIRE_FALSE(pool.retire(vke::Handle<std::string>{}).has_value());
     REQUIRE_FALSE(pool.retire({handle.index, handle.gen + 1}).has_value());
     REQUIRE_FALSE(pool.retire({100, 1}).has_value());
 
@@ -133,7 +133,7 @@ TEST_CASE("Retiring an invalid handle returns nothing", "[Pool][retire]")
 
 TEST_CASE("Retiring one item does not affect the others", "[Pool][retire]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto first = pool.create(std::string{"first"});
     const auto second = pool.create(std::string{"second"});
 
@@ -150,7 +150,7 @@ TEST_CASE("Retiring one item does not affect the others", "[Pool][retire]")
 
 TEST_CASE("Freed slot is reused by the next create", "[Pool][free]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto oldHandle = pool.create(std::string{"old"});
     pool.retire(oldHandle);
     pool.free(oldHandle.index);
@@ -164,7 +164,7 @@ TEST_CASE("Freed slot is reused by the next create", "[Pool][free]")
 
 TEST_CASE("Old handle stays invalid after its slot is reused", "[Pool][free]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto oldHandle = pool.create(std::string{"old"});
     pool.retire(oldHandle);
     pool.free(oldHandle.index);
@@ -180,7 +180,7 @@ TEST_CASE("Old handle stays invalid after its slot is reused", "[Pool][free]")
 
 TEST_CASE("Freeing the same slot twice does not hand it out twice", "[Pool][free]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto handle = pool.create(std::string{"item"});
     pool.retire(handle);
 
@@ -197,7 +197,7 @@ TEST_CASE("Freeing the same slot twice does not hand it out twice", "[Pool][free
 
 TEST_CASE("Freeing a live slot does nothing", "[Pool][free]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto handle = pool.create(std::string{"live"});
 
     pool.free(handle.index);
@@ -213,7 +213,7 @@ TEST_CASE("Freeing a live slot does nothing", "[Pool][free]")
 
 TEST_CASE("Freeing a reused slot with a stale index does nothing", "[Pool][free]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto oldHandle = pool.create(std::string{"old"});
     pool.retire(oldHandle);
     pool.free(oldHandle.index);
@@ -228,7 +228,7 @@ TEST_CASE("Freeing a reused slot with a stale index does nothing", "[Pool][free]
 
 TEST_CASE("Freeing an out-of-range index does nothing", "[Pool][free]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto handle = pool.create(std::string{"item"});
 
     pool.free(100);
@@ -240,7 +240,7 @@ TEST_CASE("Freeing an out-of-range index does nothing", "[Pool][free]")
 
 TEST_CASE("Several pending slots are freed independently", "[Pool][free]")
 {
-    Pool<std::string> pool(4);
+    vke::Pool<std::string> pool(4);
     const auto first = pool.create(std::string{"first"});
     const auto second = pool.create(std::string{"second"});
     pool.retire(first);
@@ -262,7 +262,7 @@ TEST_CASE("Several pending slots are freed independently", "[Pool][free]")
 
 TEST_CASE("Full create / retire / free cycle many times on one slot", "[Pool][lifecycle]")
 {
-    Pool<std::string> pool(1);
+    vke::Pool<std::string> pool(1);
     auto handle = pool.create(std::string{"gen"});
     const auto slotIndex = handle.index;
 

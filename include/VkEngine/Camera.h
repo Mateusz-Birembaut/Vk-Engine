@@ -4,8 +4,9 @@
 #include <glm/trigonometric.hpp>
 #include <glm/vec3.hpp>
 
-inline constexpr glm::vec3 WORLD_UP{0.0f, 1.0f, 0.0f};
+namespace vke {
 
+inline constexpr glm::vec3 WORLD_UP{0.0f, 1.0f, 0.0f};
 class Camera {
 public:
     Camera();
@@ -41,3 +42,5 @@ private:
     float m_near{0.1f};
     float m_far{100.0f};
 };
+
+} // namespace vke

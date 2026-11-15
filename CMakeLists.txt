@@ -56,6 +56,7 @@ vke_setup_target(VkEngine)
 target_include_directories(VkEngine PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_link_libraries(VkEngine PRIVATE SDL3::SDL3 Vulkan::Vulkan vk-bootstrap::vk-bootstrap glm::glm)
 target_compile_definitions(VkEngine PRIVATE $<$<BOOL:${VKENGINE_VALIDATION}>:VKENGINE_VALIDATION>)
+target_compile_definitions(VkEngine PRIVATE GLM_FORCE_DEPTH_ZERO_TO_ONE)
 set_target_properties(VkEngine PROPERTIES COMPILE_WARNING_AS_ERROR ON)
 
 # Copy runtime DLLs (SDL3.dll) next to the exe

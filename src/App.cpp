@@ -6,8 +6,8 @@
 #include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_timer.h>
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
+
 #if defined(__linux__)
 #include <SDL3/SDL_main.h>
 #endif
@@ -25,6 +25,8 @@
 #include "VkEngine/VkEngineInfo.h"
 #include "VkEngine/VulkanCtx.h"
 #include "VkEngine/Window.h"
+
+namespace vke {
 
 App::App() = default;
 
@@ -92,7 +94,7 @@ void App::run()
     for (uint32_t IImage = 0; IImage < impScene.images.size(); IImage++) {
         const auto& img = impScene.images[IImage];
 
-        vke::CPUImage cpuImage{.colorSpace = img.colorSpace};
+        vke::ImageDesc cpuImage{.colorSpace = img.colorSpace};
 
         // TODO do not use prefered channels
         cpuImage.data = stbi_load_from_memory(
@@ -113,7 +115,7 @@ void App::run()
     for (uint32_t IMaterial = 0; IMaterial < impScene.materials.size(); IMaterial++) {
         const auto& gltfMaterial = impScene.materials[IMaterial];
 
-        vke::GPUMaterialInfo materialCreateInfo{
+        vke::MaterialDesc materialCreateInfo{
             .baseColorFactor = gltfMaterial.baseColorFactor,
             .metallicFactor = gltfMaterial.metallicFactor,
             .roughnessFactor = gltfMaterial.roughnessFactor,
@@ -232,3 +234,5 @@ void App::run()
         }
     }
 }
+
+} // namespace vke

@@ -5,6 +5,8 @@
 #include <vector>
 #include <vk_mem_alloc.h>
 
+namespace vke {
+
 // forward declaration
 class Window;
 
@@ -48,3 +50,5 @@ private:
     VkQueue m_graphicsQueue = VK_NULL_HANDLE;
     uint32_t m_graphicsQueueFamily{};
 };
+
+} // namespace vke

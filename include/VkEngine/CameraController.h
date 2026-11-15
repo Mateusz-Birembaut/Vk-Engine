@@ -3,11 +3,13 @@
 #include <numbers>
 
 #include "VkEngine/Camera.h"
-#include "VkEngine/Types.h"
+#include "VkEngine/Types/RenderApi.h"
+
+namespace vke {
 
 class CameraController {
 public:
-    vke::RenderView renderView() const;
+    RenderView renderView() const;
 
     void updateAspectRatio(float newAspectRatio);
     void handleMouseMotion(float xRel, float yRel);
@@ -19,3 +21,5 @@ private:
     float m_speed{5.0f};
     float m_sensitivity{2 * static_cast<float>(std::numbers::pi) / 5000.0f};
 };
+
+} // namespace vke

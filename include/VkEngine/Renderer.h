@@ -8,7 +8,9 @@
 
 #include "VkEngine/GPUResources.h"
 #include "VkEngine/ResourceDestroyer.h"
-#include "VkEngine/Types.h"
+#include "VkEngine/Types/Handle.h"
+
+namespace vke {
 
 class VulkanCtx;
 
@@ -21,18 +23,18 @@ public:
 
     void init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFolderPath);
     void cleanup();
-    void drawFrame(const std::span<vke::RenderItem>& renderItems, const vke::RenderView& RenderView);
+    void drawFrame(const std::span<RenderItem>& renderItems, const RenderView& RenderView);
 
-    Handle<vke::GPUMesh> createMesh(std::span<const vke::Vertex> vertices, std::span<const uint32_t> indices);
+    Handle<GPUMesh> createMesh(std::span<const Vertex> vertices, std::span<const uint32_t> indices);
 
-    Handle<vke::GPUImage> createTexture(const vke::CPUImage& cpuImg);
+    Handle<GPUImage> createTexture(const ImageDesc& cpuImg);
 
-    Handle<vke::GPUMaterial> createMaterial(const vke::GPUMaterialInfo& material);
+    Handle<GPUMaterial> createMaterial(const MaterialDesc& material);
 
-    vke::FrameData& getCurrentFrame();
+    FrameData& getCurrentFrame();
 
-    vke::Texture fallbackTexture() const;
-    Handle<vke::GPUMaterial> fallbackMaterial() const;
+    Texture fallbackTexture() const;
+    Handle<GPUMaterial> fallbackMaterial() const;
 
 private:
     void initPerFrameData();
@@ -45,7 +47,7 @@ private:
     VulkanCtx* m_ctx{nullptr};
     bool m_swapchainDirty{false};
 
-    vke::FrameData m_frames[FRAMES_IN_FLIGHT];
+    FrameData m_frames[FRAMES_IN_FLIGHT];
     uint64_t m_frameNb{0};
 
     std::vector<VkSemaphore> m_renderSems; // 1 per swapchain image
@@ -60,8 +62,8 @@ private:
     };
     VkClearDepthStencilValue m_clearDepthValue{.depth = 1.0f, .stencil = 0};
 
-    vke::Texture m_fallbackTexture{};
-    Handle<vke::GPUMaterial> m_fallbackMaterial{};
+    Texture m_fallbackTexture{};
+    Handle<GPUMaterial> m_fallbackMaterial{};
 
     GPUResources m_gpuResources;
     ResourceDestroyer m_resourceDestroyer;
@@ -71,3 +73,5 @@ private:
     VkPipeline m_graphicsPipeline;
     VkPipelineLayout m_graphicsPipelineLayout;
 };
+
+} // namespace vke

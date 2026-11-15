@@ -6,26 +6,6 @@
 
 namespace vke {
 
-inline VkSemaphoreCreateInfo semaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0)
-{
-    VkSemaphoreCreateInfo semInfo{};
-    semInfo.flags = flags;
-    semInfo.pNext = nullptr;
-    semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    return semInfo;
-}
-
-inline VkFenceCreateInfo fenceCreateInfo(VkFenceCreateFlags flags = 0)
-{
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.flags = flags;
-    fenceInfo.pNext = nullptr;
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-
-    return fenceInfo;
-}
-
 inline VkCommandBufferBeginInfo commandBufferBeginInfo(VkCommandBufferUsageFlags flags)
 {
     VkCommandBufferBeginInfo beginInfo = {};

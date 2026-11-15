@@ -2,8 +2,9 @@
 
 #include <SDL3/SDL_keyboard.h>
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/vec3.hpp>
+
+namespace vke {
 
 vke::RenderView CameraController::renderView() const
 {
@@ -51,3 +52,5 @@ void CameraController::handleKeyboard(float dt)
 
     m_camera.updatePosition(glm::normalize(xAxis + zAxis) * dt * m_speed);
 }
+
+} // namespace vke

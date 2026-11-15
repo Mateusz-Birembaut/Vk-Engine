@@ -22,6 +22,8 @@ constexpr bool useValidation = true;
 constexpr bool useValidation = false;
 #endif
 
+namespace vke {
+
 VulkanCtx::~VulkanCtx()
 {
     // never initialized, nothing was created (everything derives from the instance)
@@ -300,3 +302,5 @@ VmaAllocator VulkanCtx::vmaAllocator() const
 {
     return m_allocator;
 }
+
+} // namespace vke

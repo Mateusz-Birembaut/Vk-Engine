@@ -5,6 +5,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
 
+namespace vke {
+
 class Window {
 public:
     Window();
@@ -25,3 +27,5 @@ private:
     bool m_capturingMouse{true};
     bool m_minimized{false};
 };
+
+} // namespace vke

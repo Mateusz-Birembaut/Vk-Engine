@@ -1,6 +1,5 @@
 #include "VkEngine/GltfLoader.h"
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
@@ -9,9 +8,9 @@
 #include <utility>
 
 #include "VkEngine/FileReader.h"
-#include "VkEngine/Types.h"
 
 namespace vke {
+
 std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
 {
     tg3_parse_options opts;

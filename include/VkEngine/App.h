@@ -2,6 +2,8 @@
 
 #include <memory>
 
+namespace vke {
+
 class Window;
 class VulkanCtx;
 class Renderer;
@@ -22,3 +24,5 @@ private:
     std::unique_ptr<CameraController> m_cameraController;
     bool m_running = true;
 };
+
+} // namespace vke

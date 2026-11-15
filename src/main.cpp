@@ -10,7 +10,7 @@
 
 int main(int, char*[])
 {
-    App app{};
+    vke::App app{};
 
     try {
         app.run();

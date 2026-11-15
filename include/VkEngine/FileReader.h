@@ -8,17 +8,9 @@
 #include <iostream>
 #include <vector>
 
+#include "VkEngine/Types/FileData.h"
+
 namespace vke {
-
-enum FileError { invalidPath, invalidData, readError, failOpen, fileNotFound, unknownError };
-
-struct ShaderCodeData {
-    std::vector<uint32_t> codeData;
-};
-
-struct FileData {
-    std::vector<unsigned char> bytes;
-};
 
 inline std::expected<FileData, FileError> readFile(const std::filesystem::path& path)
 {

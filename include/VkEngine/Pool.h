@@ -5,10 +5,9 @@
 #include <stdint.h>
 #include <vector>
 
-template <typename T> struct Handle {
-    uint32_t index{0};
-    uint32_t gen{0};
-};
+#include "VkEngine/Types/Handle.h"
+
+namespace vke {
 
 template <typename T> class Pool {
 public:
@@ -22,7 +21,7 @@ public:
 
     ~Pool() = default;
 
-    Handle<T> create(T&& obj)
+    vke::Handle<T> create(T&& obj)
     {
         if (m_freeSlots.empty()) {
             uint32_t slotIndex = static_cast<uint32_t>(m_slots.size());
@@ -41,7 +40,7 @@ public:
         }
     }
 
-    const T* get(const Handle<T>& handle) const
+    const T* get(const vke::Handle<T>& handle) const
     {
         if (handle.index >= m_slots.size())
             return nullptr;
@@ -51,7 +50,7 @@ public:
         return (slot.state == SlotState::Alive && handle.gen == slot.gen) ? &slot.obj : nullptr;
     }
 
-    std::optional<T> retire(const Handle<T>& handle)
+    std::optional<T> retire(const vke::Handle<T>& handle)
     {
         if (handle.index >= m_slots.size())
             return {};
@@ -144,3 +143,5 @@ private:
     std::vector<Slot> m_slots;
     std::vector<uint32_t> m_freeSlots;
 };
+
+} // namespace vke
