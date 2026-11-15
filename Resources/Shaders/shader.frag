@@ -47,29 +47,31 @@ layout (location = 3) in vec3 wPos;
 
 layout(location = 0) out vec4 fragColor;
 
-float NDF_GGXTR(vec3 N, vec3 H, float roughness){
+float DistributionGGX(vec3 N, vec3 H, float roughness){
     float a = roughness * roughness; 
-    float a2 = a * a; 
+    float a2 =  a * a; 
     float NdotH = max(dot(N, H), 0.0);
     float denom = (NdotH * NdotH) * (a2 - 1) + 1;
+    denom = max(PI * ( denom * denom), 0.0001);  // prevent division by 0
 
-    return a2 / (PI * ( denom * denom));
+    return a2 / denom;
 };
 
-float GF_GGXSB(vec3 N, vec3 V, float k){
+float GeometrySchlickGGX(vec3 N, vec3 V, float k){
     
     float NdotV = max(dot(N,V), 0.0);
+    float denom = max(NdotV * (1-k) + k, 0.0001); // prevent division by 0
 
-    return NdotV / (NdotV * (1-k) + k);
+    return NdotV / denom;
 };
 
-float G_S(vec3 N,vec3 V, vec3 L, float roughness){
+float GeometrySmith(vec3 N,vec3 V, vec3 L, float roughness){
     float k = ((roughness + 1) * (roughness + 1)) / 8;
 
-    return GF_GGXSB(N, V, k) * GF_GGXSB(N, L, k);
+    return GeometrySchlickGGX(N, V, k) * GeometrySchlickGGX(N, L, k);
 };
 
-vec3 F_S(vec3 H, vec3 V, vec3 F0){
+vec3 fresnelSchlick(vec3 H, vec3 V, vec3 F0){
     return F0 + (1 - F0) * pow(1 - (max(dot(H, V), 0.0)), 5);
 };
 
@@ -122,9 +124,9 @@ void main() {
 
     // compute cook torrance BRDF
     // specular part
-    float D = NDF_GGXTR(N, H, roughness);
-    vec3 F = F_S(H, V, F0);
-    float G = G_S(N, V, L, roughness);
+    float D = DistributionGGX(N, H, roughness);
+    vec3 F = fresnelSchlick(H, V, F0);
+    float G = GeometrySmith(N, V, L, roughness);
 
     vec3 num = D * F * G;
     float denom = 4.0 * max(dot(V, N), 0.0) * max(dot(L, N), 0.0) + 0.0001; // prevent division by 0 
