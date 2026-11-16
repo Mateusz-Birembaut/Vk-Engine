@@ -13,8 +13,15 @@ struct Material{
     uint baseColorTextureSampler;
     uint metallicRoughnessTextureIndex;
     uint metallicRoughnessTextureSampler;
+    uint normalTextureIndex;
+    uint normalTextureSampler;
+    uint occlusionTextureIndex;
+    uint occlusionTextureSampler;
+    uint emissiveTextureIndex;
+    uint emissiveTextureSampler;
     float metallicFactor;
     float roughnessFactor;
+    vec3 emissiveFactor;
 };
 
 layout(buffer_reference, scalar) readonly buffer MaterialBuffer { Material materials[]; };

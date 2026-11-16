@@ -46,8 +46,15 @@ struct GPUMaterial {
     uint32_t baseColorTextureSampler{0xFFFFFFFF};
     uint32_t metallicRoughnessTextureIndex{0xFFFFFFFF};
     uint32_t metallicRoughnessTextureSampler{0xFFFFFFFF};
+    uint32_t normalTextureIndex{0xFFFFFFFF};
+    uint32_t normalTextureSampler{0xFFFFFFFF};
+    uint32_t occlusionTextureIndex{0xFFFFFFFF};
+    uint32_t occlusionTextureSampler{0xFFFFFFFF};
+    uint32_t emissiveTextureIndex{0xFFFFFFFF};
+    uint32_t emissiveTextureSampler{0xFFFFFFFF};
     float metallicFactor{1.0f};
     float roughnessFactor{1.0f};
+    glm::vec3 emissiveFactor{0.0f, 0.0f, 0.0f};
 };
 
 struct GPUSampler {

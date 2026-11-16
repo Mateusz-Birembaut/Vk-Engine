@@ -397,6 +397,11 @@ Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
         gpuMat.baseColorTextureSampler = matInfo.baseColorTexture.samplerIndex;
     }
 
+    if (m_gpuImgs.get(matInfo.normalTexture.imageHandle)) {
+        gpuMat.normalTextureIndex = matInfo.normalTexture.imageHandle.index;
+        gpuMat.normalTextureSampler = matInfo.normalTexture.samplerIndex;
+    }
+
     auto bytes = std::as_bytes(std::span<GPUMaterial>{&gpuMat, 1});
 
     GPUBuffer stagingBuffer = createStagingBuffer(bytes.size_bytes());

@@ -231,18 +231,23 @@ void fillMaterialData(
 {
     impSceneMaterials.reserve(model.materials_count);
 
+    auto updateToLinearColorSpace = [&](uint32_t textureIndex) -> void {
+        if (textureIndex != -1) {
+            uint32_t imgIndex = model.textures[textureIndex].source;
+
+            if (imgIndex < impSceneImgs.size()) {
+                impSceneImgs[imgIndex].colorSpace = ColorSpace::LINEAR;
+            }
+        }
+    };
+
     for (uint32_t IMaterial = 0; IMaterial < model.materials_count; IMaterial++) {
         const auto& tgMaterial = model.materials[IMaterial];
 
-        // if image is used in metallic_roughness_texture then update its color space
-        if (tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index != -1) {
-            uint32_t metallicTextureIndex = tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index;
-            uint32_t metallicImageIndex = model.textures[metallicTextureIndex].source;
-
-            if (metallicImageIndex < impSceneImgs.size()) {
-                impSceneImgs[metallicImageIndex].colorSpace = ColorSpace::LINEAR;
-            }
-        }
+        updateToLinearColorSpace(tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index);
+        updateToLinearColorSpace(tgMaterial.normal_texture.index);
+        updateToLinearColorSpace(tgMaterial.emissive_texture.index);
+        updateToLinearColorSpace(tgMaterial.occlusion_texture.index);
 
         impSceneMaterials.push_back(
             gltf::Material{
@@ -254,6 +259,7 @@ void fillMaterialData(
                 .normalTextureIndex = tgMaterial.normal_texture.index,
                 .occlusionTexture = tgMaterial.occlusion_texture.index,
                 .emissiveTexture = tgMaterial.emissive_texture.index,
+                .emissiveFactor = glm::vec3(glm::make_vec3(tgMaterial.emissive_factor)),
             }
         );
     }

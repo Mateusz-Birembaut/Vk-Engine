@@ -46,6 +46,7 @@ struct Material {
     int32_t normalTextureIndex{-1};
     int32_t occlusionTexture{-1};
     int32_t emissiveTexture{-1};
+    glm::vec3 emissiveFactor{0.0f, 0.0f, 0.0f};
 };
 
 struct ImportedScene {

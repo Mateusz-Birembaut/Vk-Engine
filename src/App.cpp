@@ -147,25 +147,35 @@ void App::run()
     for (uint32_t IMaterial = 0; IMaterial < impScene.materials.size(); IMaterial++) {
         const auto& gltfMaterial = impScene.materials[IMaterial];
 
-        MaterialDesc materialCreateInfo{
+        MaterialDesc materialDesc{
             .baseColorFactor = gltfMaterial.baseColorFactor,
             .metallicFactor = gltfMaterial.metallicFactor,
             .roughnessFactor = gltfMaterial.roughnessFactor,
         };
 
-        // TODO : later check indices < to sizes
-
         if (gltfMaterial.baseColorTextureIndex >= 0) {
-            materialCreateInfo.baseColorTexture = textures[gltfMaterial.baseColorTextureIndex];
+            materialDesc.baseColorTexture = textures[gltfMaterial.baseColorTextureIndex];
         } else {
-            materialCreateInfo.baseColorTexture = fallbackTexture;
+            materialDesc.baseColorTexture = fallbackTexture;
         }
 
-        if (gltfMaterial.metallicRoughnessTextureIndex >= 0) { 
-            materialCreateInfo.metallicRoughnessTexture = textures[gltfMaterial.metallicRoughnessTextureIndex];
+        if (gltfMaterial.metallicRoughnessTextureIndex >= 0) {
+            materialDesc.metallicRoughnessTexture = textures[gltfMaterial.metallicRoughnessTextureIndex];
         }
 
-        matHandles[IMaterial] = m_renderer->createMaterial(materialCreateInfo);
+        if (gltfMaterial.normalTextureIndex >= 0) {
+            materialDesc.normalTexture = textures[gltfMaterial.normalTextureIndex];
+        }
+
+        if (gltfMaterial.emissiveTexture >= 0) {
+            materialDesc.emissiveTexture = textures[gltfMaterial.emissiveTexture];
+        }
+
+        if (gltfMaterial.occlusionTexture >= 0) {
+            materialDesc.occlusionTexture = textures[gltfMaterial.occlusionTexture];
+        }
+
+        matHandles[IMaterial] = m_renderer->createMaterial(materialDesc);
     }
 
     std::vector<RenderItem> renderItems;
