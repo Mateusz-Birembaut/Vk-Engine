@@ -31,10 +31,10 @@ layout(buffer_reference, scalar) readonly buffer SceneData {
     uint64_t matBuffAddress;
 };
 
-layout (location = 0) out vec2 uv;
-layout (location = 1) out vec3 N;
+layout (location = 0) out vec2 vUv;
+layout (location = 1) out vec3 vN;
 layout (location = 2) out vec4 vColor;
-layout (location = 3) out vec3 wPos;
+layout (location = 3) out vec3 vWPos;
 
 void main() {
     SceneData sData = SceneData(pc.sceneDataBufferAddr);
@@ -47,9 +47,9 @@ void main() {
 
     mat4 normalMatrix = transpose(inverse(pc.model));
 
+    vUv = vec2(vert.uv_x, vert.uv_y);
     // for now compute normal matrix  in shader, TODO : if support of non uniform scales is maintained, move this to CPU on a per draw basis
-    N = normalize((normalMatrix * vec4(vert.normal, 0.0)).xyz); 
-    uv = vec2(vert.uv_x, vert.uv_y);
+    vN = normalize((normalMatrix * vec4(vert.normal, 0.0)).xyz); 
     vColor = vert.color;
-    wPos = vec3(pc.model * vec4(vert.position, 1.0));
+    vWPos = vec3(pc.model * vec4(vert.position, 1.0));
 }   

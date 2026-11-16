@@ -40,10 +40,10 @@ layout(buffer_reference, scalar) readonly buffer SceneData {
 layout(set = 0, binding = 0) uniform sampler samplers[];
 layout(set = 0, binding = 1) uniform texture2D textures[];
 
-layout (location = 0) in vec2 uv;
-layout (location = 1) in vec3 N;
+layout (location = 0) in vec2 vUv;
+layout (location = 1) in vec3 vN;
 layout (location = 2) in vec4 vColor;
-layout (location = 3) in vec3 wPos;
+layout (location = 3) in vec3 vWPos;
 
 layout(location = 0) out vec4 fragColor;
 
@@ -89,14 +89,14 @@ void main() {
         sampler2D(
             textures[nonuniformEXT(mat.baseColorTextureIndex)],
             samplers[nonuniformEXT(mat.baseColorTextureSampler)])
-        , uv);
+        , vUv);
 
   
     vec4 metallicRoughness = texture(
         sampler2D(
             textures[nonuniformEXT(mat.metallicRoughnessTextureIndex)],
             samplers[nonuniformEXT(mat.metallicRoughnessTextureSampler)])
-        , uv);
+        , vUv);
 
     float metalness = metallicRoughness.b * mat.metallicFactor;
     float roughness = metallicRoughness.g * mat.roughnessFactor;
@@ -106,8 +106,8 @@ void main() {
     float ambientFactor = 0.03; // later use a cubemap for now is ok 
     vec3 ambient = surfaceColor.xyz * ambientFactor;
 
-    vec3 N = normalize(N); 
-    vec3 V = normalize(sData.cameraPos - wPos);
+    vec3 N = normalize(vN); 
+    vec3 V = normalize(sData.cameraPos - vWPos);
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, surfaceColor.rgb, metalness);
