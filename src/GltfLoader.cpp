@@ -134,8 +134,7 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
                     primitive.vertices[IVertex].normal = normals[IVertex];
                 }
                 if (uvPrim != -1) {
-                    primitive.vertices[IVertex].uv_x = uvs[IVertex].x;
-                    primitive.vertices[IVertex].uv_y = uvs[IVertex].y;
+                    primitive.vertices[IVertex].texCoord0 = uvs[IVertex];
                 }
                 if (colorPrim != -1) {
                     primitive.vertices[IVertex].color = colors[IVertex];

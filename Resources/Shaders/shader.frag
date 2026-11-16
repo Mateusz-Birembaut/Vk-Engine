@@ -47,14 +47,16 @@ layout(buffer_reference, scalar) readonly buffer SceneData {
 layout(set = 0, binding = 0) uniform sampler samplers[];
 layout(set = 0, binding = 1) uniform texture2D textures[];
 
-layout (location = 0) in vec2 vUv;
-layout (location = 1) in vec3 vN;
-layout (location = 2) in vec4 vColor;
-layout (location = 3) in vec3 vWPos;
+layout (location = 1) in vec4 vColor;
+layout (location = 2) in vec2 vUv0;
+layout (location = 3) in vec2 vUv1;
+layout (location = 4) in vec3 vWPos;
+layout (location = 5) in vec3 vN;
 
 layout(location = 0) out vec4 fragColor;
 
 float DistributionGGX(vec3 N, vec3 H, float roughness){
+
     float a = roughness * roughness; 
     float a2 =  a * a; 
     float NdotH = max(dot(N, H), 0.0);
@@ -73,13 +75,16 @@ float GeometrySchlickGGX(vec3 N, vec3 V, float k){
 };
 
 float GeometrySmith(vec3 N,vec3 V, vec3 L, float roughness){
+
     float k = ((roughness + 1) * (roughness + 1)) / 8;
 
     return GeometrySchlickGGX(N, V, k) * GeometrySchlickGGX(N, L, k);
 };
 
 vec3 fresnelSchlick(vec3 H, vec3 V, vec3 F0){
+
     return F0 + (1 - F0) * pow(1 - (max(dot(H, V), 0.0)), 5);
+
 };
 
 vec3 reinhardToneMapping(vec3 v){
@@ -100,7 +105,7 @@ void main() {
             texture(sampler2D(
                 textures[nonuniformEXT(mat.baseColorTextureIndex)],
                 samplers[nonuniformEXT(mat.baseColorTextureSampler)])
-            , vUv);
+            , vUv0);
     }
 
     float metalness = mat.metallicFactor;
@@ -112,7 +117,7 @@ void main() {
             texture(sampler2D(
                 textures[nonuniformEXT(mat.metallicRoughnessTextureIndex)],
                 samplers[nonuniformEXT(mat.metallicRoughnessTextureSampler)])
-            , vUv);
+            , vUv0);
 
         metalness *= metallicRoughness.b;
         roughness *= metallicRoughness.g;

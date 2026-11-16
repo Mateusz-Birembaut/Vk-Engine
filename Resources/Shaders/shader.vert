@@ -4,11 +4,13 @@
 #extension GL_EXT_scalar_block_layout : require
 
 struct Vertex {
-    vec3 position;
-    float uv_x;
-    vec3 normal;
-    float uv_y;
     vec4 color;
+    vec4 tangent;
+    vec2 texCoord0;
+    vec2 texCoord1;
+    vec3 position;
+    vec3 normal;
+
 };
 
 layout(buffer_reference, scalar) readonly buffer VertexBuffer { Vertex vertices[]; };
@@ -31,10 +33,11 @@ layout(buffer_reference, scalar) readonly buffer SceneData {
     uint64_t matBuffAddress;
 };
 
-layout (location = 0) out vec2 vUv;
-layout (location = 1) out vec3 vN;
-layout (location = 2) out vec4 vColor;
-layout (location = 3) out vec3 vWPos;
+layout (location = 1) out vec4 vColor;
+layout (location = 2) out vec2 vUv0;
+layout (location = 3) out vec2 vUv1;
+layout (location = 4) out vec3 vWPos;
+layout (location = 5) out vec3 vN;
 
 void main() {
     SceneData sData = SceneData(pc.sceneDataBufferAddr);
@@ -47,9 +50,9 @@ void main() {
 
     mat4 normalMatrix = transpose(inverse(pc.model));
 
-    vUv = vec2(vert.uv_x, vert.uv_y);
-    // for now compute normal matrix  in shader, TODO : if support of non uniform scales is maintained, move this to CPU on a per draw basis
-    vN = normalize((normalMatrix * vec4(vert.normal, 0.0)).xyz); 
+    vUv0 = vert.texCoord0;
+    vUv1 = vert.texCoord1;
+    vN = normalize((normalMatrix * vec4(vert.normal, 0.0)).xyz);  // for now compute normal matrix  in shader, TODO : if support of non uniform scales is maintained, move this to CPU on a per draw basis
     vColor = vert.color;
     vWPos = vec3(pc.model * vec4(vert.position, 1.0));
 }   
