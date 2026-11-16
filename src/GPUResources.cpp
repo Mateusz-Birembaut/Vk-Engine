@@ -388,18 +388,18 @@ Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
     };
 
     if (m_gpuImgs.get(matInfo.metallicRoughnessTexture.imageHandle)) {
-        gpuMat.metallicRoughnessTextureIndex = matInfo.metallicRoughnessTexture.imageHandle.index;
-        gpuMat.metallicRoughnessTextureSampler = matInfo.metallicRoughnessTexture.samplerIndex;
+        gpuMat.metallicRoughnessTex.imageIndex = matInfo.metallicRoughnessTexture.imageHandle.index;
+        gpuMat.metallicRoughnessTex.samplerIndex = static_cast<uint16_t>(matInfo.metallicRoughnessTexture.samplerIndex);
     }
 
     if (m_gpuImgs.get(matInfo.baseColorTexture.imageHandle)) {
-        gpuMat.baseColorTextureIndex = matInfo.baseColorTexture.imageHandle.index;
-        gpuMat.baseColorTextureSampler = matInfo.baseColorTexture.samplerIndex;
+        gpuMat.baseColorTex.imageIndex = matInfo.baseColorTexture.imageHandle.index;
+        gpuMat.baseColorTex.samplerIndex = static_cast<uint16_t>(matInfo.baseColorTexture.samplerIndex);
     }
 
     if (m_gpuImgs.get(matInfo.normalTexture.imageHandle)) {
-        gpuMat.normalTextureIndex = matInfo.normalTexture.imageHandle.index;
-        gpuMat.normalTextureSampler = matInfo.normalTexture.samplerIndex;
+        gpuMat.normalTex.imageIndex = matInfo.normalTexture.imageHandle.index;
+        gpuMat.normalTex.samplerIndex = static_cast<uint16_t>(matInfo.normalTexture.samplerIndex);
     }
 
     auto bytes = std::as_bytes(std::span<GPUMaterial>{&gpuMat, 1});

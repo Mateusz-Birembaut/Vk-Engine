@@ -7,18 +7,19 @@
 
 #define PI 3.14159265359
 
+struct GPUTextureRef {
+    uint imageIndex;   // 0xFFFFFFFF if absent
+    uint samplerIndex; // 0xFFFFFFFF if absent
+    uint texCoord;     
+};
+
 struct Material{
     vec4 baseColorFactor;
-    uint baseColorTextureIndex;
-    uint baseColorTextureSampler;
-    uint metallicRoughnessTextureIndex;
-    uint metallicRoughnessTextureSampler;
-    uint normalTextureIndex;
-    uint normalTextureSampler;
-    uint occlusionTextureIndex;
-    uint occlusionTextureSampler;
-    uint emissiveTextureIndex;
-    uint emissiveTextureSampler;
+    GPUTextureRef baseColorTex;
+    GPUTextureRef metallicRoughnessTex;
+    GPUTextureRef normalTex;
+    GPUTextureRef occlusionTex;
+    GPUTextureRef emissiveTex;
     float metallicFactor;
     float roughnessFactor;
     vec3 emissiveFactor;
@@ -99,24 +100,24 @@ void main() {
 
     vec4 baseColor = vec4(1.0f);
     
-    if(mat.baseColorTextureIndex != ~0){
+    if(mat.baseColorTex.imageIndex != ~0){
 
         baseColor =
             texture(sampler2D(
-                textures[nonuniformEXT(mat.baseColorTextureIndex)],
-                samplers[nonuniformEXT(mat.baseColorTextureSampler)])
+                textures[nonuniformEXT(mat.baseColorTex.imageIndex)],
+                samplers[nonuniformEXT(mat.baseColorTex.samplerIndex)])
             , vUv0);
     }
 
     float metalness = mat.metallicFactor;
     float roughness = mat.roughnessFactor;
 
-    if(mat.metallicRoughnessTextureIndex != ~0){
+    if(mat.metallicRoughnessTex.imageIndex != ~0){
 
         vec4 metallicRoughness = 
             texture(sampler2D(
-                textures[nonuniformEXT(mat.metallicRoughnessTextureIndex)],
-                samplers[nonuniformEXT(mat.metallicRoughnessTextureSampler)])
+                textures[nonuniformEXT(mat.metallicRoughnessTex.imageIndex)],
+                samplers[nonuniformEXT(mat.metallicRoughnessTex.samplerIndex)])
             , vUv0);
 
         metalness *= metallicRoughness.b;

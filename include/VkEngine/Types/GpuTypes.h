@@ -39,19 +39,20 @@ struct GPUMegaBuffer {
     GPUBuffer gpuBuffer{};
 };
 
+// TODO : later fuse all 1 variable ? 16 for textures, 8 for sampler 8 for texCoord 
+struct GPUTextureRef {
+    uint32_t imageIndex{0xFFFFFFFF}; // 0xFFFFFFFF if absent
+    uint32_t samplerIndex{0xFFFF};   // 0xFFFFF if absent
+    uint32_t texCoord{0};             // 0 / 1 for now
+};
+
 struct GPUMaterial {
-    // 0xFFFFFFFF for absent
     glm::vec4 baseColorFactor{1.0f, 1.0f, 1.0f, 1.0f};
-    uint32_t baseColorTextureIndex{0xFFFFFFFF};
-    uint32_t baseColorTextureSampler{0xFFFFFFFF};
-    uint32_t metallicRoughnessTextureIndex{0xFFFFFFFF};
-    uint32_t metallicRoughnessTextureSampler{0xFFFFFFFF};
-    uint32_t normalTextureIndex{0xFFFFFFFF};
-    uint32_t normalTextureSampler{0xFFFFFFFF};
-    uint32_t occlusionTextureIndex{0xFFFFFFFF};
-    uint32_t occlusionTextureSampler{0xFFFFFFFF};
-    uint32_t emissiveTextureIndex{0xFFFFFFFF};
-    uint32_t emissiveTextureSampler{0xFFFFFFFF};
+    GPUTextureRef baseColorTex{};
+    GPUTextureRef metallicRoughnessTex{};
+    GPUTextureRef normalTex{};
+    GPUTextureRef occlusionTex{};
+    GPUTextureRef emissiveTex{};
     float metallicFactor{1.0f};
     float roughnessFactor{1.0f};
     glm::vec3 emissiveFactor{0.0f, 0.0f, 0.0f};
