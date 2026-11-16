@@ -5,7 +5,8 @@
 #include <vector>
 
 #include "VkEngine/Types/FileData.h"
-#include "VkEngine/Types/Formats.h"
+#include "VkEngine/Types/Texturing.h"
+#include "VkEngine/Types/Vertex.h"
 
 namespace vke {
 
@@ -26,16 +27,9 @@ struct Node {
     glm::mat4 transform{1.0f};
 };
 
-struct Sampler {
-    int32_t minFilter;
-    int32_t magFilter;
-    int32_t wrapS;
-    int32_t wrapT;
-};
-
 struct Image {
     FileData data;
-    ColorSpace colorSpace{SRGB};
+    ColorSpace colorSpace{ColorSpace::SRGB};
 };
 
 struct Texture {
@@ -49,6 +43,9 @@ struct Material {
     float metallicFactor{1.0f};
     float roughnessFactor{1.0f};
     int32_t metallicRoughnessTextureIndex{-1};
+    int32_t normalTextureIndex{-1};
+    int32_t occlusionTexture{-1};
+    int32_t emissiveTexture{-1};
 };
 
 struct ImportedScene {

@@ -8,6 +8,7 @@
 #include <vk_mem_alloc.h>
 
 #include "VkEngine/Types/Handle.h"
+#include "VkEngine/Types/RenderApi.h"
 
 namespace vke {
 
@@ -46,6 +47,11 @@ struct GPUMaterial {
     uint32_t metallicRoughnessTextureSampler{};
     float metallicFactor{1.0f};
     float roughnessFactor{1.0f};
+};
+
+struct GPUSampler {
+    VkSampler vkSampler{VK_NULL_HANDLE};
+    Sampler samplerDesc{};
 };
 
 struct PushConstants {

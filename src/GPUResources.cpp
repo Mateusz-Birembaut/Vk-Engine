@@ -264,15 +264,15 @@ void GPUResources::cleanupDepthBuffer()
     }
 }
 
-Handle<GPUImage> GPUResources::createTexture(const ImageDesc& cpuImg)
+Handle<GPUImage> GPUResources::createTexture(const ImageDesc& imgDesc)
 {
     const auto device = m_ctx->device();
 
     VkExtent3D imgExtent{
-        .width = static_cast<uint32_t>(cpuImg.width), .height = static_cast<uint32_t>(cpuImg.height), .depth = 1
+        .width = static_cast<uint32_t>(imgDesc.width), .height = static_cast<uint32_t>(imgDesc.height), .depth = 1
     };
 
-    VkFormat format = (cpuImg.colorSpace == SRGB) ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormat format = (imgDesc.colorSpace == ColorSpace::SRGB) ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
 
     // image and view creation
     // TODO : check for best format (only color space changes for now)
@@ -282,9 +282,9 @@ Handle<GPUImage> GPUResources::createTexture(const ImageDesc& cpuImg)
     );
 
     // staging buffer to hold texture data
-    GPUBuffer stagingBuffer = createStagingBuffer(cpuImg.sizeBytes());
+    GPUBuffer stagingBuffer = createStagingBuffer(imgDesc.sizeBytes());
 
-    copyToStagingBuffer(cpuImg.bytes(), 0, stagingBuffer);
+    copyToStagingBuffer(imgDesc.bytes(), 0, stagingBuffer);
 
     immediateSubmit([&](VkCommandBuffer transientCmdBuff) {
         recordImgCopyCmds(transientCmdBuff, stagingBuffer.vkbuffer, imgExtent, gpuImage.vkImage);
@@ -440,27 +440,32 @@ Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
     return materialHandle;
 }
 
-uint32_t GPUResources::getOrCreateSampler()
+uint32_t GPUResources::getOrCreateSampler(const Sampler& samplerDesc)
 {
-    const auto device = m_ctx->device();
+    for (uint32_t ISampler = 0; ISampler < m_gpuSamplers.size(); ISampler++) {
+        if (m_gpuSamplers[ISampler].samplerDesc == samplerDesc) {
+            return ISampler;
+        }
+    }
+
+    uint32_t newSamplerIndex = static_cast<uint32_t>(m_gpuSamplers.size());
 
     VkSamplerCreateInfo samplerInfo{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-        .magFilter = VK_FILTER_NEAREST,
-        .minFilter = VK_FILTER_NEAREST,
-        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .magFilter = filterModeFrom(samplerDesc.magFilter),
+        .minFilter = filterModeFrom(samplerDesc.minFilter),
+        .addressModeU = wrapModeFrom(samplerDesc.wrapS),
+        .addressModeV = wrapModeFrom(samplerDesc.wrapT),
         .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
         .compareEnable = VK_FALSE,
     };
 
-    VkSampler sampler = nullptr;
-    check(vkCreateSampler(device, &samplerInfo, nullptr, &sampler), "[GPUResources] Failed to create sampler");
+    const auto device = m_ctx->device();
 
-    uint32_t samplerIndex = static_cast<uint32_t>(m_samplers.size());
-    m_samplers.push_back(sampler);
+    VkSampler vkSampler = nullptr;
+    check(vkCreateSampler(device, &samplerInfo, nullptr, &vkSampler), "[GPUResources] Failed to create sampler");
 
-    VkDescriptorImageInfo descImageInfo{.sampler = sampler};
+    VkDescriptorImageInfo descImageInfo{.sampler = vkSampler};
 
     VkWriteDescriptorSet descSetWrite{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -474,7 +479,9 @@ uint32_t GPUResources::getOrCreateSampler()
 
     vkUpdateDescriptorSets(device, 1, &descSetWrite, 0, nullptr);
 
-    return samplerIndex;
+    m_gpuSamplers.push_back({vkSampler, std::move(samplerDesc)});
+
+    return newSamplerIndex;
 }
 
 void GPUResources::copyToStagingBuffer(
@@ -612,6 +619,30 @@ void GPUResources::recordMeshCopyCmds(
     vkCmdPipelineBarrier2(transientCmdBuff, &transferDependencyInfo);
 }
 
+VkSamplerAddressMode GPUResources::wrapModeFrom(WrapMode wrapMode)
+{
+    switch (wrapMode) {
+        case WrapMode::CLAMP_TO_EDGE:
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case WrapMode::MIRRORED_REPEAT:
+            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        case WrapMode::REPEAT:
+        default:
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    }
+}
+
+VkFilter GPUResources::filterModeFrom(FilterMode filterMode)
+{
+    switch (filterMode) {
+        case FilterMode::NEAREST:
+            return VK_FILTER_NEAREST;
+        case FilterMode::LINEAR:
+        default:
+            return VK_FILTER_LINEAR;
+    }
+}
+
 void GPUResources::cleanup()
 {
     if (!m_ctx)
@@ -624,8 +655,8 @@ void GPUResources::cleanup()
 
     vkDestroyCommandPool(device, m_transientBuffCmdPool, nullptr);
 
-    for (auto& sampler : m_samplers) {
-        vkDestroySampler(device, sampler, nullptr);
+    for (auto& sampler : m_gpuSamplers) {
+        vkDestroySampler(device, sampler.vkSampler, nullptr);
     }
 
     m_gpuImgs.releaseAllAlive([this, device, vmaAllocator](GPUImage& gpuImage) {

@@ -9,6 +9,7 @@
 #include "VkEngine/Types/GpuTypes.h"
 #include "VkEngine/Types/Handle.h"
 #include "VkEngine/Types/RenderApi.h"
+#include "VkEngine/Types/Vertex.h"
 #include "VkEngine/VkInits.h"
 #include "VkEngine/VulkanCtx.h"
 
@@ -43,7 +44,7 @@ public:
      *
      * @return Handle of the created Texture { gpuImage index, gen }
      */
-    Handle<GPUImage> createTexture(const ImageDesc& cpuImg);
+    Handle<GPUImage> createTexture(const ImageDesc& imgDesc);
 
     /**
      * @brief Create a Mesh stored in VRAM for the given vertices and indices
@@ -88,7 +89,7 @@ public:
      * // TODO update function to use a description of the sampler before
      * @return Sampler index used for bindless texture sampling
      */
-    uint32_t getOrCreateSampler();
+    uint32_t getOrCreateSampler(const Sampler& samplerDesc);
 
     void recreateDepthBuffer();
 
@@ -227,12 +228,15 @@ private:
         vkFreeCommandBuffers(device, m_transientBuffCmdPool, 1, &transientCmdBuff);
     }
 
+    VkSamplerAddressMode wrapModeFrom(WrapMode wrapMode);
+    VkFilter filterModeFrom(FilterMode filterMode);
+
     Pool<GPUImage> m_gpuImgs;
     Pool<GPUBuffer> m_gpuBuffs;
     Pool<GPUMesh> m_gpuMeshes;
     Pool<GPUMaterial> m_gpuMaterials;
 
-    std::vector<VkSampler> m_samplers;
+    std::vector<GPUSampler> m_gpuSamplers;
 
     GPUImage m_depthBuffer{};
 

@@ -200,19 +200,16 @@ void fillImagesData(const tg3_model& model, const std::filesystem::path& path, s
     }
 }
 
-void fillSamplerData(const tg3_model& model, std::vector<gltf::Sampler>& impSceneSampler)
+void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampler)
 {
     impSceneSampler.reserve(model.samplers_count);
 
     for (uint32_t ISampler = 0; ISampler < model.samplers_count; ISampler++) {
-        const auto& sampler = model.samplers[ISampler];
-        impSceneSampler.push_back(
-            gltf::Sampler{
-                .minFilter = sampler.min_filter,
-                .magFilter = sampler.mag_filter,
-                .wrapS = sampler.wrap_s,
-                .wrapT = sampler.wrap_t,
-            }
+        const auto& tgSampler = model.samplers[ISampler];
+
+        impSceneSampler.emplace_back(
+            filterModeFrom(tgSampler.min_filter), filterModeFrom(tgSampler.mag_filter), wrapModeFrom(tgSampler.wrap_s),
+            wrapModeFrom(tgSampler.wrap_t)
         );
     }
 }
@@ -223,8 +220,7 @@ void fillTexturesData(const tg3_model& model, std::vector<gltf::Texture>& impSce
 
     for (uint32_t ITexture = 0; ITexture < model.textures_count; ITexture++) {
         const auto& texture = model.textures[ITexture];
-        // if source -1 still aded but not handled
-        // if sampler -1 use a default sampler with repeat both on axis
+        // if source -1 still added, default sampler will be used
         impSceneTextures.push_back(gltf::Texture{.imgIndex = texture.source, .samplerIndex = texture.sampler});
     }
 }
@@ -240,11 +236,11 @@ void fillMaterialData(
 
         // if image is used in metallic_roughness_texture then update its color space
         if (tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index != -1) {
-            uint32_t modelTextureIndex = tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index;
-            uint32_t modelImageIndex = model.textures[modelTextureIndex].source;
+            uint32_t metallicTextureIndex = tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index;
+            uint32_t metallicImageIndex = model.textures[metallicTextureIndex].source;
 
-            if (modelImageIndex < impSceneImgs.size()) {
-                impSceneImgs[modelImageIndex].colorSpace = LINEAR;
+            if (metallicImageIndex < impSceneImgs.size()) {
+                impSceneImgs[metallicImageIndex].colorSpace = ColorSpace::LINEAR;
             }
         }
 
@@ -255,6 +251,9 @@ void fillMaterialData(
                 .metallicFactor = static_cast<float>(tgMaterial.pbr_metallic_roughness.metallic_factor),
                 .roughnessFactor = static_cast<float>(tgMaterial.pbr_metallic_roughness.roughness_factor),
                 .metallicRoughnessTextureIndex = tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index,
+                .normalTextureIndex = tgMaterial.normal_texture.index,
+                .occlusionTexture = tgMaterial.occlusion_texture.index,
+                .emissiveTexture = tgMaterial.emissive_texture.index,
             }
         );
     }
@@ -291,6 +290,30 @@ void traverseNodes(
 
     for (uint32_t IChild = 0; IChild < tgNode.children_count; IChild++) {
         traverseNodes(model, model.nodes[tgNode.children[IChild]], localTransform, impSceneNodes);
+    }
+}
+
+WrapMode wrapModeFrom(int32_t value)
+{
+    switch (value) {
+        case TG3_TEXTURE_WRAP_CLAMP_TO_EDGE:
+            return WrapMode::CLAMP_TO_EDGE;
+        case TG3_TEXTURE_WRAP_MIRRORED_REPEAT:
+            return WrapMode::MIRRORED_REPEAT;
+        default:
+            return WrapMode::REPEAT;
+    }
+}
+
+FilterMode filterModeFrom(int32_t value)
+{
+    switch (value) {
+        // TODO : later split this when mipmap is in
+        case TG3_TEXTURE_FILTER_NEAREST | TG3_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST |
+            TG3_TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR:
+            return FilterMode::NEAREST;
+        default:
+            return FilterMode::LINEAR;
     }
 }
 

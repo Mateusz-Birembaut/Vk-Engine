@@ -40,9 +40,9 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
     };
 
     Handle<GPUImage> fallBackImageHandle = m_gpuResources.createTexture(whitePixel);
-    uint32_t fallBackSamplerIndex = m_gpuResources.getOrCreateSampler(); // for now create a basic sampler
+    uint32_t fallBackSamplerIndex = m_gpuResources.getOrCreateSampler({}); // for now create a basic sampler
 
-    m_fallbackTexture = {fallBackImageHandle, fallBackSamplerIndex};
+    m_fallbackTexture = Texture{fallBackImageHandle, fallBackSamplerIndex};
 
     m_fallbackMaterial = m_gpuResources.createMaterial(
         {.baseColorTexture = m_fallbackTexture, .metallicRoughnessTexture = m_fallbackTexture}
@@ -458,14 +458,19 @@ Handle<GPUMesh> Renderer::createMesh(std::span<const Vertex> vertices, std::span
     return m_gpuResources.createGpuMesh(vertices, indices);
 }
 
-Handle<GPUImage> Renderer::createTexture(const ImageDesc& cpuImg)
+Handle<GPUImage> Renderer::createTexture(const ImageDesc& imgDesc)
 {
-    return m_gpuResources.createTexture(cpuImg);
+    return m_gpuResources.createTexture(imgDesc);
 }
 
 Handle<GPUMaterial> Renderer::createMaterial(const MaterialDesc& material)
 {
     return m_gpuResources.createMaterial(material);
+}
+
+uint32_t Renderer::getOrCreateSampler(const Sampler& samplerDesc)
+{
+    return m_gpuResources.getOrCreateSampler(samplerDesc);
 }
 
 } // namespace vke

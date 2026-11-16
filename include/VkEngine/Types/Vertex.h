@@ -13,6 +13,6 @@ struct Vertex {
     glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 };
 
-enum ColorSpace { SRGB, LINEAR };
+
 
 } // namespace vke

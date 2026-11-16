@@ -5,8 +5,8 @@
 
 #include <span>
 
-#include "VkEngine/Types/Formats.h"
 #include "VkEngine/Types/Handle.h"
+#include "VkEngine/Types/Texturing.h"
 
 namespace vke {
 
@@ -19,7 +19,7 @@ struct ImageDesc {
     int height{0};
     int channels{4};
     unsigned char* data{nullptr};
-    ColorSpace colorSpace{SRGB};
+    ColorSpace colorSpace{ColorSpace::SRGB};
 
     /// @return Size of image in bytes
     size_t sizeBytes() const

@@ -18,7 +18,7 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
 void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMeshes);
 void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNodes);
 void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<gltf::Image>& impSceneImgs);
-void fillSamplerData(const tg3_model& model, std::vector<gltf::Sampler>& impSceneSampler);
+void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampler);
 void fillTexturesData(const tg3_model& model, std::vector<gltf::Texture>& impSceneTextures);
 void fillMaterialData(
     const tg3_model& model, std::vector<gltf::Material>& impSceneMaterials, std::vector<gltf::Image>& impSceneImgs
@@ -28,6 +28,9 @@ void traverseNodes(
     const tg3_model& model, const tg3_node& node, const glm::mat4& parentTransform,
     std::vector<gltf::Node>& impSceneNodes
 );
+
+WrapMode wrapModeFrom(int32_t value);
+FilterMode filterModeFrom(int32_t value);
 
 template <typename SRC, size_t Count>
 std::vector<glm::vec<Count, float>> readPrimitiveAttribute(const tg3_model& model, const tg3_accessor& acc)
