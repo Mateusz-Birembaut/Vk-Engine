@@ -60,8 +60,10 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
 
             int32_t positionPrim = -1;
             int32_t normalPrim = -1;
-            int32_t uvPrim = -1;
+            int32_t uvPrim0 = -1;
+            int32_t uvPrim1 = -1;
             int32_t colorPrim = -1;
+            int32_t tangPrim = -1;
 
             // get indices of attributes
             for (uint32_t IAttr = 0; IAttr < attributeCount; IAttr++) {
@@ -72,35 +74,57 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
                 } else if (strcmp(attribute.key.data, "NORMAL") == 0) {
                     normalPrim = attribute.value;
                 } else if (strcmp(attribute.key.data, "TEXCOORD_0") == 0) {
-                    uvPrim = attribute.value;
+                    uvPrim0 = attribute.value;
+                } else if (strcmp(attribute.key.data, "TEXCOORD_0") == 0) {
+                    uvPrim1 = attribute.value;
                 } else if (strcmp(attribute.key.data, "COLOR_0") == 0) {
                     colorPrim = attribute.value;
+                } else if (strcmp(attribute.key.data, "TANGENT") == 0) {
+                    tangPrim = attribute.value;
                 }
             }
 
             const auto& vertexAcc = model.accessors[positionPrim];
 
             std::vector<glm::vec3> positions = readPrimitiveAttribute<float, 3>(model, vertexAcc);
-            std::vector<glm::vec2> uvs;
+            std::vector<glm::vec2> uvs0;
+            std::vector<glm::vec2> uvs1;
             std::vector<glm::vec3> normals;
             std::vector<glm::vec4> colors;
+            std::vector<glm::vec4> tangs;
 
+            // TODO : compute them if absent
             if (normalPrim != -1) {
                 const auto& normalAcc = model.accessors[normalPrim];
                 normals = readPrimitiveAttribute<float, 3>(model, normalAcc);
             }
 
-            if (uvPrim != -1) {
-                const auto& uvAcc = model.accessors[uvPrim];
+            if (uvPrim0 != -1) {
+                const auto& uvAcc = model.accessors[uvPrim0];
                 switch (uvAcc.component_type) {
                     case TG3_COMPONENT_TYPE_FLOAT:
-                        uvs = readPrimitiveAttribute<float, 2>(model, uvAcc);
+                        uvs0 = readPrimitiveAttribute<float, 2>(model, uvAcc);
                         break;
                     case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        uvs = readPrimitiveAttribute<uint8_t, 2>(model, uvAcc);
+                        uvs0 = readPrimitiveAttribute<uint8_t, 2>(model, uvAcc);
                         break;
                     case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        uvs = readPrimitiveAttribute<uint16_t, 2>(model, uvAcc);
+                        uvs0 = readPrimitiveAttribute<uint16_t, 2>(model, uvAcc);
+                        break;
+                }
+            }
+
+            if (uvPrim1 != -1) {
+                const auto& uvAcc = model.accessors[uvPrim1];
+                switch (uvAcc.component_type) {
+                    case TG3_COMPONENT_TYPE_FLOAT:
+                        uvs0 = readPrimitiveAttribute<float, 2>(model, uvAcc);
+                        break;
+                    case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
+                        uvs0 = readPrimitiveAttribute<uint8_t, 2>(model, uvAcc);
+                        break;
+                    case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
+                        uvs0 = readPrimitiveAttribute<uint16_t, 2>(model, uvAcc);
                         break;
                 }
             }
@@ -109,6 +133,13 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
                 const auto& colorAcc = model.accessors[colorPrim];
 
                 colors = readColors(model, colorAcc);
+            }
+
+            // TODO : compute them if absent
+            if (tangPrim != -1) {
+                const auto& tangAcc = model.accessors[tangPrim];
+
+                tangs = readPrimitiveAttribute<float, 4>(model, tangAcc);
             }
 
             const auto& indexAcc = model.accessors[indicesPrim];
@@ -129,15 +160,27 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
 
             // fill vertices data
             for (size_t IVertex = 0; IVertex < positions.size(); IVertex++) {
-                primitive.vertices[IVertex].position = positions[IVertex];
+                auto& vertex = primitive.vertices[IVertex];
+
+                vertex.position = positions[IVertex];
                 if (normalPrim != -1) {
-                    primitive.vertices[IVertex].normal = normals[IVertex];
+                    vertex.normal = normals[IVertex];
                 }
-                if (uvPrim != -1) {
-                    primitive.vertices[IVertex].texCoord0 = uvs[IVertex];
+                if (uvPrim0 != -1) {
+                    vertex.texCoord0 = uvs0[IVertex];
+
+                    // fill text coord 1 with values of uv0
+                    vertex.texCoord1 = uvs0[IVertex];
+                }
+                if (uvPrim1 != -1) {
+                    // if text coord 1 set, fill with values of uv1
+                    vertex.texCoord1 = uvs1[IVertex];
                 }
                 if (colorPrim != -1) {
-                    primitive.vertices[IVertex].color = colors[IVertex];
+                    vertex.color = colors[IVertex];
+                }
+                if (tangPrim != -1) {
+                    vertex.tangent = tangs[IVertex];
                 }
             }
 
