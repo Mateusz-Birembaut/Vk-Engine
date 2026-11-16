@@ -85,21 +85,31 @@ void main() {
 
     Material mat = mbuff.materials[pc.materialIndex];
 
-    vec4 baseColor = texture(
-        sampler2D(
-            textures[nonuniformEXT(mat.baseColorTextureIndex)],
-            samplers[nonuniformEXT(mat.baseColorTextureSampler)])
-        , vUv);
+    vec4 baseColor = vec4(1.0f);
+    
+    if(mat.baseColorTextureIndex != ~0){
 
-  
-    vec4 metallicRoughness = texture(
-        sampler2D(
-            textures[nonuniformEXT(mat.metallicRoughnessTextureIndex)],
-            samplers[nonuniformEXT(mat.metallicRoughnessTextureSampler)])
-        , vUv);
+        baseColor =
+            texture(sampler2D(
+                textures[nonuniformEXT(mat.baseColorTextureIndex)],
+                samplers[nonuniformEXT(mat.baseColorTextureSampler)])
+            , vUv);
+    }
 
-    float metalness = metallicRoughness.b * mat.metallicFactor;
-    float roughness = metallicRoughness.g * mat.roughnessFactor;
+    float metalness = mat.metallicFactor;
+    float roughness = mat.roughnessFactor;
+
+    if(mat.metallicRoughnessTextureIndex != ~0){
+
+        vec4 metallicRoughness = 
+            texture(sampler2D(
+                textures[nonuniformEXT(mat.metallicRoughnessTextureIndex)],
+                samplers[nonuniformEXT(mat.metallicRoughnessTextureSampler)])
+            , vUv);
+
+        metalness *= metallicRoughness.b;
+        roughness *= metallicRoughness.g;
+    }
 
     vec4 surfaceColor = vColor * baseColor * mat.baseColorFactor;  
 

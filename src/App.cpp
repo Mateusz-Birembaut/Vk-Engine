@@ -161,10 +161,8 @@ void App::run()
             materialCreateInfo.baseColorTexture = fallbackTexture;
         }
 
-        if (gltfMaterial.metallicRoughnessTextureIndex >= 0) {
+        if (gltfMaterial.metallicRoughnessTextureIndex >= 0) { 
             materialCreateInfo.metallicRoughnessTexture = textures[gltfMaterial.metallicRoughnessTextureIndex];
-        } else {
-            materialCreateInfo.metallicRoughnessTexture = fallbackTexture;
         }
 
         matHandles[IMaterial] = m_renderer->createMaterial(materialCreateInfo);

@@ -383,13 +383,19 @@ Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
 {
     GPUMaterial gpuMat{
         .baseColorFactor = matInfo.baseColorFactor,
-        .baseColorTextureIndex = matInfo.baseColorTexture.imageHandle.index,
-        .baseColorTextureSampler = matInfo.baseColorTexture.samplerIndex,
-        .metallicRoughnessTextureIndex = matInfo.metallicRoughnessTexture.imageHandle.index,
-        .metallicRoughnessTextureSampler = matInfo.metallicRoughnessTexture.samplerIndex,
         .metallicFactor = matInfo.metallicFactor,
         .roughnessFactor = matInfo.roughnessFactor,
     };
+
+    if (m_gpuImgs.get(matInfo.metallicRoughnessTexture.imageHandle)) {
+        gpuMat.metallicRoughnessTextureIndex = matInfo.metallicRoughnessTexture.imageHandle.index;
+        gpuMat.metallicRoughnessTextureSampler = matInfo.metallicRoughnessTexture.samplerIndex;
+    }
+
+    if (m_gpuImgs.get(matInfo.baseColorTexture.imageHandle)) {
+        gpuMat.baseColorTextureIndex = matInfo.baseColorTexture.imageHandle.index;
+        gpuMat.baseColorTextureSampler = matInfo.baseColorTexture.samplerIndex;
+    }
 
     auto bytes = std::as_bytes(std::span<GPUMaterial>{&gpuMat, 1});
 

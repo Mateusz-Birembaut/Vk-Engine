@@ -40,11 +40,12 @@ struct GPUMegaBuffer {
 };
 
 struct GPUMaterial {
+    // 0xFFFFFFFF for absent
     glm::vec4 baseColorFactor{1.0f, 1.0f, 1.0f, 1.0f};
-    uint32_t baseColorTextureIndex{};
-    uint32_t baseColorTextureSampler{};
-    uint32_t metallicRoughnessTextureIndex{};
-    uint32_t metallicRoughnessTextureSampler{};
+    uint32_t baseColorTextureIndex{0xFFFFFFFF};
+    uint32_t baseColorTextureSampler{0xFFFFFFFF};
+    uint32_t metallicRoughnessTextureIndex{0xFFFFFFFF};
+    uint32_t metallicRoughnessTextureSampler{0xFFFFFFFF};
     float metallicFactor{1.0f};
     float roughnessFactor{1.0f};
 };
