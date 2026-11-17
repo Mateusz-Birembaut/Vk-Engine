@@ -8,6 +8,7 @@
 #define PI 3.14159265359
 
 struct GPUTextureRef {
+    mat3x2 transform;
     uint imageIndex;   // 0xFFFFFFFF if absent
     uint samplerIndex; // 0xFFFFFFFF if absent
     uint texCoord;     
@@ -52,7 +53,9 @@ layout (location = 1) in vec4 vColor;
 layout (location = 2) in vec2 vUv0;
 layout (location = 3) in vec2 vUv1;
 layout (location = 4) in vec3 vWPos;
-layout (location = 5) in vec3 vN;
+layout (location = 5) in vec3 vN;           // normal in world space
+layout (location = 6) in vec3 vTangent;     // tangent in world space
+layout (location = 7) in float vTangentDir; // sign D of tangent space
 
 layout(location = 0) out vec4 fragColor;
 
@@ -130,6 +133,26 @@ void main() {
     vec3 ambient = surfaceColor.xyz * ambientFactor;
 
     vec3 N = normalize(vN); 
+
+    if(mat.normalTex.imageIndex != ~0){
+
+        vec3 T = normalize(vTangent);
+        vec3 B = vTangentDir * cross(N, T);
+
+        vec2 uvTransformed = mat.normalTex.transform * vec3(vUv0, 1.0); // TODO : check texture uv coord vUv0 or vUv1
+        vec4 normal = // [0, 1]
+            texture(sampler2D(
+                textures[nonuniformEXT(mat.normalTex.imageIndex)],
+                samplers[nonuniformEXT(mat.normalTex.samplerIndex)])
+            , uvTransformed);
+
+        normal = normal * 2.0 - 1.0; // [-1, 1]
+
+        N = T * normal.x + B * normal.y + N * normal.z;
+        N = normalize(N); 
+        
+    }
+
     vec3 V = normalize(sData.cameraPos - vWPos);
 
     vec3 F0 = vec3(0.04);

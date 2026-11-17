@@ -39,11 +39,12 @@ struct GPUMegaBuffer {
     GPUBuffer gpuBuffer{};
 };
 
-// TODO : later fuse all 1 variable ? 16 for textures, 8 for sampler 8 for texCoord 
+// TODO : later fuse all 1 variable ? 16 for textures, 8 for sampler 8 for texCoord
 struct GPUTextureRef {
+    glm::mat3x2 transform{1.0f};
     uint32_t imageIndex{0xFFFFFFFF}; // 0xFFFFFFFF if absent
     uint32_t samplerIndex{0xFFFF};   // 0xFFFFF if absent
-    uint32_t texCoord{0};             // 0 / 1 for now
+    uint32_t texCoord{0};            // 0 / 1 for now TODO : UPDATE TEXTCOOD IN TEXTURES
 };
 
 struct GPUMaterial {

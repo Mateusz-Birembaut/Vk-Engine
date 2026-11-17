@@ -37,7 +37,9 @@ layout (location = 1) out vec4 vColor;
 layout (location = 2) out vec2 vUv0;
 layout (location = 3) out vec2 vUv1;
 layout (location = 4) out vec3 vWPos;
-layout (location = 5) out vec3 vN;
+layout (location = 5) out vec3 vN;           // normal in world space
+layout (location = 6) out vec3 vTangent;     // tangent in world space
+layout (location = 7) out float vTangentDir; // sign D of tangent space
 
 void main() {
     SceneData sData = SceneData(pc.sceneDataBufferAddr);
@@ -55,4 +57,6 @@ void main() {
     vN = normalize((normalMatrix * vec4(vert.normal, 0.0)).xyz);  // for now compute normal matrix  in shader, TODO : if support of non uniform scales is maintained, move this to CPU on a per draw basis
     vColor = vert.color;
     vWPos = vec3(pc.model * vec4(vert.position, 1.0));
+    vTangent = normalize((normalMatrix * vec4(vert.tangent.xyz, 0.0)).xyz);
+    vTangentDir = vert.tangent.w;
 }   

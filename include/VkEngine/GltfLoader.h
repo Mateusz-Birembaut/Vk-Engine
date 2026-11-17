@@ -24,6 +24,8 @@ void fillMaterialData(
     const tg3_model& model, std::vector<gltf::Material>& impSceneMaterials, std::vector<gltf::Image>& impSceneImgs
 );
 
+void fillTextureRefExtData(vke::gltf::TextureRef& textRef, const tg3_extras_ext& extensionInfo);
+
 void traverseNodes(
     const tg3_model& model, const tg3_node& node, const glm::mat4& parentTransform,
     std::vector<gltf::Node>& impSceneNodes
@@ -91,5 +93,7 @@ template <typename SRC> std::vector<uint32_t> readIndices(const tg3_model& model
 }
 
 std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& acc);
+
+glm::mat3x2 readTextureTransform(const tg3_extension& ext);
 
 } // namespace vke

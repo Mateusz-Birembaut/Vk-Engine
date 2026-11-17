@@ -2,6 +2,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include <cmath>
 #include <iostream>
 #include <stb_image.h>
 #include <tiny_gltf_v3.h>
@@ -262,7 +263,7 @@ void fillTexturesData(const tg3_model& model, std::vector<gltf::Texture>& impSce
 
     for (uint32_t ITexture = 0; ITexture < model.textures_count; ITexture++) {
         const auto& texture = model.textures[ITexture];
-        // if source -1 still added, default sampler will be used
+
         impSceneTextures.push_back(gltf::Texture{.imgIndex = texture.source, .samplerIndex = texture.sampler});
     }
 }
@@ -273,7 +274,7 @@ void fillMaterialData(
 {
     impSceneMaterials.reserve(model.materials_count);
 
-    auto updateToLinearColorSpace = [&](uint32_t textureIndex) -> void {
+    const auto updateToLinearColorSpace = [&](uint32_t textureIndex) -> void {
         if (textureIndex != -1) {
             uint32_t imgIndex = model.textures[textureIndex].source;
 
@@ -283,27 +284,68 @@ void fillMaterialData(
         }
     };
 
+    glm::mat3 uvTransform{1.0f};
+
     for (uint32_t IMaterial = 0; IMaterial < model.materials_count; IMaterial++) {
         const auto& tgMaterial = model.materials[IMaterial];
 
-        updateToLinearColorSpace(tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index);
-        updateToLinearColorSpace(tgMaterial.normal_texture.index);
-        updateToLinearColorSpace(tgMaterial.emissive_texture.index);
-        updateToLinearColorSpace(tgMaterial.occlusion_texture.index);
+        gltf::Material material{
+            .baseColorFactor = glm::vec4(glm::make_vec4(tgMaterial.pbr_metallic_roughness.base_color_factor)),
 
-        impSceneMaterials.push_back(
-            gltf::Material{
-                .baseColorFactor = glm::vec4(glm::make_vec4(tgMaterial.pbr_metallic_roughness.base_color_factor)),
-                .baseColorTextureIndex = tgMaterial.pbr_metallic_roughness.base_color_texture.index,
-                .metallicFactor = static_cast<float>(tgMaterial.pbr_metallic_roughness.metallic_factor),
-                .roughnessFactor = static_cast<float>(tgMaterial.pbr_metallic_roughness.roughness_factor),
-                .metallicRoughnessTextureIndex = tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index,
-                .normalTextureIndex = tgMaterial.normal_texture.index,
-                .occlusionTexture = tgMaterial.occlusion_texture.index,
-                .emissiveTexture = tgMaterial.emissive_texture.index,
-                .emissiveFactor = glm::vec3(glm::make_vec3(tgMaterial.emissive_factor)),
-            }
+            .baseColorTexture{
+                .index = tgMaterial.pbr_metallic_roughness.base_color_texture.index,
+                .texCoord = static_cast<uint32_t>(tgMaterial.pbr_metallic_roughness.base_color_texture.tex_coord),
+            },
+
+            .metallicFactor = static_cast<float>(tgMaterial.pbr_metallic_roughness.metallic_factor),
+
+            .roughnessFactor = static_cast<float>(tgMaterial.pbr_metallic_roughness.roughness_factor),
+
+            .metallicRoughnessTexture{
+                .index = tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index,
+                .texCoord =
+                    static_cast<uint32_t>(tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.tex_coord),
+            },
+
+            .normalTexture{
+                .index = tgMaterial.normal_texture.index,
+                .texCoord = static_cast<uint32_t>(tgMaterial.normal_texture.tex_coord),
+            },
+
+            .occlusionTexture{
+                .index = tgMaterial.occlusion_texture.index,
+                .texCoord = static_cast<uint32_t>(tgMaterial.occlusion_texture.tex_coord),
+            },
+
+            .emissiveTexture{
+                .index = tgMaterial.emissive_texture.index,
+                .texCoord = static_cast<uint32_t>(tgMaterial.emissive_texture.tex_coord),
+            },
+
+            .emissiveFactor = glm::vec3(glm::make_vec3(tgMaterial.emissive_factor)),
+        };
+
+        if (IMaterial == 3) {
+            std::cerr << "Interior 1 :";
+        }
+
+        fillTextureRefExtData(material.baseColorTexture, tgMaterial.pbr_metallic_roughness.base_color_texture.ext);
+
+        updateToLinearColorSpace(tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index);
+        fillTextureRefExtData(
+            material.metallicRoughnessTexture, tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.ext
         );
+
+        updateToLinearColorSpace(tgMaterial.normal_texture.index);
+        fillTextureRefExtData(material.normalTexture, tgMaterial.normal_texture.ext);
+
+        updateToLinearColorSpace(tgMaterial.emissive_texture.index);
+        fillTextureRefExtData(material.emissiveTexture, tgMaterial.emissive_texture.ext);
+
+        updateToLinearColorSpace(tgMaterial.occlusion_texture.index);
+        fillTextureRefExtData(material.occlusionTexture, tgMaterial.occlusion_texture.ext);
+
+        impSceneMaterials.push_back(std::move(material));
     }
 }
 
@@ -403,6 +445,98 @@ std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& co
     }
 
     return colors;
+}
+
+void fillTextureRefExtData(vke::gltf::TextureRef& textRef, const tg3_extras_ext& extensionInfo)
+{
+    if (textRef.index < 0) {
+        return;
+    }
+
+    for (uint32_t IExtension = 0; IExtension < extensionInfo.extensions_count; IExtension++) {
+        const auto& ext = extensionInfo.extensions[IExtension];
+
+        if (strcmp(ext.name.data, "KHR_texture_transform") == 0) {
+            textRef.transform = readTextureTransform(ext);
+        }
+    }
+}
+
+glm::mat3x2 readTextureTransform(const tg3_extension& ext)
+{
+    float rotationRad{0.0f};
+    glm::vec2 scale{1.0f, 1.0f};
+    glm::vec2 offset{0.0f, 0.0f};
+
+    // TODO : cleanup later
+    for (uint32_t IObject = 0; IObject < ext.value.object_count; IObject++) {
+        const auto& obj = ext.value.object_data[IObject];
+
+        if (strcmp(obj.key.data, "scale") == 0) {
+            uint32_t scaleSize = std::min(obj.value.array_count, static_cast<uint32_t>(2));
+
+            for (uint32_t IScaleScalar = 0; IScaleScalar < scaleSize; IScaleScalar++) {
+                const auto& scalar = obj.value.array_data[IScaleScalar];
+
+                if (scalar.type == TG3_VALUE_INT) {
+                    scale[IScaleScalar] = (static_cast<float>(scalar.int_val));
+                } else if (scalar.type == TG3_VALUE_REAL) {
+                    scale[IScaleScalar] = (static_cast<float>(scalar.real_val));
+                }
+            }
+        }
+
+        if (strcmp(obj.key.data, "offset") == 0) {
+            uint32_t offsetSize = std::min(obj.value.array_count, uint32_t{2});
+
+            for (uint32_t IOffsetScalar = 0; IOffsetScalar < offsetSize; IOffsetScalar++) {
+                const auto& scalar = obj.value.array_data[IOffsetScalar];
+
+                if (scalar.type == TG3_VALUE_INT) {
+                    offset[IOffsetScalar] = (static_cast<float>(scalar.int_val));
+                } else if (scalar.type == TG3_VALUE_REAL) {
+                    offset[IOffsetScalar] = (static_cast<float>(scalar.real_val));
+                }
+            }
+        }
+        if (strcmp(obj.key.data, "rotation") == 0) {
+            if (obj.value.type == TG3_VALUE_INT) {
+                rotationRad = (static_cast<float>(obj.value.int_val));
+            } else if (obj.value.type == TG3_VALUE_REAL) {
+                rotationRad = (static_cast<float>(obj.value.real_val));
+            }
+        }
+    }
+
+    // clang-format off
+    glm::mat3 trMat = glm::mat3{
+        1.0f,     0.0f,     0.0f, 
+        0.0f,     1.0f,     0.0f,  
+        offset.x, offset.y, 1.0f  
+    };
+
+    float cosRot = std::cos(rotationRad);
+    float sinRot = std::sin(rotationRad);
+
+    glm::mat3 rMat = glm::mat3{
+        cosRot,  sinRot, 0.0f,
+        sinRot,  cosRot, 0.0f,
+        0.0f  ,  0.0f  , 1.0f  
+    };
+
+    glm::mat3 sMat = glm::mat3{
+        scale.x, 0.0f,    0.0f, 
+        0.0f,    scale.y, 0.0f,
+        0.0f,    0.0f,    1.0f  
+    };
+    // clang-format on
+
+    glm::mat3 uvTransform = trMat * rMat * sMat;
+
+    return glm::mat3x2{
+        glm::vec2{uvTransform[0][0], uvTransform[0][1]}, glm::vec2{uvTransform[1][0], uvTransform[1][1]},
+        glm::vec2{uvTransform[2][0], uvTransform[2][1]}
+    };
 }
 
 gltf::ImportedScene vke::loadGltf(const std::filesystem::path& path)

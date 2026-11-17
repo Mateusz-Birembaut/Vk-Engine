@@ -45,7 +45,10 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
     m_fallbackTexture = Texture{fallBackImageHandle, fallBackSamplerIndex};
 
     m_fallbackMaterial = m_gpuResources.createMaterial(
-        {.baseColorTexture = m_fallbackTexture, .metallicRoughnessTexture = m_fallbackTexture}
+        {.baseColorTexture{
+             .texture = m_fallbackTexture,
+         },
+         .metallicRoughnessTexture{.texture = m_fallbackTexture}}
     );
 }
 
@@ -434,8 +437,8 @@ void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderV
 
     VkCommandBufferSubmitInfo cmdBufferSubmitInfo = cmdBuffSubmitInfo(cmdBuff);
 
-    // reset here so if an early return happens before sumbit, on the next iteration renderFence would be left waiting
-    // because never signaled
+    // reset here so if an early return happens before sumbit, on the next iteration renderFence would be left
+    // waiting because never signaled
     check(vkResetFences(device, 1, &frameData.renderFence), "[Renderer] Failed to reset fence");
 
     // submit to graphics queue and signal fence for next iteration that uses this frameData

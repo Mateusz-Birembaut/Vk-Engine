@@ -65,7 +65,8 @@ void App::run()
     // const auto modelPath = exeDir / "Resources" / "Models" / "Box" / "Box.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "AntiqueCamera.glb";
     // const auto modelPath = exeDir / "Resources" / "Models" / "steampunk_underwater_explorer" / "scene.gltf";
-    const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
+     const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
     // const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "microphone_gxl_066_bafhcteks.glb";
     // const auto modelPath = exeDir / "Resources" / "Models" / "Cartoon_City_Free.glb";
@@ -149,30 +150,59 @@ void App::run()
 
         MaterialDesc materialDesc{
             .baseColorFactor = gltfMaterial.baseColorFactor,
+
+            .baseColorTexture{
+                .transform = gltfMaterial.baseColorTexture.transform,
+                .texCoord = gltfMaterial.baseColorTexture.texCoord,
+            },
+
+            .metallicRoughnessTexture{
+                .transform = gltfMaterial.metallicRoughnessTexture.transform,
+                .texCoord = gltfMaterial.metallicRoughnessTexture.texCoord,
+            },
+
+            .normalTexture{
+                .transform = gltfMaterial.normalTexture.transform,
+                .texCoord = gltfMaterial.normalTexture.texCoord,
+            },
+
+            .occlusionTexture{
+                .transform = gltfMaterial.occlusionTexture.transform,
+                .texCoord = gltfMaterial.occlusionTexture.texCoord,
+            },
+
+            .emissiveTexture{
+                .transform = gltfMaterial.emissiveTexture.transform,
+                .texCoord = gltfMaterial.emissiveTexture.texCoord,
+            },
+
+            .emissiveFactor = gltfMaterial.emissiveFactor,
+
             .metallicFactor = gltfMaterial.metallicFactor,
+
             .roughnessFactor = gltfMaterial.roughnessFactor,
         };
 
-        if (gltfMaterial.baseColorTextureIndex >= 0) {
-            materialDesc.baseColorTexture = textures[gltfMaterial.baseColorTextureIndex];
+        if (gltfMaterial.baseColorTexture.index >= 0) {
+            materialDesc.baseColorTexture.texture = textures[gltfMaterial.baseColorTexture.index];
         } else {
-            materialDesc.baseColorTexture = fallbackTexture;
+            materialDesc.baseColorTexture.texture = fallbackTexture;
         }
 
-        if (gltfMaterial.metallicRoughnessTextureIndex >= 0) {
-            materialDesc.metallicRoughnessTexture = textures[gltfMaterial.metallicRoughnessTextureIndex];
+        if (gltfMaterial.metallicRoughnessTexture.index >= 0) {
+            materialDesc.metallicRoughnessTexture.texture = textures[gltfMaterial.metallicRoughnessTexture.index];
         }
 
-        if (gltfMaterial.normalTextureIndex >= 0) {
-            materialDesc.normalTexture = textures[gltfMaterial.normalTextureIndex];
+        if (gltfMaterial.normalTexture.index >= 0) {
+            materialDesc.normalTexture.texture = textures[gltfMaterial.normalTexture.index];
         }
 
-        if (gltfMaterial.emissiveTexture >= 0) {
-            materialDesc.emissiveTexture = textures[gltfMaterial.emissiveTexture];
+        if (gltfMaterial.emissiveTexture.index >= 0) {
+            materialDesc.emissiveTexture.texture = textures[gltfMaterial.emissiveTexture.index];
         }
 
-        if (gltfMaterial.occlusionTexture >= 0) {
-            materialDesc.occlusionTexture = textures[gltfMaterial.occlusionTexture];
+        if (gltfMaterial.occlusionTexture.index >= 0) {
+            materialDesc.occlusionTexture.texture = textures[gltfMaterial.occlusionTexture.index];
         }
 
         matHandles[IMaterial] = m_renderer->createMaterial(materialDesc);
@@ -259,6 +289,6 @@ void App::run()
             }
         }
     }
-}
+} // namespace vke
 
 } // namespace vke
