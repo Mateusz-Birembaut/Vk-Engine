@@ -11,20 +11,30 @@
 
 namespace vke {
 
+/**
+ * Loads in RAM a scene from a gltf file
+ *
+ * @param path Path to .gltf or .glb file
+ *
+ */
 std::optional<gltf::ImportedScene> loadGltf(const std::filesystem::path& path);
 
 std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path);
 
+std::optional<gltf::Primitive> readPrimitiveData();
 void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMeshes);
+
+
 void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNodes);
+
 void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<gltf::Image>& impSceneImgs);
 void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampler);
 void fillTexturesData(const tg3_model& model, std::vector<gltf::Texture>& impSceneTextures);
+
+void fillTextureRefExtData(vke::gltf::TextureInfo& textInfo, const tg3_extras_ext& extensionInfo);
 void fillMaterialData(
     const tg3_model& model, std::vector<gltf::Material>& impSceneMaterials, std::vector<gltf::Image>& impSceneImgs
 );
-
-void fillTextureRefExtData(vke::gltf::TextureInfo& textInfo, const tg3_extras_ext& extensionInfo);
 
 void traverseNodes(
     const tg3_model& model, const tg3_node& node, const glm::mat4& parentTransform,
