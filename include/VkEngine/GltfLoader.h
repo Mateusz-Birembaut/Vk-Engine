@@ -21,18 +21,22 @@ std::optional<gltf::ImportedScene> loadGltf(const std::filesystem::path& path);
 
 std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path);
 
-std::optional<gltf::Primitive> readPrimitiveData();
-void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMeshes);
+std::optional<gltf::Primitive>
+readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t primIndex, const tg3_primitive& tgPrim);
 
+void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMeshes);
 
 void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNodes);
 
-std::vector<unsigned char> readBufferImageBytes();
+std::vector<unsigned char> readBufferImageBytes(const tg3_model& model, uint32_t IImage, const tg3_image& tgImage);
 void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<gltf::Image>& impSceneImgs);
+
 void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampler);
+
 void fillTexturesData(const tg3_model& model, std::vector<gltf::Texture>& impSceneTextures);
 
 void fillTextureRefExtData(vke::gltf::TextureInfo& textInfo, const tg3_extras_ext& extensionInfo);
+
 void fillMaterialData(
     const tg3_model& model, std::vector<gltf::Material>& impSceneMaterials, std::vector<gltf::Image>& impSceneImgs
 );
