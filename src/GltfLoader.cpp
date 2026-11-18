@@ -399,8 +399,9 @@ FilterMode filterModeFrom(int32_t value)
 {
     switch (value) {
         // TODO : later split this when mipmap is in
-        case TG3_TEXTURE_FILTER_NEAREST | TG3_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST |
-            TG3_TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR:
+        case TG3_TEXTURE_FILTER_NEAREST:
+        case TG3_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
+        case TG3_TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR:
             return FilterMode::NEAREST;
         default:
             return FilterMode::LINEAR;
