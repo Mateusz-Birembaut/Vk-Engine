@@ -410,7 +410,6 @@ void traverseNodes(
     glm::mat4 localTransform{1.0f};
 
     if (tgNode.has_matrix) {
-        // create matrix from stored matrix
         localTransform = glm::mat4(glm::make_mat4(tgNode.matrix));
     } else {
         // create matrix from T R S
@@ -432,7 +431,11 @@ void traverseNodes(
     }
 
     for (uint32_t IChild = 0; IChild < tgNode.children_count; IChild++) {
-        traverseNodes(model, model.nodes[tgNode.children[IChild]], localTransform, impSceneNodes);
+        uint32_t childNodeIndex = tgNode.children[IChild];
+
+        if (childNodeIndex < model.nodes_count) {
+            traverseNodes(model, model.nodes[tgNode.children[IChild]], localTransform, impSceneNodes);
+        }
     }
 }
 
