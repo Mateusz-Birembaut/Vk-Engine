@@ -486,7 +486,7 @@ uint32_t GPUResources::getOrCreateSampler(const Sampler& samplerDesc)
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = m_descSet,
         .dstBinding = 0,
-        .dstArrayElement = 0,
+        .dstArrayElement = newSamplerIndex,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
         .pImageInfo = &descImageInfo,
