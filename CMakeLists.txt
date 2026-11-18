@@ -72,13 +72,20 @@ set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Resources/Shaders)
 file(GLOB SHADER_SOURCES CONFIGURE_DEPENDS
     Resources/Shaders/*.vert Resources/Shaders/*.frag Resources/Shaders/*.comp)
 
+set(GLSLC_FLAGS "")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    list(APPEND GLSLC_FLAGS -g)
+else()
+    list(APPEND GLSLC_FLAGS -O)
+endif()
+
 foreach(shader IN LISTS SHADER_SOURCES)
     get_filename_component(name ${shader} NAME)
     set(spv ${SHADER_BINARY_DIR}/${name}.spv)
     add_custom_command(
         OUTPUT  ${spv}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BINARY_DIR}
-        COMMAND Vulkan::glslc ${shader} -o ${spv}
+        COMMAND Vulkan::glslc ${GLSLC_FLAGS} ${shader} -o ${spv}
         DEPENDS ${shader}
         COMMENT "Compiling shader ${name}"
         VERBATIM)
