@@ -76,7 +76,7 @@ void App::run()
         return;
     }
 
-    const auto impScene = impSceneRet.value();
+    const auto impScene = std::move(impSceneRet.value());
 
     // stores for each mesh the handles of its primitives
     std::vector<std::vector<Handle<GPUMesh>>> meshHandles(impScene.meshes.size());

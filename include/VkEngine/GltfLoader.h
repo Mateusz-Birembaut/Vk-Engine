@@ -11,7 +11,6 @@
 
 namespace vke {
 
-gltf::ImportedScene loadGltf(const std::filesystem::path& path);
 std::optional<gltf::ImportedScene> loadGltf(const std::filesystem::path& path);
 
 std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path);
