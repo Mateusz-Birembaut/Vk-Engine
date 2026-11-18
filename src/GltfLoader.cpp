@@ -76,7 +76,7 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
                     normalPrim = attribute.value;
                 } else if (strcmp(attribute.key.data, "TEXCOORD_0") == 0) {
                     uvPrim0 = attribute.value;
-                } else if (strcmp(attribute.key.data, "TEXCOORD_0") == 0) {
+                } else if (strcmp(attribute.key.data, "TEXCOORD_1") == 0) {
                     uvPrim1 = attribute.value;
                 } else if (strcmp(attribute.key.data, "COLOR_0") == 0) {
                     colorPrim = attribute.value;
@@ -119,13 +119,13 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
                 const auto& uvAcc = model.accessors[uvPrim1];
                 switch (uvAcc.component_type) {
                     case TG3_COMPONENT_TYPE_FLOAT:
-                        uvs0 = readPrimitiveAttribute<float, 2>(model, uvAcc);
+                        uvs1 = readPrimitiveAttribute<float, 2>(model, uvAcc);
                         break;
                     case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
-                        uvs0 = readPrimitiveAttribute<uint8_t, 2>(model, uvAcc);
+                        uvs1 = readPrimitiveAttribute<uint8_t, 2>(model, uvAcc);
                         break;
                     case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
-                        uvs0 = readPrimitiveAttribute<uint16_t, 2>(model, uvAcc);
+                        uvs1 = readPrimitiveAttribute<uint16_t, 2>(model, uvAcc);
                         break;
                 }
             }
