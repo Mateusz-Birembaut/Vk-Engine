@@ -4,6 +4,8 @@
 
 #include <cmath>
 #include <iostream>
+#include <spdlog/fmt/std.h>
+#include <spdlog/spdlog.h>
 #include <stb_image.h>
 #include <tiny_gltf_v3.h>
 #include <utility>
@@ -23,14 +25,30 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
     const uint32_t pathSize = static_cast<uint32_t>(pathStr.size());
 
     tg3_parse_options_init(&opts);
-    tg3_error_stack_init(errors.get());
-
     tg3_error_code err = tg3_parse_file(model.get(), errors.get(), pathCstr, pathSize, &opts);
-    if (err != TG3_OK) {
-        for (uint32_t IError = 0; IError < errors.count(); IError++) {
-            const tg3_error_entry* errEntry = errors.entry(IError);
-            fprintf(stderr, "[%d] %s\n", (int) errEntry->severity, errEntry->message ? errEntry->message : "(null)");
+
+    bool success = (err == TG3_OK);
+
+    for (uint32_t IError = 0; IError < errors.count(); IError++) {
+        const tg3_error_entry* errEntry = errors.entry(IError);
+
+        std::string errMsg = (errEntry->message) ? errEntry->message : "(null)";
+
+        switch (errEntry->severity) {
+            case TG3_SEVERITY_INFO:
+                spdlog::info("[GltfLoader] : {}", errMsg);
+                break;
+            case TG3_SEVERITY_WARNING:
+                spdlog::warn("[GltfLoader] : {}", errMsg);
+                break;
+            case TG3_SEVERITY_ERROR:
+            default:
+                spdlog::error("[GltfLoader] : {}", errMsg);
         }
+    }
+
+    if (!success) {
+        spdlog::error("[GltfLoader] Failed to parse file {}", path);
         return std::nullopt;
     }
 
@@ -540,7 +558,7 @@ glm::mat3x2 readTextureTransform(const tg3_extension& ext)
     };
 }
 
-gltf::ImportedScene vke::loadGltf(const std::filesystem::path& path)
+std::optional<gltf::ImportedScene> vke::loadGltf(const std::filesystem::path& path)
 {
     gltf::ImportedScene impScene{};
 

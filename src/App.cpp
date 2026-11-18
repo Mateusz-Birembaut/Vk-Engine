@@ -67,10 +67,16 @@ void App::run()
     // const auto modelPath = exeDir / "Resources" / "Models" / "steampunk_underwater_explorer" / "scene.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
+    const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "microphone_gxl_066_bafhcteks.glb";
-    const auto modelPath = exeDir / "Resources" / "Models" / "free_1975_porsche_911_930_turbo.glb";
-    const auto impScene = loadGltf(modelPath);
+    // const auto modelPath = exeDir / "Resources" / "Models" / "free_1975_porsche_911_930_turbo.glb";
+    const auto impSceneRet = loadGltf(modelPath);
+
+    if (!impSceneRet.has_value()) {
+        return;
+    }
+
+    const auto impScene = impSceneRet.value();
 
     // stores for each mesh the handles of its primitives
     std::vector<std::vector<Handle<GPUMesh>>> meshHandles(impScene.meshes.size());
