@@ -28,8 +28,8 @@ struct Node {
 };
 
 struct Image {
-    FileData data;
-    ColorSpace colorSpace{ColorSpace::SRGB};
+    FileData data; // empty if failed to read image
+    ColorSpace colorSpace{ColorSpace::LINEAR};
 };
 
 struct Texture {
