@@ -66,10 +66,10 @@ void App::run()
     // const auto modelPath = exeDir / "Resources" / "Models" / "AntiqueCamera.glb";
     // const auto modelPath = exeDir / "Resources" / "Models" / "steampunk_underwater_explorer" / "scene.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
-     const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
     // const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "microphone_gxl_066_bafhcteks.glb";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "Cartoon_City_Free.glb";
+    const auto modelPath = exeDir / "Resources" / "Models" / "free_1975_porsche_911_930_turbo.glb";
     const auto impScene = loadGltf(modelPath);
 
     // stores for each mesh the handles of its primitives
@@ -183,26 +183,26 @@ void App::run()
             .roughnessFactor = gltfMaterial.roughnessFactor,
         };
 
-        if (gltfMaterial.baseColorTexture.index >= 0) {
-            materialDesc.baseColorTexture.texture = textures[gltfMaterial.baseColorTexture.index];
+        if (gltfMaterial.baseColorTexture.texIndex >= 0) {
+            materialDesc.baseColorTexture.texture = textures[gltfMaterial.baseColorTexture.texIndex];
         } else {
             materialDesc.baseColorTexture.texture = fallbackTexture;
         }
 
-        if (gltfMaterial.metallicRoughnessTexture.index >= 0) {
-            materialDesc.metallicRoughnessTexture.texture = textures[gltfMaterial.metallicRoughnessTexture.index];
+        if (gltfMaterial.metallicRoughnessTexture.texIndex >= 0) {
+            materialDesc.metallicRoughnessTexture.texture = textures[gltfMaterial.metallicRoughnessTexture.texIndex];
         }
 
-        if (gltfMaterial.normalTexture.index >= 0) {
-            materialDesc.normalTexture.texture = textures[gltfMaterial.normalTexture.index];
+        if (gltfMaterial.normalTexture.texIndex >= 0) {
+            materialDesc.normalTexture.texture = textures[gltfMaterial.normalTexture.texIndex];
         }
 
-        if (gltfMaterial.emissiveTexture.index >= 0) {
-            materialDesc.emissiveTexture.texture = textures[gltfMaterial.emissiveTexture.index];
+        if (gltfMaterial.emissiveTexture.texIndex >= 0) {
+            materialDesc.emissiveTexture.texture = textures[gltfMaterial.emissiveTexture.texIndex];
         }
 
-        if (gltfMaterial.occlusionTexture.index >= 0) {
-            materialDesc.occlusionTexture.texture = textures[gltfMaterial.occlusionTexture.index];
+        if (gltfMaterial.occlusionTexture.texIndex >= 0) {
+            materialDesc.occlusionTexture.texture = textures[gltfMaterial.occlusionTexture.texIndex];
         }
 
         matHandles[IMaterial] = m_renderer->createMaterial(materialDesc);
