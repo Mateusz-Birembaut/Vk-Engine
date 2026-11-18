@@ -292,7 +292,7 @@ void fillImagesData(const tg3_model& model, const std::filesystem::path& path, s
                     "Image {} uri : {}, Failed to load image, fallback data will be used", IImage,
                     std::string_view{image.uri.data, image.uri.len}
                 );
-                // data will be empty, need to be checks when creating textures
+                // data will be empty, need to be checked when creating textures
             } else {
                 img.data = std::move(imgData.value());
             }
@@ -349,8 +349,6 @@ void fillMaterialData(
             }
         }
     };
-
-    glm::mat3 uvTransform{1.0f};
 
     for (uint32_t IMaterial = 0; IMaterial < model.materials_count; IMaterial++) {
         const auto& tgMaterial = model.materials[IMaterial];
