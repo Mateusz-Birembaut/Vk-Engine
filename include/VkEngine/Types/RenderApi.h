@@ -19,7 +19,7 @@ struct ImageDesc {
     int height{0};
     int channels{4};
     unsigned char* data{nullptr};
-    ColorSpace colorSpace{ColorSpace::SRGB};
+    ColorSpace colorSpace{ColorSpace::LINEAR};
 
     /// @return Size of image in bytes
     size_t sizeBytes() const

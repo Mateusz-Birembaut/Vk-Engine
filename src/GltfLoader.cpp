@@ -340,9 +340,9 @@ void fillMaterialData(
 {
     impSceneMaterials.reserve(model.materials_count);
 
-    const auto updateToSRGB = [&](uint32_t textureIndex) -> void {
-        if (textureIndex != -1) {
-            uint32_t imgIndex = model.textures[textureIndex].source;
+    const auto updateToSRGB = [&](uint32_t tgTextureIndex) -> void {
+        if (tgTextureIndex != -1) {
+            uint32_t imgIndex = model.textures[tgTextureIndex].source;
 
             if (imgIndex < impSceneImgs.size()) {
                 impSceneImgs[imgIndex].colorSpace = ColorSpace::SRGB;
@@ -391,7 +391,7 @@ void fillMaterialData(
             .emissiveFactor = glm::vec3(glm::make_vec3(tgMaterial.emissive_factor)),
         };
 
-        updateToSRGB(tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index);
+        updateToSRGB(tgMaterial.pbr_metallic_roughness.base_color_texture.index);
         fillTextureRefExtData(material.baseColorTexture, tgMaterial.pbr_metallic_roughness.base_color_texture.ext);
 
         fillTextureRefExtData(
