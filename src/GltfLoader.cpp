@@ -273,38 +273,83 @@ void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNode
     }
 }
 
+std::vector<unsigned char> readBufferImageBytes(const tg3_model& model, uint32_t IImage, const tg3_image& tgImage)
+{
+    std::vector<unsigned char> imgBytes;
+
+    int32_t bufferViewIndex = tgImage.buffer_view;
+
+    if (bufferViewIndex < 0 || bufferViewIndex >= static_cast<int32_t>(model.buffer_views_count)) {
+        log::gltf->warn(
+            "Image {}, Failed to read image bytes, bufferViewIndex {} is out of range  [0, {}[", IImage,
+            bufferViewIndex, model.buffer_views_count
+        );
+        return imgBytes;
+    }
+
+    const auto& bufferView = model.buffer_views[static_cast<uint32_t>(bufferViewIndex)];
+
+    int32_t bufferIndex = bufferView.buffer;
+
+    if (bufferIndex < 0 || bufferIndex >= static_cast<int32_t>(model.buffers_count)) {
+        log::gltf->warn(
+            "Image {}, Failed to read image bytes, bufferIndex {} is out of range [0, {}[", IImage, bufferIndex,
+            model.buffers_count
+        );
+        return imgBytes; // data will be empty, need to be checked when creating textures
+    }
+
+    const auto& buffer = model.buffers[static_cast<uint32_t>(bufferIndex)];
+
+    if (bufferView.byte_offset > buffer.byte_length ||
+        bufferView.byte_length > buffer.byte_length - bufferView.byte_offset) {
+        log::gltf->warn(
+            "Image {}, Failed to read {} image bytes from buffer {} with offset {}, the buffer size is {}", IImage,
+            bufferView.byte_length, bufferIndex, bufferView.byte_offset, buffer.byte_length
+        );
+        return imgBytes; // data will be empty, need to be checked when creating textures
+    }
+
+    if (!buffer.data.data) {
+        log::gltf->warn("Image {}, Failed to read image bytes buffer {}, data is null", IImage, bufferIndex);
+        return imgBytes; // data will be empty, need to be checked when creating textures
+    }
+
+    const auto* begin = &buffer.data.data[bufferView.byte_offset];
+
+    imgBytes.assign(begin, begin + bufferView.byte_length);
+
+    return imgBytes;
+}
+
 void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<gltf::Image>& impSceneImgs)
 {
     uint32_t imageCount = model.images_count;
     impSceneImgs.reserve(imageCount);
 
     for (uint32_t IImage = 0; IImage < imageCount; IImage++) {
-        const auto& image = model.images[IImage];
+        const auto& tgImage = model.images[IImage];
 
-        if (image.uri.len != 0) {
-            std::filesystem::path pathImage = path / image.uri.data;
+        auto& img = impSceneImgs.emplace_back();
 
-            auto& img = impSceneImgs.emplace_back();
+        if (tgImage.uri.len != 0) {
+            std::filesystem::path pathImage = path / std::string_view{tgImage.uri.data, tgImage.uri.len};
+
             auto imgData = readFile(pathImage);
 
-            if (!imgData.has_value()) {
+            if (imgData.has_value()) {
+                img.data = std::move(imgData.value());
+            } else {
                 log::gltf->warn(
                     "Image {} uri : {}, Failed to load image, fallback data will be used", IImage,
-                    std::string_view{image.uri.data, image.uri.len}
+                    std::string_view{tgImage.uri.data, tgImage.uri.len}
                 );
-                // data will be empty, need to be checked when creating textures
-            } else {
-                img.data = std::move(imgData.value());
+                // data will be empty, img.data.bytes need to be checked when creating textures
             }
-
         } else {
-            const auto& bufferView = model.buffer_views[image.buffer_view];
-            const auto& buffer = model.buffers[bufferView.buffer];
-
-            auto& img = impSceneImgs.emplace_back();
-
-            const auto* begin = &buffer.data.data[bufferView.byte_offset];
-            img.data.bytes.assign(begin, begin + bufferView.byte_length);
+            img.data.bytes = std::move(
+                readBufferImageBytes(model, IImage, tgImage)
+            ); // will be empty if error, img.data.bytes need to be checked when creating textures
         }
     }
 }

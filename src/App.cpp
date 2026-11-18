@@ -71,8 +71,8 @@ void App::run()
     // const auto modelPath = exeDir / "Resources" / "Models" / "steampunk_underwater_explorer" / "scene.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept.glb";
-    const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
-    // const auto modelPath = exeDir / "Resources" / "Models" / "microphone_gxl_066_bafhcteks.glb";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "john_face" / "scene.gltf";
+    const auto modelPath = exeDir / "Resources" / "Models" / "microphone_gxl_066_bafhcteks.glb";
     // const auto modelPath = exeDir / "Resources" / "Models" / "free_1975_porsche_911_930_turbo.glb";
     const auto impSceneRet = loadGltf(modelPath);
 

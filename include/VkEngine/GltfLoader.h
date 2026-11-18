@@ -27,6 +27,7 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
 
 void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNodes);
 
+std::vector<unsigned char> readBufferImageBytes();
 void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<gltf::Image>& impSceneImgs);
 void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampler);
 void fillTexturesData(const tg3_model& model, std::vector<gltf::Texture>& impSceneTextures);
