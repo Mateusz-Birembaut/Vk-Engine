@@ -252,11 +252,18 @@ void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNode
 
     // comply with gltf 2.1 => no more than 1 scene wil be loaded, skip if 0 scenes
     if (model.scenes_count == 0) {
-        std::cerr << "[GltfLoader] No scenes found inside gltf file";
+        log::gltf->warn("No scenes found inside gltf file");
         return;
     }
 
     const auto& scene = (model.default_scene != -1) ? model.scenes[model.default_scene] : model.scenes[0];
+
+    if (scene.nodes_count == 0) {
+        log::gltf->warn(
+            "Scene {} : No root nodes found inside gltf file", std::string_view{scene.name.data, scene.name.len}
+        );
+        return;
+    }
 
     // iterating through rootNodes (listed in gltf -> scenes -> nodes)
     for (size_t IRootNode = 0; IRootNode < scene.nodes_count; IRootNode++) {
@@ -377,10 +384,6 @@ void fillMaterialData(
 
             .emissiveFactor = glm::vec3(glm::make_vec3(tgMaterial.emissive_factor)),
         };
-
-        if (IMaterial == 3) {
-            std::cerr << "Interior 1 :";
-        }
 
         fillTextureRefExtData(material.baseColorTexture, tgMaterial.pbr_metallic_roughness.base_color_texture.ext);
 
