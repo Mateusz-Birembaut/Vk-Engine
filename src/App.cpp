@@ -21,6 +21,7 @@
 #include "VkEngine/CameraController.h"
 #include "VkEngine/FileReader.h"
 #include "VkEngine/GltfLoader.h"
+#include "VkEngine/Log.h"
 #include "VkEngine/Renderer.h"
 #include "VkEngine/VkEngineInfo.h"
 #include "VkEngine/VulkanCtx.h"
@@ -28,7 +29,10 @@
 
 namespace vke {
 
-App::App() = default;
+App::App()
+{
+    log::initLoggers();
+}
 
 App::~App()
 {
