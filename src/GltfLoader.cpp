@@ -275,21 +275,27 @@ void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNode
 
 void fillImagesData(const tg3_model& model, const std::filesystem::path& path, std::vector<gltf::Image>& impSceneImgs)
 {
-    impSceneImgs.reserve(model.images_count);
+    uint32_t imageCount = model.images_count;
+    impSceneImgs.reserve(imageCount);
 
-    for (uint32_t IImage = 0; IImage < model.images_count; IImage++) {
+    for (uint32_t IImage = 0; IImage < imageCount; IImage++) {
         const auto& image = model.images[IImage];
+
         if (image.uri.len != 0) {
             std::filesystem::path pathImage = path / image.uri.data;
 
-            auto imgData = readFile(pathImage);
-            if (!imgData.has_value()) {
-                // for now error TODO : add fallback texture here ?
-                throw std::runtime_error("[GltfLoader] Couldn't read image bytes");
-            }
-
             auto& img = impSceneImgs.emplace_back();
-            img.data = std::move(imgData.value());
+            auto imgData = readFile(pathImage);
+
+            if (!imgData.has_value()) {
+                log::gltf->warn(
+                    "Image {} uri : {}, Failed to load image, fallback data will be used", IImage,
+                    std::string_view{image.uri.data, image.uri.len}
+                );
+                // data will be empty, need to be checks when creating textures
+            } else {
+                img.data = std::move(imgData.value());
+            }
 
         } else {
             const auto& bufferView = model.buffer_views[image.buffer_view];
