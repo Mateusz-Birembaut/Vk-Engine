@@ -105,11 +105,12 @@ void main() {
     
     if(mat.baseColorTex.imageIndex != ~0){
 
+        vec2 uvTransformed = (mat.baseColorTex.texCoord == 0) ? mat.baseColorTex.transform * vec3(vUv0, 1.0) : mat.baseColorTex.transform * vec3(vUv1, 1.0); 
         baseColor =
             texture(sampler2D(
                 textures[nonuniformEXT(mat.baseColorTex.imageIndex)],
                 samplers[nonuniformEXT(mat.baseColorTex.samplerIndex)])
-            , vUv0);
+            , uvTransformed);
     }
 
     float metalness = mat.metallicFactor;
@@ -117,11 +118,12 @@ void main() {
 
     if(mat.metallicRoughnessTex.imageIndex != ~0){
 
+        vec2 uvTransformed = (mat.metallicRoughnessTex.texCoord == 0) ? mat.metallicRoughnessTex.transform * vec3(vUv0, 1.0) : mat.metallicRoughnessTex.transform * vec3(vUv1, 1.0); 
         vec4 metallicRoughness = 
             texture(sampler2D(
                 textures[nonuniformEXT(mat.metallicRoughnessTex.imageIndex)],
                 samplers[nonuniformEXT(mat.metallicRoughnessTex.samplerIndex)])
-            , vUv0);
+            , uvTransformed);
 
         metalness *= metallicRoughness.b;
         roughness *= metallicRoughness.g;
@@ -139,7 +141,7 @@ void main() {
         vec3 T = normalize(vTangent);
         vec3 B = vTangentDir * cross(N, T);
 
-        vec2 uvTransformed = mat.normalTex.transform * vec3(vUv0, 1.0); // TODO : check texture uv coord vUv0 or vUv1
+        vec2 uvTransformed = (mat.normalTex.texCoord == 0) ? mat.normalTex.transform * vec3(vUv0, 1.0) : mat.normalTex.transform * vec3(vUv1, 1.0); 
         vec4 normal = // [0, 1]
             texture(sampler2D(
                 textures[nonuniformEXT(mat.normalTex.imageIndex)],
