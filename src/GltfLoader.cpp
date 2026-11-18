@@ -57,12 +57,12 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
 }
 
 std::optional<gltf::Primitive>
-readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t PrimIndex, const tg3_primitive& tgPrim)
+readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t primIndex, const tg3_primitive& tgPrim)
 {
     if (tgPrim.mode != TG3_MODE_TRIANGLES) {
         log::gltf->warn(
             "Mesh {} : Prim {}, Wrong primitive mode, primitive will be skipped, primitive mode must be Triangles (4)",
-            meshName, PrimIndex
+            meshName, primIndex
         );
         return std::nullopt;
     };
@@ -101,7 +101,7 @@ readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t Pr
     }
 
     if (positionPrim == -1) {
-        log::gltf->warn("Mesh {} : Prim {}, No position attribute found, primitive skipped", meshName, PrimIndex);
+        log::gltf->warn("Mesh {} : Prim {}, No position attribute found, primitive skipped", meshName, primIndex);
         return std::nullopt;
     }
 
@@ -120,7 +120,7 @@ readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t Pr
         normals = readPrimitiveAttribute<float, 3>(model, normalAcc);
     } else {
         log::gltf->warn(
-            "Mesh {} : Prim {}, No normal attribute found, normals and tangents must be computed", meshName, PrimIndex
+            "Mesh {} : Prim {}, No normal attribute found, normals and tangents must be computed", meshName, primIndex
         );
     }
 
@@ -169,22 +169,38 @@ readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t Pr
         tangs = readPrimitiveAttribute<float, 4>(model, tangAcc);
     } else {
         log::gltf->warn(
-            "Mesh {} : Prim {}, No tangent attribute found, tangents must be computed", meshName, PrimIndex
+            "Mesh {} : Prim {}, No tangent attribute found, tangents must be computed", meshName, primIndex
         );
     }
 
-    const auto& indexAcc = model.accessors[indicesPrim];
+    if (indicesPrim != -1) {
+        const auto& indexAcc = model.accessors[indicesPrim];
 
-    switch (indexAcc.component_type) {
-        case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
-            primitive.indices = readIndices<uint8_t>(model, indexAcc);
-            break;
-        case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
-            primitive.indices = readIndices<uint16_t>(model, indexAcc);
-            break;
-        case TG3_COMPONENT_TYPE_UNSIGNED_INT:
-            primitive.indices = readIndices<uint32_t>(model, indexAcc);
-            break;
+        switch (indexAcc.component_type) {
+            case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
+                primitive.indices = readIndices<uint8_t>(model, indexAcc);
+                break;
+            case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
+                primitive.indices = readIndices<uint16_t>(model, indexAcc);
+                break;
+            case TG3_COMPONENT_TYPE_UNSIGNED_INT:
+                primitive.indices = readIndices<uint32_t>(model, indexAcc);
+                break;
+        }
+    } else {
+        // fill indices for
+        if (positions.size() % 3 != 0) { // only for TG3_MODE_TRIANGLES
+            log::gltf->warn(
+                "Mesh {} : Prim {}, No indices found, failed to compute indices, number of vertices {} should be a "
+                "multiple of 3, skipping this primitive",
+                meshName, primIndex, positions.size()
+            );
+            return std::nullopt;
+        }
+        primitive.indices.reserve(positions.size());
+        for (uint32_t IIndex = 0; IIndex < positions.size(); IIndex++) {
+            primitive.indices.push_back(IIndex);
+        }
     }
 
     primitive.vertices.resize(positions.size());
