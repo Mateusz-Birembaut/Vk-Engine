@@ -388,22 +388,22 @@ Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
     };
 
     if (m_gpuImgs.get(matInfo.metallicRoughnessTexture.texture.imageHandle)) {
-        gpuMat.metallicRoughnessTex.imageIndex = matInfo.metallicRoughnessTexture.texture.imageHandle.index;
-        gpuMat.metallicRoughnessTex.samplerIndex =
+        gpuMat.metallicRoughnessTexture.imageIndex = matInfo.metallicRoughnessTexture.texture.imageHandle.index;
+        gpuMat.metallicRoughnessTexture.samplerIndex =
             static_cast<uint16_t>(matInfo.metallicRoughnessTexture.texture.samplerIndex);
-        gpuMat.metallicRoughnessTex.transform = matInfo.metallicRoughnessTexture.transform;
+        gpuMat.metallicRoughnessTexture.transform = matInfo.metallicRoughnessTexture.transform;
     }
 
     if (m_gpuImgs.get(matInfo.baseColorTexture.texture.imageHandle)) {
-        gpuMat.baseColorTex.imageIndex = matInfo.baseColorTexture.texture.imageHandle.index;
-        gpuMat.baseColorTex.samplerIndex = static_cast<uint16_t>(matInfo.baseColorTexture.texture.samplerIndex);
-        gpuMat.baseColorTex.transform = matInfo.baseColorTexture.transform;
+        gpuMat.baseColorTexture.imageIndex = matInfo.baseColorTexture.texture.imageHandle.index;
+        gpuMat.baseColorTexture.samplerIndex = static_cast<uint16_t>(matInfo.baseColorTexture.texture.samplerIndex);
+        gpuMat.baseColorTexture.transform = matInfo.baseColorTexture.transform;
     }
 
     if (m_gpuImgs.get(matInfo.normalTexture.texture.imageHandle)) {
-        gpuMat.normalTex.imageIndex = matInfo.normalTexture.texture.imageHandle.index;
-        gpuMat.normalTex.samplerIndex = static_cast<uint16_t>(matInfo.normalTexture.texture.samplerIndex);
-        gpuMat.normalTex.transform = matInfo.normalTexture.transform;
+        gpuMat.normalTexture.imageIndex = matInfo.normalTexture.texture.imageHandle.index;
+        gpuMat.normalTexture.samplerIndex = static_cast<uint16_t>(matInfo.normalTexture.texture.samplerIndex);
+        gpuMat.normalTexture.transform = matInfo.normalTexture.transform;
     }
 
     auto bytes = std::as_bytes(std::span<GPUMaterial>{&gpuMat, 1});

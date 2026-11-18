@@ -24,7 +24,7 @@ void fillMaterialData(
     const tg3_model& model, std::vector<gltf::Material>& impSceneMaterials, std::vector<gltf::Image>& impSceneImgs
 );
 
-void fillTextureRefExtData(vke::gltf::TextureRef& textRef, const tg3_extras_ext& extensionInfo);
+void fillTextureRefExtData(vke::gltf::TextureInfo& textInfo, const tg3_extras_ext& extensionInfo);
 
 void traverseNodes(
     const tg3_model& model, const tg3_node& node, const glm::mat4& parentTransform,

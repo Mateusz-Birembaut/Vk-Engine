@@ -293,7 +293,7 @@ void fillMaterialData(
             .baseColorFactor = glm::vec4(glm::make_vec4(tgMaterial.pbr_metallic_roughness.base_color_factor)),
 
             .baseColorTexture{
-                .index = tgMaterial.pbr_metallic_roughness.base_color_texture.index,
+                .texIndex = tgMaterial.pbr_metallic_roughness.base_color_texture.index,
                 .texCoord = static_cast<uint32_t>(tgMaterial.pbr_metallic_roughness.base_color_texture.tex_coord),
             },
 
@@ -302,23 +302,23 @@ void fillMaterialData(
             .roughnessFactor = static_cast<float>(tgMaterial.pbr_metallic_roughness.roughness_factor),
 
             .metallicRoughnessTexture{
-                .index = tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index,
+                .texIndex = tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index,
                 .texCoord =
                     static_cast<uint32_t>(tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.tex_coord),
             },
 
             .normalTexture{
-                .index = tgMaterial.normal_texture.index,
+                .texIndex = tgMaterial.normal_texture.index,
                 .texCoord = static_cast<uint32_t>(tgMaterial.normal_texture.tex_coord),
             },
 
             .occlusionTexture{
-                .index = tgMaterial.occlusion_texture.index,
+                .texIndex = tgMaterial.occlusion_texture.index,
                 .texCoord = static_cast<uint32_t>(tgMaterial.occlusion_texture.tex_coord),
             },
 
             .emissiveTexture{
-                .index = tgMaterial.emissive_texture.index,
+                .texIndex = tgMaterial.emissive_texture.index,
                 .texCoord = static_cast<uint32_t>(tgMaterial.emissive_texture.tex_coord),
             },
 
@@ -448,9 +448,9 @@ std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& co
     return colors;
 }
 
-void fillTextureRefExtData(vke::gltf::TextureRef& textRef, const tg3_extras_ext& extensionInfo)
+void fillTextureRefExtData(vke::gltf::TextureInfo& textInfo, const tg3_extras_ext& extensionInfo)
 {
-    if (textRef.index < 0) {
+    if (textInfo.texIndex < 0) {
         return;
     }
 
@@ -458,7 +458,7 @@ void fillTextureRefExtData(vke::gltf::TextureRef& textRef, const tg3_extras_ext&
         const auto& ext = extensionInfo.extensions[IExtension];
 
         if (strcmp(ext.name.data, "KHR_texture_transform") == 0) {
-            textRef.transform = readTextureTransform(ext);
+            textInfo.transform = readTextureTransform(ext);
         }
     }
 }

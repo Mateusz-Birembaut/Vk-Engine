@@ -39,7 +39,7 @@ struct Texture {
     uint32_t samplerIndex{0};
 };
 
-struct TextureRef {
+struct TextureInfo {
     glm::mat3x2 transform{1.0f};
     Texture texture{};
     uint32_t texCoord{0};
@@ -47,11 +47,11 @@ struct TextureRef {
 
 struct MaterialDesc {
     glm::vec4 baseColorFactor{1.0f, 1.0f, 1.0f, 1.0f};
-    TextureRef baseColorTexture{};
-    TextureRef metallicRoughnessTexture{};
-    TextureRef normalTexture{};
-    TextureRef occlusionTexture{};
-    TextureRef emissiveTexture{};
+    TextureInfo baseColorTexture{};
+    TextureInfo metallicRoughnessTexture{};
+    TextureInfo normalTexture{};
+    TextureInfo occlusionTexture{};
+    TextureInfo emissiveTexture{};
     glm::vec3 emissiveFactor{0.0f, 0.0f, 0.0f};
     float metallicFactor{1.0f};
     float roughnessFactor{1.0f};
