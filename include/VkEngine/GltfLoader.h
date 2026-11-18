@@ -21,6 +21,11 @@ std::optional<gltf::ImportedScene> loadGltf(const std::filesystem::path& path);
 
 std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path);
 
+/**
+ * Fills a structure containing all possible attrbitue indices for a primitive, -1 if absent
+ */
+gltf::PrimitiveAttributeIndices readAttributesIndices(const tg3_primitive& tgPrim);
+
 std::optional<gltf::Primitive>
 readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t primIndex, const tg3_primitive& tgPrim);
 

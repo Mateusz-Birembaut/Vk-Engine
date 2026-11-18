@@ -64,6 +64,16 @@ struct ImportedScene {
     std::vector<Material> materials;
 };
 
+struct PrimitiveAttributeIndices {
+    int32_t pos{-1};
+    int32_t normal{-1};
+    int32_t uv0{-1};
+    int32_t uv1{-1};
+    int32_t color{-1};
+    int32_t tang{-1};
+    int32_t indices{-1};
+};
+
 }; // namespace gltf
 
 } // namespace vke
