@@ -1,6 +1,6 @@
 .vscode/
 docs/
 build/
-*.md
+README.md
 .clang-format
 Models/
