@@ -264,7 +264,7 @@ void GPUResources::cleanupDepthBuffer()
     }
 }
 
-Handle<GPUImage> GPUResources::createTexture(const ImageDesc& imgDesc)
+Handle<GPUImage> GPUResources::createGpuImage(const ImageDesc& imgDesc)
 {
     const auto device = m_ctx->device();
 

@@ -66,7 +66,7 @@ void App::run()
     init();
 
     std::filesystem::path exeDir = SDL_GetBasePath();
-    const auto modelPath = exeDir / "Resources" / "Models" / "Box" / "Box.gltf";
+    // const auto modelPath = exeDir / "Resources" / "Models" / "Box" / "Box.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "AntiqueCamera.glb";
     // const auto modelPath = exeDir / "Resources" / "Models" / "steampunk_underwater_explorer" / "scene.gltf";
     // const auto modelPath = exeDir / "Resources" / "Models" / "CarConcept" / "CarConcept.gltf";
@@ -116,19 +116,27 @@ void App::run()
 
         ImageDesc cpuImage{.colorSpace = img.colorSpace};
 
+        // failed to read image when loading no errors but bytes size == 0, use fallback texture
+        if (img.data.bytes.size() == 0) {
+            imageHandles[IImage] = fallbackTexture.imageHandle;
+            continue;
+        }
+
         // TODO do not use prefered channels
         cpuImage.data = stbi_load_from_memory(
             img.data.bytes.data(), static_cast<int>(img.data.bytes.size()), &cpuImage.width, &cpuImage.height,
             &cpuImage.channels, 4
         );
 
-        if (cpuImage.data) {
-            cpuImage.channels = 4;
-            imageHandles[IImage] = m_renderer->createTexture(cpuImage);
-            stbi_image_free(cpuImage.data);
-        } else {
-            throw std::runtime_error("[APP] Couldn't read image data");
+        if (!cpuImage.data) {
+            spdlog::warn("Couldn't load image from memory");
+            imageHandles[IImage] = fallbackTexture.imageHandle;
+            continue;
         }
+
+        cpuImage.channels = 4;
+        imageHandles[IImage] = m_renderer->createGpuImage(cpuImage);
+        stbi_image_free(cpuImage.data);
     }
 
     // upload or get samplers

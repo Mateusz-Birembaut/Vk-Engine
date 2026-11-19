@@ -44,7 +44,7 @@ public:
      *
      * @return Handle of the created Texture { gpuImage index, gen }
      */
-    Handle<GPUImage> createTexture(const ImageDesc& imgDesc);
+    Handle<GPUImage> createGpuImage(const ImageDesc& imgDesc);
 
     /**
      * @brief Create a Mesh stored in VRAM for the given vertices and indices

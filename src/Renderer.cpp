@@ -39,7 +39,7 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
         .width = 1, .height = 1, .channels = 4, .data = reinterpret_cast<unsigned char*>(&whitePixelData)
     };
 
-    Handle<GPUImage> fallBackImageHandle = m_gpuResources.createTexture(whitePixel);
+    Handle<GPUImage> fallBackImageHandle = m_gpuResources.createGpuImage(whitePixel);
     uint32_t fallBackSamplerIndex = m_gpuResources.getOrCreateSampler({}); // for now create a basic sampler
 
     m_fallbackTexture = Texture{fallBackImageHandle, fallBackSamplerIndex};
@@ -461,9 +461,9 @@ Handle<GPUMesh> Renderer::createMesh(std::span<const Vertex> vertices, std::span
     return m_gpuResources.createGpuMesh(vertices, indices);
 }
 
-Handle<GPUImage> Renderer::createTexture(const ImageDesc& imgDesc)
+Handle<GPUImage> Renderer::createGpuImage(const ImageDesc& imgDesc)
 {
-    return m_gpuResources.createTexture(imgDesc);
+    return m_gpuResources.createGpuImage(imgDesc);
 }
 
 Handle<GPUMaterial> Renderer::createMaterial(const MaterialDesc& material)

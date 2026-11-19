@@ -29,7 +29,7 @@ public:
 
     Handle<GPUMesh> createMesh(std::span<const Vertex> vertices, std::span<const uint32_t> indices);
 
-    Handle<GPUImage> createTexture(const ImageDesc& imgDesc);
+    Handle<GPUImage> createGpuImage(const ImageDesc& imgDesc);
 
     Handle<GPUMaterial> createMaterial(const MaterialDesc& material);
 
