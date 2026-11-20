@@ -310,7 +310,7 @@ void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderV
         .proj = RenderView.proj,
         .cameraPos = RenderView.pos,
         .vertBuffAddress = m_gpuResources.vertBuffAddr(),
-        .materialBuffAdress = m_gpuResources.matBuffAddr(),
+        .matBuffAddress = m_gpuResources.matBuffAddr(),
     };
 
     memcpy(sceneBuffer->pMappedData, &sceneData, sizeof(SceneData));

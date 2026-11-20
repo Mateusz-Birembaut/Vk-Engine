@@ -87,7 +87,7 @@ struct SceneData
     glm::vec3 sunLightColor{1.0f, 1.0f, 1.0f};
     float sunIntensity{3.0f};
     uint64_t vertBuffAddress{0};
-    uint64_t materialBuffAdress{0};
+    uint64_t matBuffAddress{0};
 };
 
 struct FrameData
