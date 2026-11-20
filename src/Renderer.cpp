@@ -158,7 +158,7 @@ void Renderer::initGraphicsPipeline()
     dynamicStates[1] = VK_DYNAMIC_STATE_SCISSOR;
 
     VkPipelineDynamicStateCreateInfo dynamicStateInfo =
-        dynamicStateCreateInfo(dynamicStates.size(), dynamicStates.data());
+        dynamicStateCreateInfo(static_cast<uint32_t>(dynamicStates.size()), dynamicStates.data());
 
     VkDescriptorSetLayout descriptorSetLayout = m_gpuResources.descSetLayout();
 
