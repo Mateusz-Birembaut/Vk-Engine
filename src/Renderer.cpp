@@ -166,13 +166,13 @@ void Renderer::initGraphicsPipeline()
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
-    VkPushConstantRange fragShaderPushConstants{};
-    fragShaderPushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderPushConstants.offset = 0;
-    fragShaderPushConstants.size = sizeof(PushConstants);
+    VkPushConstantRange pushConstants{};
+    pushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    pushConstants.offset = 0;
+    pushConstants.size = sizeof(PushConstants);
 
     pipelineLayoutInfo.pushConstantRangeCount = 1;
-    pipelineLayoutInfo.pPushConstantRanges = &fragShaderPushConstants;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstants;
 
     VkPipelineRenderingCreateInfo pipelineRenderingInfo =
         pipelineRenderingCreateInfo(&imgFormat, VK_FORMAT_D32_SFLOAT); // TODO ask for best format
