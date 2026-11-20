@@ -29,7 +29,9 @@ VulkanCtx::~VulkanCtx()
 {
     // never initialized, nothing was created (everything derives from the instance)
     if (!m_instance)
+    {
         return;
+    }
 
     cleanupSwapchain();
     vmaDestroyAllocator(m_allocator);
@@ -52,14 +54,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         isatty(fileno(stderr));
 #endif
 
-    const char* color = "";
+    const char* color;
     const char* label = "INFO";
-    if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
     {
         color = "\033[1;31m"; // bold red
         label = "ERROR";
     }
-    else if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
     {
         color = "\033[1;33m"; // bold yellow
         label = "WARNING";
@@ -70,14 +72,21 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     }
     const char* dim = "\033[90m";
     const char* reset = "\033[0m";
+
     if (!useColor)
+    {
         color = dim = reset = "";
+    }
 
     const char* tag = "GENERAL";
-    if (type == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
+    if (type & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
+    {
         tag = "VALIDATION";
-    else if (type == VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
+    }
+    else if (type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
+    {
         tag = "PERF"; // best-practices warnings land here
+    }
 
     // pMessageIdName holds the short VUID, no need to dig it out of the message
     std::string_view vuid = data->pMessageIdName ? data->pMessageIdName : "-";
@@ -85,9 +94,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     // drop the spec quote + URL, the VUID is enough to look it up
     std::string_view msg = data->pMessage ? data->pMessage : "";
     if (size_t specPos = msg.find("The Vulkan spec states"); specPos != std::string_view::npos)
+    {
         msg = msg.substr(0, specPos);
+    }
+
     while (msg.ends_with(' ') || msg.ends_with('\n'))
+    {
         msg.remove_suffix(1);
+    }
 
     std::cerr << color << "[" << label << "|" << tag << "] " << vuid << reset << '\n' << msg << '\n';
 
@@ -198,10 +212,13 @@ void VulkanCtx::init(Window* pWindow)
 void VulkanCtx::createSwapchain()
 {
     VkExtent2D extent;
-    if (m_window)
-        extent = m_window->getSizeInPixels();
-    else
+
+    if (!m_window)
+    {
         throw std::runtime_error("[VulkanCtx] Failed to get window extent");
+    }
+
+    extent = m_window->getSizeInPixels();
 
     vkb::SwapchainBuilder swapchainBuilder{m_gpu, m_device, m_surface};
 
@@ -219,40 +236,42 @@ void VulkanCtx::createSwapchain()
     {
         throw std::runtime_error("[VulkanCtx] Failed to create swapchain : " + swap_ret.error().message());
     }
-    else
-    {
-        cleanupSwapchain();
 
-        vkb::Swapchain& vkbSwap = swap_ret.value();
+    cleanupSwapchain();
 
-        m_swapchain = vkbSwap.swapchain;
-        m_swapchainExtent = vkbSwap.extent;
-        m_swapchainImgFormat = vkbSwap.image_format;
+    vkb::Swapchain& vkbSwap = swap_ret.value();
 
-        auto imgs_ret = vkbSwap.get_images();
-        if (!imgs_ret)
-            throw std::runtime_error("[VulkanCtx] Failed to create images : " + imgs_ret.error().message());
-        m_swapchainImgs = imgs_ret.value();
+    m_swapchain = vkbSwap.swapchain;
+    m_swapchainExtent = vkbSwap.extent;
+    m_swapchainImgFormat = vkbSwap.image_format;
 
-        auto views_ret = vkbSwap.get_image_views();
-        if (!views_ret)
-            throw std::runtime_error("[VulkanCtx] Failed to create image views: " + views_ret.error().message());
-        m_swapchainImgViews = views_ret.value();
-    }
+    auto imgs_ret = vkbSwap.get_images();
+    if (!imgs_ret)
+        throw std::runtime_error("[VulkanCtx] Failed to create images : " + imgs_ret.error().message());
+    m_swapchainImgs = imgs_ret.value();
+
+    auto views_ret = vkbSwap.get_image_views();
+    if (!views_ret)
+        throw std::runtime_error("[VulkanCtx] Failed to create image views: " + views_ret.error().message());
+    m_swapchainImgViews = views_ret.value();
 }
 
 void VulkanCtx::cleanupSwapchain()
 {
-    if (m_swapchain)
+    if (!m_swapchain)
     {
-        for (VkImageView view : m_swapchainImgViews)
-            vkDestroyImageView(m_device, view, nullptr);
-
-        vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
-        m_swapchainImgViews.clear();
-        m_swapchainImgs.clear();
-        m_swapchain = VK_NULL_HANDLE;
+        return;
     }
+
+    for (VkImageView view : m_swapchainImgViews)
+    {
+        vkDestroyImageView(m_device, view, nullptr);
+    }
+
+    vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+    m_swapchainImgViews.clear();
+    m_swapchainImgs.clear();
+    m_swapchain = VK_NULL_HANDLE;
 }
 
 void VulkanCtx::initVMA()

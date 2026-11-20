@@ -3,6 +3,7 @@ Checks: >
   bugprone-*,
   performance-*,
   modernize-*,
+  clang-analyzer-*,
   -modernize-use-trailing-return-type,
   -bugprone-easily-swappable-parameters,
   -bugprone-signed-bitwise
