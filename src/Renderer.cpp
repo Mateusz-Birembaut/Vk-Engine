@@ -407,6 +407,8 @@ void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderV
         cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout, 0, 1, &descSet, 0, nullptr
     );
 
+    vkCmdBindIndexBuffer(cmdBuff, m_gpuResources.indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
     vkCmdSetViewport(cmdBuff, 0, 1, &viewport);
     vkCmdSetScissor(cmdBuff, 0, 1, &scissor);
 
@@ -424,7 +426,6 @@ void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderV
             sizeof(PushConstants), &pushConstants
         );
 
-        vkCmdBindIndexBuffer(cmdBuff, m_gpuResources.indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
         const GPUMesh* mesh = m_gpuResources.getMesh(renderItem.meshHandle);
         if (mesh)
         {
