@@ -157,7 +157,7 @@ GPUBuffer GPUResources::createBuffer(
             ),
             "[GPUResources] Failed to create aligned buffer"
         );
-        VkBufferDeviceAddressInfoKHR address_info{VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR};
+        VkBufferDeviceAddressInfoKHR address_info{.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR};
         address_info.buffer = gpuBuff.vkbuffer;
 
         gpuBuff.deviceAddress = vkGetBufferDeviceAddress(m_ctx->device(), &address_info);
@@ -300,7 +300,11 @@ Handle<GPUImage> GPUResources::createGpuImage(const ImageDesc& imgDesc)
     ); // safe to destroy since waited before
 
     const auto imgView = gpuImage.vkImageView;
-    const Handle<GPUImage> imgHandle = m_gpuImgs.create(std::move(gpuImage)); // add img to pool
+
+    // Pool::create takes T&& to make ownership transfer explicit
+    // (bugprone-use-after-move catches later uses of the transfered object).
+    // here the object is trivially copyable, so the move is a plain copy which is intended.
+    const Handle<GPUImage> imgHandle = m_gpuImgs.create(std::move(gpuImage)); // NOLINT(performance-move-const-arg)
 
     // update descriptor set at imgHandle index
 
@@ -343,7 +347,7 @@ Handle<GPUMesh> GPUResources::createGpuMesh(std::span<const Vertex> vertices, st
     );
 
     // get the index from the offset in byte
-    gpuMesh.baseVertex = static_cast<uint32_t>(allocVertexOffset / sizeof(Vertex));
+    gpuMesh.baseVertex = static_cast<int32_t>(allocVertexOffset / sizeof(Vertex));
 
     VmaVirtualAllocationCreateInfo indexVirtualAllocInfo{
         .size = indices.size() * sizeof(uint32_t),
@@ -380,7 +384,10 @@ Handle<GPUMesh> GPUResources::createGpuMesh(std::span<const Vertex> vertices, st
         m_ctx->vmaAllocator(), stagingBuffer.vkbuffer, stagingBuffer.allocation
     ); // safe to destroy since waited before
 
-    return m_gpuMeshes.create(std::move(gpuMesh));
+    // Pool::create takes T&& to make ownership transfer explicit
+    // (bugprone-use-after-move catches later uses of the transfered object).
+    // here the object is trivially copyable, so the move is a plain copy which is intended.
+    return m_gpuMeshes.create(std::move(gpuMesh)); // NOLINT(performance-move-const-arg)
 }
 
 Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
@@ -420,7 +427,10 @@ Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
     copyToStagingBuffer(bytes, 0, stagingBuffer);
 
     // create mat handle here to know at which index to write its data
-    const auto materialHandle = m_gpuMaterials.create(std::move(gpuMat));
+    // Pool::create takes T&& to make ownership transfer explicit
+    // (bugprone-use-after-move catches later uses of the transfered object).
+    // here the object is trivially copyable, so the move is a plain copy which is intended.
+    const auto materialHandle = m_gpuMaterials.create(std::move(gpuMat)); // NOLINT(performance-move-const-arg)
 
     VkBufferCopy materialCopyRegion{
         .srcOffset = 0,
@@ -475,7 +485,7 @@ uint32_t GPUResources::getOrCreateSampler(const Sampler& samplerDesc)
         }
     }
 
-    uint32_t newSamplerIndex = static_cast<uint32_t>(m_gpuSamplers.size());
+    auto newSamplerIndex = static_cast<uint32_t>(m_gpuSamplers.size());
 
     VkSamplerCreateInfo samplerInfo{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -506,7 +516,7 @@ uint32_t GPUResources::getOrCreateSampler(const Sampler& samplerDesc)
 
     vkUpdateDescriptorSets(device, 1, &descSetWrite, 0, nullptr);
 
-    m_gpuSamplers.push_back({vkSampler, std::move(samplerDesc)});
+    m_gpuSamplers.emplace_back(vkSampler, samplerDesc);
 
     return newSamplerIndex;
 }

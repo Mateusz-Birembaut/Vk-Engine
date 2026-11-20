@@ -42,7 +42,7 @@ void Renderer::init(VulkanCtx* pVulkanCtx, const std::filesystem::path& shaderFo
     Handle<GPUImage> fallBackImageHandle = m_gpuResources.createGpuImage(whitePixel);
     uint32_t fallBackSamplerIndex = m_gpuResources.getOrCreateSampler({}); // for now create a basic sampler
 
-    m_fallbackTexture = Texture{fallBackImageHandle, fallBackSamplerIndex};
+    m_fallbackTexture = Texture{.imageHandle = fallBackImageHandle, .samplerIndex = fallBackSamplerIndex};
 
     m_fallbackMaterial = m_gpuResources.createMaterial(
         {.baseColorTexture{
@@ -60,38 +60,38 @@ void Renderer::initPerFrameData()
     };
     VkSemaphoreCreateInfo semaphoreCreateInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
 
-    for (int IFrame = 0; IFrame < FRAMES_IN_FLIGHT; ++IFrame)
+    for (auto& m_frame : m_frames)
     {
         // cmd pool and buffer
         check(
-            vkCreateCommandPool(m_ctx->device(), &cmdPoolInfo, nullptr, &m_frames[IFrame].commandPool),
+            vkCreateCommandPool(m_ctx->device(), &cmdPoolInfo, nullptr, &m_frame.commandPool),
             "[Renderer] Failed to create command pool"
         );
-        m_resourceDestroyer.push(m_frames[IFrame].commandPool);
+        m_resourceDestroyer.push(m_frame.commandPool);
 
         VkCommandBufferAllocateInfo cmdBuffInfo =
-            cmdBufferAllocInfo(m_frames[IFrame].commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
+            cmdBufferAllocInfo(m_frame.commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1);
 
         check(
-            vkAllocateCommandBuffers(m_ctx->device(), &cmdBuffInfo, &m_frames[IFrame].commandBuffer),
+            vkAllocateCommandBuffers(m_ctx->device(), &cmdBuffInfo, &m_frame.commandBuffer),
             "[Renderer] Failed to create command buffer"
         ); // will be destroyed with its command pool
 
         // sync objects
         check(
-            vkCreateFence(m_ctx->device(), &fenceCreateInfo, nullptr, &m_frames[IFrame].renderFence),
+            vkCreateFence(m_ctx->device(), &fenceCreateInfo, nullptr, &m_frame.renderFence),
             "[Renderer] Failed to create render fence"
         );
-        m_resourceDestroyer.push(m_frames[IFrame].renderFence);
+        m_resourceDestroyer.push(m_frame.renderFence);
 
         check(
-            vkCreateSemaphore(m_ctx->device(), &semaphoreCreateInfo, nullptr, &m_frames[IFrame].swapchainSem),
+            vkCreateSemaphore(m_ctx->device(), &semaphoreCreateInfo, nullptr, &m_frame.swapchainSem),
             "[Renderer] Failed to create swapchain semaphore"
         );
-        m_resourceDestroyer.push(m_frames[IFrame].swapchainSem);
+        m_resourceDestroyer.push(m_frame.swapchainSem);
 
         // scene data buffer
-        m_frames[IFrame].sceneDataBuffHandle = m_gpuResources.createMappedBuffer(sizeof(SceneData));
+        m_frame.sceneDataBuffHandle = m_gpuResources.createMappedBuffer(sizeof(SceneData));
     }
 }
 
@@ -113,7 +113,7 @@ void Renderer::initGraphicsPipeline()
         );
     }
 
-    ShaderCodeData vertCode = readVertexShader.value();
+    const ShaderCodeData& vertCode = *readVertexShader;
 
     std::filesystem::path fragPath = m_shaderFolderPath;
     fragPath += "/shader.frag.spv";
@@ -126,14 +126,14 @@ void Renderer::initGraphicsPipeline()
         );
     }
 
-    ShaderCodeData fragCode = readFragShader.value();
+    const ShaderCodeData& fragCode = *readFragShader;
 
     VkShaderModuleCreateInfo vertexShaderModuleInfo =
         shaderModuleCreateInfo(vertCode.codeData.size() * 4, vertCode.codeData.data());
     VkShaderModuleCreateInfo fragShaderModuleInfo =
         shaderModuleCreateInfo(fragCode.codeData.size() * 4, fragCode.codeData.data());
 
-    VkPipelineShaderStageCreateInfo shaderStages[2];
+    std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
     shaderStages[0] = shaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, &vertexShaderModuleInfo);
     shaderStages[1] = shaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, &fragShaderModuleInfo);
 
@@ -153,10 +153,12 @@ void Renderer::initGraphicsPipeline()
     VkPipelineColorBlendAttachmentState colorBlendState = colorBlendAttachmentState();
     VkPipelineColorBlendStateCreateInfo colorBlendInfo = colorBlendStateCreateInfo(&colorBlendState);
 
-    constexpr int dynamicStatesCount = 2;
-    VkDynamicState dynamicStates[dynamicStatesCount] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    std::array<VkDynamicState, 2> dynamicStates;
+    dynamicStates[0] = VK_DYNAMIC_STATE_VIEWPORT;
+    dynamicStates[1] = VK_DYNAMIC_STATE_SCISSOR;
 
-    VkPipelineDynamicStateCreateInfo dynamicStateInfo = dynamicStateCreateInfo(dynamicStatesCount, dynamicStates);
+    VkPipelineDynamicStateCreateInfo dynamicStateInfo =
+        dynamicStateCreateInfo(dynamicStates.size(), dynamicStates.data());
 
     VkDescriptorSetLayout descriptorSetLayout = m_gpuResources.descSetLayout();
 
@@ -181,8 +183,9 @@ void Renderer::initGraphicsPipeline()
     );
 
     VkGraphicsPipelineCreateInfo graphicsPipelineInfo = graphicsPipelineCreateInfo(
-        2, shaderStages, &vertexStageInfo, &assemblyInfo, &viewportStateInfo, &rasterInfo, &msSampleStateCreateInfo,
-        &depthStateCreateInfo, &colorBlendInfo, &dynamicStateInfo, m_graphicsPipelineLayout, &pipelineRenderingInfo
+        2, shaderStages.data(), &vertexStageInfo, &assemblyInfo, &viewportStateInfo, &rasterInfo,
+        &msSampleStateCreateInfo, &depthStateCreateInfo, &colorBlendInfo, &dynamicStateInfo, m_graphicsPipelineLayout,
+        &pipelineRenderingInfo
     );
 
     check(
@@ -390,7 +393,7 @@ void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderV
 
     VkRect2D scissor{};
     scissor.extent = swapchainExtent;
-    scissor.offset = {0, 0};
+    scissor.offset = {.x = 0, .y = 0};
 
     VkRenderingInfo rederingInfo = renderingInfo(&colorAttachmentInfo, &depthAttachmentInfo, scissor);
 
