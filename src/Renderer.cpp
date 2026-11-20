@@ -395,10 +395,10 @@ void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderV
     scissor.extent = swapchainExtent;
     scissor.offset = {.x = 0, .y = 0};
 
-    VkRenderingInfo rederingInfo = renderingInfo(&colorAttachmentInfo, &depthAttachmentInfo, scissor);
+    VkRenderingInfo renderingInfo = renderingInfo(&colorAttachmentInfo, &depthAttachmentInfo, scissor);
 
     // ----------------- rendering -----------------
-    vkCmdBeginRendering(cmdBuff, &rederingInfo);
+    vkCmdBeginRendering(cmdBuff, &renderingInfo);
 
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 

@@ -32,7 +32,7 @@ glm::vec3 Camera::pos() const
     return m_pos;
 }
 
-glm::vec3 Camera::fwrd() const
+glm::vec3 Camera::fwd() const
 {
     const float x = std::cos(m_pitch) * std::cos(m_yaw);
     const float y = std::sin(m_pitch);
@@ -43,13 +43,13 @@ glm::vec3 Camera::fwrd() const
 
 glm::vec3 Camera::right() const
 {
-    const glm::vec3 fwrdVec = fwrd();
-    return right(fwrdVec);
+    const glm::vec3 fwdVec = fwd();
+    return right(fwdVec);
 }
 
-glm::vec3 Camera::right(const glm::vec3& fwrd) const
+glm::vec3 Camera::right(const glm::vec3& fwd) const
 {
-    return glm::normalize(glm::cross(fwrd, WORLD_UP));
+    return glm::normalize(glm::cross(fwd, WORLD_UP));
 }
 
 void Camera::setAspectRatio(float newAspectRatio)
@@ -69,11 +69,11 @@ void Camera::updatePosition(const glm::vec3& positionOffset)
 
 void Camera::refreshView()
 {
-    const glm::vec3 fwrdVec = fwrd();
-    const glm::vec3 rightVec = right(fwrdVec);
-    const glm::vec3 upVec = glm::normalize(glm::cross(rightVec, fwrdVec));
+    const glm::vec3 fwdVec = fwd();
+    const glm::vec3 rightVec = right(fwdVec);
+    const glm::vec3 upVec = glm::normalize(glm::cross(rightVec, fwdVec));
 
-    m_view = glm::lookAt(m_pos, m_pos + fwrdVec, upVec);
+    m_view = glm::lookAt(m_pos, m_pos + fwdVec, upVec);
 }
 
 void Camera::refreshProj()
@@ -84,7 +84,7 @@ void Camera::refreshProj()
 void Camera::updateOrientation(float dYaw, float dPitch)
 {
     static constexpr float twoPi = 2.0f * static_cast<float>(std::numbers::pi);
-    // small offset to prevent cam fwrd to be colinear with world up
+    // small offset to prevent cam fwd to be colinear with world up
     static constexpr float halfPi = (static_cast<float>(std::numbers::pi) / 2.0F) - 0.01f;
 
     // -pi/2 < pitch < pi/2

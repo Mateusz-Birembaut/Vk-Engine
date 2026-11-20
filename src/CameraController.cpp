@@ -51,7 +51,7 @@ void CameraController::handleKeyboard(float dt)
     if (xDir == 0 && zDir == 0)
         return;
 
-    glm::vec3 xAxis = m_camera.fwrd() * xDir;
+    glm::vec3 xAxis = m_camera.fwd() * xDir;
     glm::vec3 zAxis = m_camera.right() * zDir;
 
     m_camera.updatePosition(glm::normalize(xAxis + zAxis) * dt * m_speed);

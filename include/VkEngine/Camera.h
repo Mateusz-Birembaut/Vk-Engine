@@ -17,7 +17,7 @@ class Camera
     glm::mat4 proj() const;
     glm::vec3 pos() const;
 
-    glm::vec3 fwrd() const;
+    glm::vec3 fwd() const;
     glm::vec3 right() const;
 
     void setAspectRatio(float newAspectRatio);
@@ -29,7 +29,7 @@ class Camera
     void refreshView();
     void refreshProj();
 
-    glm::vec3 right(const glm::vec3& fwrd) const;
+    glm::vec3 right(const glm::vec3& fwd) const;
 
     glm::mat4 m_view{1.0f};
     glm::mat4 m_proj{1.0f};
