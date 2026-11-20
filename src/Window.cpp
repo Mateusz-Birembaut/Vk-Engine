@@ -52,7 +52,7 @@ VkExtent2D Window::getSizeInPixels() const
     if (!SDL_GetWindowSizeInPixels(m_window, &w, &h))
         SDL_Log("%s", "[SDL] : could not get window size");
 
-    return {static_cast<uint32_t>(w), static_cast<uint32_t>(h)};
+    return {.width = static_cast<uint32_t>(w), .height = static_cast<uint32_t>(h)};
 }
 
 VkSurfaceKHR Window::createSurface(VkInstance instance, const struct VkAllocationCallbacks* pallocator) const
