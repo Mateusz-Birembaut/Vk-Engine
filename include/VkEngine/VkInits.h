@@ -374,7 +374,7 @@ inline VkRenderingAttachmentInfo renderingAttachmentInfo(
     return info;
 }
 
-inline VkRenderingInfo renderingInfo(
+inline VkRenderingInfo createRenderingInfo(
     VkRenderingAttachmentInfo* colorAttachmentInfo, VkRenderingAttachmentInfo* depthAttachInfo, VkRect2D renderArea
 )
 {
