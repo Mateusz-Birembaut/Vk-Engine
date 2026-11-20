@@ -5,8 +5,6 @@
 #include "VkEngine/VkInits.h"
 #include "VkEngine/VulkanCtx.h"
 
-#include <time.h>
-
 #include <array>
 #include <cmath>
 #include <stdexcept>
