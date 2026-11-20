@@ -60,8 +60,10 @@ bool MaterialHaveTexture(
     const tg3_model& model, int32_t materialIndex, materialTextureFlags textureFlags = VKE_MAT_ANY_TEXTURE
 );
 
-std::optional<gltf::Primitive>
-readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t primIndex, const tg3_primitive& tgPrim);
+std::optional<gltf::Primitive> readPrimitiveData(
+    const tg3_model& model, uint32_t meshIndex, std::string_view meshName, uint32_t primIndex,
+    const tg3_primitive& tgPrim
+);
 
 void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMeshes);
 
