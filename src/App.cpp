@@ -209,6 +209,7 @@ void App::run()
             .roughnessFactor = gltfMaterial.roughnessFactor,
         };
 
+        // TODO : check again for out of range (textures.size <= index)
         if (gltfMaterial.baseColorTexture.texIndex >= 0)
         {
             materialDesc.baseColorTexture.texture = textures[gltfMaterial.baseColorTexture.texIndex];
