@@ -242,7 +242,7 @@ GPUResources::create2dGpuImage(VkFormat format, VkExtent2D extent, VkImageUsageF
 
     check(
         vkCreateImageView(device, &imgView, nullptr, &gpuImage.vkImageView),
-        "[GPUResources] Failed to create image view for white texture"
+        "[GPUResources] Failed to create image view"
     );
 
     return gpuImage;
