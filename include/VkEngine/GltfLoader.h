@@ -56,7 +56,7 @@ std::vector<glm::vec2> readPrimitiveUVAttribute(const tg3_model& model, int32_t 
  *
  * @param textureFlags Default = VKE_MAT_ANY_TEXTURE, change this to check
  */
-bool MaterialHaveTexture(
+bool MaterialHasTexture(
     const tg3_model& model, int32_t materialIndex, materialTextureFlags textureFlags = VKE_MAT_ANY_TEXTURE
 );
 

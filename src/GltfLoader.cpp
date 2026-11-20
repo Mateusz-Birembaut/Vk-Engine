@@ -122,7 +122,7 @@ std::vector<glm::vec2> readPrimitiveUVAttribute(const tg3_model& model, int32_t 
     }
 }
 
-bool MaterialHaveTexture(const tg3_model& model, int32_t materialIndex, materialTextureFlags textureFlags)
+bool MaterialHasTexture(const tg3_model& model, int32_t materialIndex, materialTextureFlags textureFlags)
 {
     if (materialIndex == -1 || std::cmp_greater_equal(materialIndex, model.materials_count))
         return false;
@@ -191,7 +191,7 @@ std::optional<gltf::Primitive> readPrimitiveData(
             "Mesh {} '{}' : Prim {}, No normal attribute found, normals must be computed", meshIndex, meshName,
             primIndex
         );
-        if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_NORMAL_TEXTURE))
+        if (MaterialHasTexture(model, tgPrim.material, VKE_MAT_NORMAL_TEXTURE))
         {
             log::gltf->warn("tangents should also be computed", meshIndex, meshName, primIndex);
         }
@@ -204,7 +204,7 @@ std::optional<gltf::Primitive> readPrimitiveData(
     }
     else
     {
-        if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_ANY_TEXTURE))
+        if (MaterialHasTexture(model, tgPrim.material, VKE_MAT_ANY_TEXTURE))
         {
             log::gltf->warn(
                 "Mesh  {} '{}' : Prim {} has texture attached to its material but no uv attribute found ; "
@@ -239,7 +239,7 @@ std::optional<gltf::Primitive> readPrimitiveData(
     }
     else
     {
-        if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_NORMAL_TEXTURE))
+        if (MaterialHasTexture(model, tgPrim.material, VKE_MAT_NORMAL_TEXTURE))
             log::gltf->warn(
                 "Mesh  {} '{}' : Prim {} has a normal map attached to its material but no tangent attribute found ; "
                 "tangents must be computed",
