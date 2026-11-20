@@ -85,7 +85,7 @@ struct SceneData
     glm::vec3 sunLightDir{-0.5f, -1.0f, -0.3f};
     // glm::vec3 sunLightColor{1.0f, 0.95f, 0.8f};
     glm::vec3 sunLightColor{1.0f, 1.0f, 1.0f};
-    float sunIntensiy{3.0f};
+    float sunIntensity{3.0f};
     uint64_t vertBuffAddress{0};
     uint64_t materialBuffAdress{0};
 };
