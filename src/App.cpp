@@ -45,7 +45,7 @@ void App::init()
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
         throw std::runtime_error(std::string("[SDL] Couldn't init  : ") + SDL_GetError());
 
-    if (!SDL_SetAppMetadata(app::NAME.data(), app::VERSION.data(), "vkeID"))
+    if (!SDL_SetAppMetadata(app::NAME, app::VERSION, "vkeID"))
         SDL_Log("%s", "Could not set app meta data");
 
     m_window = std::make_unique<Window>();
@@ -82,7 +82,7 @@ void App::run()
         return;
     }
 
-    const auto impScene = std::move(impSceneRet.value());
+    const auto& impScene = *impSceneRet;
 
     // stores for each mesh the handles of its primitives
     std::vector<std::vector<Handle<GPUMesh>>> meshHandles(impScene.meshes.size());
@@ -106,10 +106,8 @@ void App::run()
     {
         const gltf::Mesh& mesh = impScene.meshes[IMesh];
 
-        for (uint32_t IPrim = 0; IPrim < mesh.primitives.size(); IPrim++)
+        for (const auto& prim : mesh.primitives)
         {
-            const gltf::Primitive& prim = mesh.primitives[IPrim];
-
             meshHandles[IMesh].push_back(m_renderer->createMesh(prim.vertices, prim.indices));
         }
     }
@@ -168,7 +166,7 @@ void App::run()
                                 : fallbackTexture.samplerIndex,
         };
 
-        textures[ITexture] = (std::move(texture));
+        textures[ITexture] = texture;
     }
 
     // upload each materials

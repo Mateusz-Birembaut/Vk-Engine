@@ -11,7 +11,7 @@ namespace vke
 
 Window::Window()
 {
-    m_window = SDL_CreateWindow(app::NAME.data(), 1920, 1080, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
+    m_window = SDL_CreateWindow(app::NAME, 1920, 1080, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
     setMouseCapture(m_capturingMouse);
 
     auto windowsFlags = SDL_GetWindowFlags(m_window);

@@ -26,7 +26,7 @@ void CameraController::handleMouseMotion(float xRel, float yRel)
 
 void CameraController::handleKeyboard(float dt)
 {
-    const bool* keyStates = SDL_GetKeyboardState(NULL);
+    const bool* keyStates = SDL_GetKeyboardState(nullptr);
 
     float xDir = 0.0f;
     float zDir = 0.0f;

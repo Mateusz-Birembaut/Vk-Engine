@@ -109,7 +109,7 @@ void VulkanCtx::init(Window* pWindow)
 
     // VkInstance
     vkb::InstanceBuilder builder;
-    auto inst_ret = builder.set_app_name(app::NAME.data())
+    auto inst_ret = builder.set_app_name(app::NAME)
                         .request_validation_layers(useValidation)
                         .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT)
                         .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT)
