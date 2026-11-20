@@ -510,15 +510,19 @@ void fillMaterialData(
 
     const auto updateToSRGB = [&](int32_t tgTextureIndex) -> void
     {
-        if (tgTextureIndex != -1)
+        if (tgTextureIndex < 0 || std::cmp_greater_equal(tgTextureIndex, model.textures_count))
         {
-            uint32_t imgIndex = model.textures[static_cast<uint32_t>(tgTextureIndex)].source;
-
-            if (imgIndex < impSceneImgs.size())
-            {
-                impSceneImgs[imgIndex].colorSpace = ColorSpace::SRGB;
-            }
+            return;
         }
+
+        int32_t imgIndex = model.textures[static_cast<uint32_t>(tgTextureIndex)].source;
+
+        if (imgIndex < 0 || std::cmp_greater_equal(imgIndex, model.images_count))
+        {
+            return;
+        }
+
+        impSceneImgs[imgIndex].colorSpace = ColorSpace::SRGB;
     };
 
     for (uint32_t IMaterial = 0; IMaterial < model.materials_count; IMaterial++)
