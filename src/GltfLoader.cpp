@@ -23,7 +23,7 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
 
     std::string pathStr = path.string();
     const char* pathCstr = pathStr.c_str();
-    const uint32_t pathSize = static_cast<uint32_t>(pathStr.size());
+    const auto pathSize = static_cast<uint32_t>(pathStr.size());
 
     tg3_parse_options_init(&opts);
     tg3_error_code err = tg3_parse_file(model.get(), errors.get(), pathCstr, pathSize, &opts);
@@ -102,9 +102,9 @@ PrimitiveAttributeIndices readPrimitiveAttributesIndices(const tg3_primitive& tg
 
 std::vector<glm::vec2> readPrimitiveUVAttribute(const tg3_model& model, int32_t uvAttributeIndex)
 {
-    if (uvAttributeIndex < 0 || static_cast<uint32_t>(uvAttributeIndex) >= model.accessors_count)
+    if (uvAttributeIndex < 0 || std::cmp_greater_equal(uvAttributeIndex, model.accessors_count))
     {
-        return std::vector<glm::vec2>();
+        return {};
     }
 
     const auto& uvAcc = model.accessors[static_cast<uint32_t>(uvAttributeIndex)];
@@ -118,13 +118,13 @@ std::vector<glm::vec2> readPrimitiveUVAttribute(const tg3_model& model, int32_t 
         case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
             return readPrimitiveAttribute<uint16_t, 2>(model, uvAcc);
         default:
-            return std::vector<glm::vec2>();
+            return {};
     }
 }
 
 bool MaterialHaveTexture(const tg3_model& model, int32_t materialIndex, materialTextureFlags textureFlags)
 {
-    if (materialIndex == -1 || static_cast<uint32_t>(materialIndex) >= model.materials_count)
+    if (materialIndex == -1 || std::cmp_greater_equal(materialIndex, model.materials_count))
         return false;
 
     const auto& tgMaterial = model.materials[static_cast<uint32_t>(materialIndex)];
@@ -262,6 +262,8 @@ std::optional<gltf::Primitive> readPrimitiveData(
             case TG3_COMPONENT_TYPE_UNSIGNED_INT:
                 primitive.indices = readIndices<uint32_t>(model, indexAcc);
                 break;
+            default:
+                break;
         }
     }
     else
@@ -338,12 +340,12 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
         {
             const auto& tgPrim = tgMesh.primitives[IPrim];
 
-            const auto primRet =
+            auto primRet =
                 readPrimitiveData(model, IMesh, std::string_view{tgMesh.name.data, tgMesh.name.len}, IPrim, tgPrim);
 
             if (primRet.has_value())
             {
-                mesh.primitives.push_back(std::move(primRet.value()));
+                mesh.primitives.push_back(std::move(*primRet));
             }
         }
 
@@ -387,7 +389,7 @@ std::vector<unsigned char> readBufferImageBytes(const tg3_model& model, uint32_t
 
     int32_t bufferViewIndex = tgImage.buffer_view;
 
-    if (bufferViewIndex < 0 || bufferViewIndex >= static_cast<int32_t>(model.buffer_views_count))
+    if (bufferViewIndex < 0 || std::cmp_greater_equal(bufferViewIndex, model.buffer_views_count))
     {
         log::gltf->warn(
             "Image {}, Failed to read image bytes, bufferViewIndex {} is out of range  [0, {}[", IImage,
@@ -400,7 +402,7 @@ std::vector<unsigned char> readBufferImageBytes(const tg3_model& model, uint32_t
 
     int32_t bufferIndex = bufferView.buffer;
 
-    if (bufferIndex < 0 || bufferIndex >= static_cast<int32_t>(model.buffers_count))
+    if (bufferIndex < 0 || std::cmp_greater_equal(bufferIndex, model.buffers_count))
     {
         log::gltf->warn(
             "Image {}, Failed to read image bytes, bufferIndex {} is out of range [0, {}[", IImage, bufferIndex,
@@ -506,11 +508,11 @@ void fillMaterialData(
 {
     impSceneMaterials.reserve(model.materials_count);
 
-    const auto updateToSRGB = [&](uint32_t tgTextureIndex) -> void
+    const auto updateToSRGB = [&](int32_t tgTextureIndex) -> void
     {
         if (tgTextureIndex != -1)
         {
-            uint32_t imgIndex = model.textures[tgTextureIndex].source;
+            uint32_t imgIndex = model.textures[static_cast<uint32_t>(tgTextureIndex)].source;
 
             if (imgIndex < impSceneImgs.size())
             {
@@ -572,7 +574,7 @@ void fillMaterialData(
 
         fillTextureRefExtData(material.occlusionTexture, tgMaterial.occlusion_texture.ext);
 
-        impSceneMaterials.push_back(std::move(material));
+        impSceneMaterials.push_back(material);
     }
 }
 
@@ -663,6 +665,8 @@ std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& co
             case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
                 colors = readPrimitiveAttribute<uint16_t, 4>(model, colorAcc);
                 break;
+            default:
+                return colors;
         }
     }
     else if (colorAcc.type == TG3_TYPE_VEC3)
@@ -680,6 +684,8 @@ std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& co
             case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
                 colorsV3 = readPrimitiveAttribute<uint16_t, 3>(model, colorAcc);
                 break;
+            default:
+                return colors;
         }
 
         colors.reserve(colorsV3.size());
@@ -723,38 +729,38 @@ glm::mat3x2 readTextureTransform(const tg3_extension& ext)
 
         if (strcmp(obj.key.data, "scale") == 0)
         {
-            uint32_t scaleSize = std::min(obj.value.array_count, static_cast<uint32_t>(2));
+            glm::length_t scaleSize = std::min(static_cast<glm::length_t>(obj.value.array_count), 2);
 
-            for (uint32_t IScaleScalar = 0; IScaleScalar < scaleSize; IScaleScalar++)
+            for (glm::length_t IScaleScalar = 0; IScaleScalar < scaleSize; IScaleScalar++)
             {
                 const auto& scalar = obj.value.array_data[IScaleScalar];
 
                 if (scalar.type == TG3_VALUE_INT)
                 {
-                    scale[IScaleScalar] = (static_cast<float>(scalar.int_val));
+                    scale[IScaleScalar] = static_cast<float>(scalar.int_val);
                 }
                 else if (scalar.type == TG3_VALUE_REAL)
                 {
-                    scale[IScaleScalar] = (static_cast<float>(scalar.real_val));
+                    scale[IScaleScalar] = static_cast<float>(scalar.real_val);
                 }
             }
         }
 
         if (strcmp(obj.key.data, "offset") == 0)
         {
-            uint32_t offsetSize = std::min(obj.value.array_count, uint32_t{2});
+            glm::length_t offsetSize = std::min(static_cast<glm::length_t>(obj.value.array_count), 2);
 
-            for (uint32_t IOffsetScalar = 0; IOffsetScalar < offsetSize; IOffsetScalar++)
+            for (glm::length_t IOffsetScalar = 0; IOffsetScalar < offsetSize; IOffsetScalar++)
             {
                 const auto& scalar = obj.value.array_data[IOffsetScalar];
 
                 if (scalar.type == TG3_VALUE_INT)
                 {
-                    offset[IOffsetScalar] = (static_cast<float>(scalar.int_val));
+                    offset[IOffsetScalar] = static_cast<float>(scalar.int_val);
                 }
                 else if (scalar.type == TG3_VALUE_REAL)
                 {
-                    offset[IOffsetScalar] = (static_cast<float>(scalar.real_val));
+                    offset[IOffsetScalar] = static_cast<float>(scalar.real_val);
                 }
             }
         }
@@ -762,11 +768,11 @@ glm::mat3x2 readTextureTransform(const tg3_extension& ext)
         {
             if (obj.value.type == TG3_VALUE_INT)
             {
-                rotationRad = (static_cast<float>(obj.value.int_val));
+                rotationRad = static_cast<float>(obj.value.int_val);
             }
             else if (obj.value.type == TG3_VALUE_REAL)
             {
-                rotationRad = (static_cast<float>(obj.value.real_val));
+                rotationRad = static_cast<float>(obj.value.real_val);
             }
         }
     }
