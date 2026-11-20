@@ -54,12 +54,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
     const char* color = "";
     const char* label = "INFO";
-    if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
     {
         color = "\033[1;31m"; // bold red
         label = "ERROR";
     }
-    else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    else if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
     {
         color = "\033[1;33m"; // bold yellow
         label = "WARNING";
@@ -74,9 +74,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         color = dim = reset = "";
 
     const char* tag = "GENERAL";
-    if (type & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
+    if (type == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
         tag = "VALIDATION";
-    else if (type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
+    else if (type == VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
         tag = "PERF"; // best-practices warnings land here
 
     // pMessageIdName holds the short VUID, no need to dig it out of the message
