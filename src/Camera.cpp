@@ -8,7 +8,8 @@
 #include <cmath>
 #include <numbers>
 
-namespace vke {
+namespace vke
+{
 
 Camera::Camera()
 {
@@ -91,7 +92,8 @@ void Camera::updateOrientation(float dYaw, float dPitch)
 
     // 0 < yaw < 2 pi
     m_yaw = std::fmod(m_yaw + dYaw, twoPi);
-    if (m_yaw < 0.0f) {
+    if (m_yaw < 0.0f)
+    {
         m_yaw += twoPi;
     }
 

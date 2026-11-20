@@ -1,24 +1,29 @@
 #pragma once
 
-namespace vke {
+namespace vke
+{
 
-enum class ColorSpace {
+enum class ColorSpace
+{
     SRGB,
     LINEAR,
 };
 
-enum class FilterMode {
+enum class FilterMode
+{
     NEAREST,
     LINEAR,
 };
 
-enum class WrapMode {
+enum class WrapMode
+{
     REPEAT,
     MIRRORED_REPEAT,
     CLAMP_TO_EDGE,
 };
 
-struct Sampler {
+struct Sampler
+{
     FilterMode minFilter{FilterMode::LINEAR};
     FilterMode magFilter{FilterMode::LINEAR};
     WrapMode wrapS{WrapMode::REPEAT};

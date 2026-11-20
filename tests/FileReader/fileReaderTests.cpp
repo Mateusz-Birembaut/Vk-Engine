@@ -1,8 +1,9 @@
+#include "VkEngine/FileReader.h"
+
 #include <catch2/catch_test_macros.hpp>
+
 #include <cstring>
 #include <iterator>
-
-#include "VkEngine/FileReader.h"
 
 TEST_CASE("Read empty file spv", "[FileReader]")
 {

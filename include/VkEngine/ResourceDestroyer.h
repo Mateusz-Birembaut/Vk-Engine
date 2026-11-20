@@ -4,20 +4,24 @@
 
 #include <vector>
 
-class ResourceDestroyer {
-public:
+class ResourceDestroyer
+{
+  public:
     ResourceDestroyer() = default;
     ~ResourceDestroyer() = default;
 
     void flush(VkDevice device)
     {
-        for (auto&& cmdPool : m_cmdPools) {
+        for (auto&& cmdPool : m_cmdPools)
+        {
             vkDestroyCommandPool(device, cmdPool, nullptr);
         }
-        for (auto&& fence : m_fences) {
+        for (auto&& fence : m_fences)
+        {
             vkDestroyFence(device, fence, nullptr);
         }
-        for (auto&& sem : m_sems) {
+        for (auto&& sem : m_sems)
+        {
             vkDestroySemaphore(device, sem, nullptr);
         }
     }
@@ -37,7 +41,7 @@ public:
         m_sems.push_back(sem);
     }
 
-private:
+  private:
     std::vector<VkCommandPool> m_cmdPools;
     std::vector<VkFence> m_fences;
     std::vector<VkSemaphore> m_sems;

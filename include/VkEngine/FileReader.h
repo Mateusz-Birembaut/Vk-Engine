@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VkEngine/Types/FileData.h"
+
 #include <cstdint>
 #include <cstring>
 #include <expected>
@@ -8,16 +10,17 @@
 #include <iostream>
 #include <vector>
 
-#include "VkEngine/Types/FileData.h"
-
-namespace vke {
+namespace vke
+{
 
 inline std::expected<FileData, FileError> readFile(const std::filesystem::path& path)
 {
-    try {
+    try
+    {
         FileData fileData{};
 
-        if (!std::filesystem::exists(path)) {
+        if (!std::filesystem::exists(path))
+        {
             return std::unexpected(FileError::fileNotFound);
         }
 
@@ -25,7 +28,8 @@ inline std::expected<FileData, FileError> readFile(const std::filesystem::path& 
 
         size_t size = static_cast<size_t>(std::filesystem::file_size(path));
 
-        if (size == 0) {
+        if (size == 0)
+        {
             return std::unexpected(FileError::invalidData);
         }
 
@@ -39,28 +43,33 @@ inline std::expected<FileData, FileError> readFile(const std::filesystem::path& 
             return std::unexpected(FileError::readError);
 
         return fileData;
-
-    } catch (const std::exception&) {
+    }
+    catch (const std::exception&)
+    {
         return std::unexpected(FileError::unknownError);
     }
 }
 
 inline std::expected<ShaderCodeData, FileError> readShader(const std::filesystem::path& path)
 {
-    try {
-        if (path.extension() != ".spv") {
+    try
+    {
+        if (path.extension() != ".spv")
+        {
             return std::unexpected(FileError::invalidPath);
         }
 
         auto fileDataRet = readFile(path);
 
-        if (!fileDataRet.has_value()) {
+        if (!fileDataRet.has_value())
+        {
             return std::unexpected(fileDataRet.error());
         }
 
         FileData& fileData = fileDataRet.value();
 
-        if (fileData.bytes.size() == 0 || fileData.bytes.size() % 4 != 0) {
+        if (fileData.bytes.size() == 0 || fileData.bytes.size() % 4 != 0)
+        {
             return std::unexpected(FileError::invalidData);
         }
 
@@ -70,8 +79,9 @@ inline std::expected<ShaderCodeData, FileError> readShader(const std::filesystem
         std::memcpy(shaderData.codeData.data(), fileData.bytes.data(), byteLength);
 
         return shaderData;
-
-    } catch (const std::exception&) {
+    }
+    catch (const std::exception&)
+    {
         return std::unexpected(FileError::unknownError);
     }
 }

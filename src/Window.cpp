@@ -1,12 +1,13 @@
 #include "VkEngine/Window.h"
 
+#include "VkEngine/VkEngineInfo.h"
+
 #include <SDL3/SDL_vulkan.h>
 
 #include <stdexcept>
 
-#include "VkEngine/VkEngineInfo.h"
-
-namespace vke {
+namespace vke
+{
 
 Window::Window()
 {

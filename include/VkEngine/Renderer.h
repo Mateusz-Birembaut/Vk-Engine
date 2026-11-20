@@ -1,25 +1,27 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
-#include <filesystem>
-#include <time.h>
-#include <vector>
-
 #include "VkEngine/GPUResources.h"
 #include "VkEngine/ResourceDestroyer.h"
 #include "VkEngine/Types/Handle.h"
 #include "VkEngine/Types/Texturing.h"
 #include "VkEngine/Types/Vertex.h"
 
-namespace vke {
+#include <time.h>
+#include <vulkan/vulkan.h>
+
+#include <filesystem>
+#include <vector>
+
+namespace vke
+{
 
 class VulkanCtx;
 
 inline constexpr int FRAMES_IN_FLIGHT = 2;
 
-class Renderer {
-public:
+class Renderer
+{
+  public:
     Renderer();
     ~Renderer();
 
@@ -40,7 +42,7 @@ public:
     Texture fallbackTexture() const;
     Handle<GPUMaterial> fallbackMaterial() const;
 
-private:
+  private:
     void initPerFrameData();
     void initGraphicsPipeline();
 

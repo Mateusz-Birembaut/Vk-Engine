@@ -3,15 +3,26 @@
 #include <cstdint>
 #include <vector>
 
-namespace vke {
+namespace vke
+{
 
-enum FileError { invalidPath, invalidData, readError, failOpen, fileNotFound, unknownError };
+enum FileError
+{
+    invalidPath,
+    invalidData,
+    readError,
+    failOpen,
+    fileNotFound,
+    unknownError
+};
 
-struct ShaderCodeData {
+struct ShaderCodeData
+{
     std::vector<uint32_t> codeData;
 };
 
-struct FileData {
+struct FileData
+{
     std::vector<unsigned char> bytes;
 };
 

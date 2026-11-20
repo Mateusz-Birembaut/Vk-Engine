@@ -1,10 +1,10 @@
 #include "VkEngine/CameraController.h"
 
+#include <glm/vec3.hpp>
 #include <SDL3/SDL_keyboard.h>
 
-#include <glm/vec3.hpp>
-
-namespace vke {
+namespace vke
+{
 
 vke::RenderView CameraController::renderView() const
 {
@@ -31,16 +31,20 @@ void CameraController::handleKeyboard(float dt)
     float xDir = 0.0f;
     float zDir = 0.0f;
 
-    if (keyStates[SDL_SCANCODE_W]) {
+    if (keyStates[SDL_SCANCODE_W])
+    {
         xDir += 1.0f;
     }
-    if (keyStates[SDL_SCANCODE_S]) {
+    if (keyStates[SDL_SCANCODE_S])
+    {
         xDir -= 1.0f;
     }
-    if (keyStates[SDL_SCANCODE_D]) {
+    if (keyStates[SDL_SCANCODE_D])
+    {
         zDir += 1.0f;
     }
-    if (keyStates[SDL_SCANCODE_A]) {
+    if (keyStates[SDL_SCANCODE_A])
+    {
         zDir -= 1.0f;
     }
 

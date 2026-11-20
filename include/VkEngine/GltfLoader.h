@@ -1,18 +1,19 @@
 #pragma once
 
-#include <glm/mat4x4.hpp>
+#include "VkEngine/Types/ImportedScene.h"
 
+#include <glm/mat4x4.hpp>
 #include <tiny_gltf_v3.h>
 
 #include <filesystem>
 #include <memory>
 #include <optional>
 
-#include "VkEngine/Types/ImportedScene.h"
+namespace vke
+{
 
-namespace vke {
-
-struct PrimitiveAttributeIndices {
+struct PrimitiveAttributeIndices
+{
     int32_t pos{-1};
     int32_t normal{-1};
     int32_t uv0{-1};
@@ -22,7 +23,8 @@ struct PrimitiveAttributeIndices {
     int32_t indices{-1};
 };
 
-enum materialTextureFlagBits : uint32_t {
+enum materialTextureFlagBits : uint32_t
+{
     VKE_MAT_BASE_COLOR_TEXTURE = 1u << 0,
     VKE_MAT_METALLIC_ROUGHNESS_TEXTURE = 1u << 1,
     VKE_MAT_NORMAL_TEXTURE = 1u << 2,
@@ -106,17 +108,23 @@ std::vector<glm::vec<Count, float>> readPrimitiveAttribute(const tg3_model& mode
 
     glm::vec<Count, SRC> value{};
 
-    for (size_t IElement = 0; IElement < elementCount; IElement++) {
+    for (size_t IElement = 0; IElement < elementCount; IElement++)
+    {
         std::memcpy(&value, &buffer.data.data[byteOffset + IElement * byteStride], bytesSrc);
 
         data.push_back(static_cast<glm::vec<Count, float>>(value));
 
-        if (acc.normalized) {
-            if constexpr (std::is_signed_v<SRC>) {
-                for (glm::length_t IValue = 0; IValue < Count; IValue++) {
+        if (acc.normalized)
+        {
+            if constexpr (std::is_signed_v<SRC>)
+            {
+                for (glm::length_t IValue = 0; IValue < Count; IValue++)
+                {
                     data[IElement][IValue] = std::max(data[IElement][IValue] / std::numeric_limits<SRC>::max(), -1.0f);
                 }
-            } else {
+            }
+            else
+            {
                 data[IElement] /= static_cast<float>(std::numeric_limits<SRC>::max());
             }
         }
@@ -138,7 +146,8 @@ template <typename SRC> std::vector<uint32_t> readIndices(const tg3_model& model
     size_t bytePerIndex = sizeof(SRC);
 
     SRC value{};
-    for (size_t IIndex = 0; IIndex < indexCount; IIndex++) {
+    for (size_t IIndex = 0; IIndex < indexCount; IIndex++)
+    {
         std::memcpy(&value, &buffer.data.data[byteOffset + IIndex * bytePerIndex], bytePerIndex);
         indices.push_back(static_cast<uint32_t>(value));
     }

@@ -1,16 +1,19 @@
 #pragma once
 
-#include <algorithm>
-#include <optional>
-#include <stdint.h>
-#include <vector>
-
 #include "VkEngine/Types/Handle.h"
 
-namespace vke {
+#include <stdint.h>
 
-template <typename T> class Pool {
-public:
+#include <algorithm>
+#include <optional>
+#include <vector>
+
+namespace vke
+{
+
+template <typename T> class Pool
+{
+  public:
     Pool() = default;
 
     Pool(const uint32_t size)
@@ -23,12 +26,15 @@ public:
 
     vke::Handle<T> create(T&& obj)
     {
-        if (m_freeSlots.empty()) {
+        if (m_freeSlots.empty())
+        {
             uint32_t slotIndex = static_cast<uint32_t>(m_slots.size());
             m_slots.push_back({.obj = std::move(obj)});
 
             return {slotIndex, 1};
-        } else {
+        }
+        else
+        {
             size_t slotIndex = m_freeSlots[m_freeSlots.size() - 1];
             Slot& slot = m_slots[slotIndex];
 
@@ -57,7 +63,8 @@ public:
 
         Slot& slot = m_slots[handle.index];
 
-        if (slot.state == SlotState::Alive && handle.gen == slot.gen) {
+        if (slot.state == SlotState::Alive && handle.gen == slot.gen)
+        {
             slot.state = SlotState::Pending;
             ++slot.gen;
             return std::move(slot.obj);
@@ -73,7 +80,8 @@ public:
 
         Slot& slot = m_slots[index];
 
-        if (slot.state == SlotState::Pending) {
+        if (slot.state == SlotState::Pending)
+        {
             slot.state = SlotState::Free;
             m_freeSlots.push_back(index);
         }
@@ -87,8 +95,10 @@ public:
 
     template <typename F> void forEachAlive(F&& f)
     {
-        for (auto&& slot : m_slots) {
-            if (slot.state == SlotState::Alive) {
+        for (auto&& slot : m_slots)
+        {
+            if (slot.state == SlotState::Alive)
+            {
                 f(slot.obj);
             }
         }
@@ -96,10 +106,12 @@ public:
 
     template <typename F> void releaseAllAlive(F&& f)
     {
-        for (size_t slotIndex = 0; slotIndex < m_slots.size(); ++slotIndex) {
+        for (size_t slotIndex = 0; slotIndex < m_slots.size(); ++slotIndex)
+        {
             Slot& slot = m_slots[slotIndex];
 
-            if (slot.state == SlotState::Alive) {
+            if (slot.state == SlotState::Alive)
+            {
                 f(slot.obj);
 
                 slot.state = SlotState::Free;
@@ -117,7 +129,8 @@ public:
     std::vector<uint32_t> freeSlotsIndices() const
     {
         std::vector<uint32_t> freeSlotsIndices;
-        for (auto&& freeSlot : m_freeSlots) {
+        for (auto&& freeSlot : m_freeSlots)
+        {
             freeSlotsIndices.push_back(freeSlot);
         }
         return freeSlotsIndices;
@@ -126,15 +139,22 @@ public:
     std::vector<uint32_t> slotsGeneration()
     {
         std::vector<uint32_t> slotsGen;
-        for (auto&& slot : m_slots) {
+        for (auto&& slot : m_slots)
+        {
             slotsGen.push_back(slot.gen);
         }
         return slotsGen;
     }
 
-private:
-    enum class SlotState { Free, Alive, Pending };
-    struct Slot {
+  private:
+    enum class SlotState
+    {
+        Free,
+        Alive,
+        Pending
+    };
+    struct Slot
+    {
         T obj;
         uint32_t gen{1};
         SlotState state{SlotState::Alive};

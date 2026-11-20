@@ -1,19 +1,19 @@
 #include "VkEngine/GltfLoader.h"
 
-#include <glm/gtc/type_ptr.hpp>
+#include "VkEngine/FileReader.h"
+#include "VkEngine/Log.h"
 
+#include <glm/gtc/type_ptr.hpp>
+#include <spdlog/fmt/std.h>
+#include <spdlog/spdlog.h>
 #include <tiny_gltf_v3.h>
 
 #include <cmath>
 #include <iostream>
-#include <spdlog/fmt/std.h>
-#include <spdlog/spdlog.h>
 #include <utility>
 
-#include "VkEngine/FileReader.h"
-#include "VkEngine/Log.h"
-
-namespace vke {
+namespace vke
+{
 
 std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
 {
@@ -30,12 +30,14 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
 
     bool success = (err == TG3_OK);
 
-    for (uint32_t IError = 0; IError < errors.count(); IError++) {
+    for (uint32_t IError = 0; IError < errors.count(); IError++)
+    {
         const tg3_error_entry* errEntry = errors.entry(IError);
 
         std::string errMsg = (errEntry->message) ? errEntry->message : "(null)";
 
-        switch (errEntry->severity) {
+        switch (errEntry->severity)
+        {
             case TG3_SEVERITY_INFO:
                 log::gltf->info("{}", errMsg);
                 break;
@@ -48,7 +50,8 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
         }
     }
 
-    if (!success) {
+    if (!success)
+    {
         log::gltf->info("Failed to parse file {}", path);
         return std::nullopt;
     }
@@ -65,20 +68,32 @@ PrimitiveAttributeIndices readPrimitiveAttributesIndices(const tg3_primitive& tg
     uint32_t attributeCount = tgPrim.attributes_count;
 
     // get indices of attributes
-    for (uint32_t IAttr = 0; IAttr < attributeCount; IAttr++) {
+    for (uint32_t IAttr = 0; IAttr < attributeCount; IAttr++)
+    {
         auto& attribute = tgPrim.attributes[IAttr];
 
-        if (strcmp(attribute.key.data, "POSITION") == 0) {
+        if (strcmp(attribute.key.data, "POSITION") == 0)
+        {
             attributes.pos = attribute.value;
-        } else if (strcmp(attribute.key.data, "NORMAL") == 0) {
+        }
+        else if (strcmp(attribute.key.data, "NORMAL") == 0)
+        {
             attributes.normal = attribute.value;
-        } else if (strcmp(attribute.key.data, "TEXCOORD_0") == 0) {
+        }
+        else if (strcmp(attribute.key.data, "TEXCOORD_0") == 0)
+        {
             attributes.uv0 = attribute.value;
-        } else if (strcmp(attribute.key.data, "TEXCOORD_1") == 0) {
+        }
+        else if (strcmp(attribute.key.data, "TEXCOORD_1") == 0)
+        {
             attributes.uv1 = attribute.value;
-        } else if (strcmp(attribute.key.data, "COLOR_0") == 0) {
+        }
+        else if (strcmp(attribute.key.data, "COLOR_0") == 0)
+        {
             attributes.color = attribute.value;
-        } else if (strcmp(attribute.key.data, "TANGENT") == 0) {
+        }
+        else if (strcmp(attribute.key.data, "TANGENT") == 0)
+        {
             attributes.tang = attribute.value;
         }
     }
@@ -87,13 +102,15 @@ PrimitiveAttributeIndices readPrimitiveAttributesIndices(const tg3_primitive& tg
 
 std::vector<glm::vec2> readPrimitiveUVAttribute(const tg3_model& model, int32_t uvAttributeIndex)
 {
-    if (uvAttributeIndex < 0 || static_cast<uint32_t>(uvAttributeIndex) >= model.accessors_count) {
+    if (uvAttributeIndex < 0 || static_cast<uint32_t>(uvAttributeIndex) >= model.accessors_count)
+    {
         return std::vector<glm::vec2>();
     }
 
     const auto& uvAcc = model.accessors[static_cast<uint32_t>(uvAttributeIndex)];
 
-    switch (uvAcc.component_type) {
+    switch (uvAcc.component_type)
+    {
         case TG3_COMPONENT_TYPE_FLOAT:
             return readPrimitiveAttribute<float, 2>(model, uvAcc);
         case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
@@ -129,7 +146,8 @@ std::optional<gltf::Primitive> readPrimitiveData(
     const tg3_primitive& tgPrim
 )
 {
-    if (tgPrim.mode != TG3_MODE_TRIANGLES) {
+    if (tgPrim.mode != TG3_MODE_TRIANGLES)
+    {
         log::gltf->warn(
             "Mesh {} '{}' : Prim {}, Wrong primitive mode, primitive will be skipped, primitive mode must be Triangles "
             "(4)",
@@ -144,7 +162,8 @@ std::optional<gltf::Primitive> readPrimitiveData(
 
     PrimitiveAttributeIndices attributes = readPrimitiveAttributesIndices(tgPrim);
 
-    if (attributes.pos == -1) {
+    if (attributes.pos == -1)
+    {
         log::gltf->warn(
             "Mesh {} '{}' : Prim {}, No position attribute found, primitive skipped", meshIndex, meshName, primIndex
         );
@@ -161,24 +180,32 @@ std::optional<gltf::Primitive> readPrimitiveData(
     std::vector<glm::vec4> tangs;
 
     // TODO : compute them if absent
-    if (attributes.normal != -1) {
+    if (attributes.normal != -1)
+    {
         const auto& normalAcc = model.accessors[attributes.normal];
         normals = readPrimitiveAttribute<float, 3>(model, normalAcc);
-    } else {
+    }
+    else
+    {
         log::gltf->warn(
             "Mesh {} '{}' : Prim {}, No normal attribute found, normals must be computed", meshIndex, meshName,
             primIndex
         );
-        if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_NORMAL_TEXTURE)) {
+        if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_NORMAL_TEXTURE))
+        {
             log::gltf->warn("tangents should also be computed", meshIndex, meshName, primIndex);
         }
     }
 
-    if (attributes.uv0 != -1) {
+    if (attributes.uv0 != -1)
+    {
         uvs0 = readPrimitiveUVAttribute(model, attributes.uv0);
         uvs1 = uvs0;
-    } else {
-        if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_ANY_TEXTURE)) {
+    }
+    else
+    {
+        if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_ANY_TEXTURE))
+        {
             log::gltf->warn(
                 "Mesh  {} '{}' : Prim {} has texture attached to its material but no uv attribute found ; "
                 "tangents must be computed",
@@ -187,24 +214,31 @@ std::optional<gltf::Primitive> readPrimitiveData(
         }
     }
 
-    if (attributes.uv1 != -1) {
+    if (attributes.uv1 != -1)
+    {
         uvs1 = readPrimitiveUVAttribute(model, attributes.uv1);
     }
 
-    if (attributes.color != -1) {
+    if (attributes.color != -1)
+    {
         const auto& colorAcc = model.accessors[attributes.color];
 
         colors = readColors(model, colorAcc);
-    } else {
+    }
+    else
+    {
         log::gltf->debug("Mesh  {} '{}' : Prim {}, No color attribute found", meshIndex, meshName, primIndex);
     }
 
     // TODO : compute them if absent
-    if (attributes.tang != -1) {
+    if (attributes.tang != -1)
+    {
         const auto& tangAcc = model.accessors[attributes.tang];
 
         tangs = readPrimitiveAttribute<float, 4>(model, tangAcc);
-    } else {
+    }
+    else
+    {
         if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_NORMAL_TEXTURE))
             log::gltf->warn(
                 "Mesh  {} '{}' : Prim {} has a normal map attached to its material but no tangent attribute found ; "
@@ -213,10 +247,12 @@ std::optional<gltf::Primitive> readPrimitiveData(
             );
     }
 
-    if (attributes.indices != -1) {
+    if (attributes.indices != -1)
+    {
         const auto& indexAcc = model.accessors[attributes.indices];
 
-        switch (indexAcc.component_type) {
+        switch (indexAcc.component_type)
+        {
             case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
                 primitive.indices = readIndices<uint8_t>(model, indexAcc);
                 break;
@@ -227,9 +263,12 @@ std::optional<gltf::Primitive> readPrimitiveData(
                 primitive.indices = readIndices<uint32_t>(model, indexAcc);
                 break;
         }
-    } else {
+    }
+    else
+    {
         // fill indices for
-        if (positions.size() % 3 != 0) { // only for TG3_MODE_TRIANGLES
+        if (positions.size() % 3 != 0)
+        { // only for TG3_MODE_TRIANGLES
             log::gltf->warn(
                 "Mesh {} '{}' : Prim {}, No indices found, failed to compute indices, number of vertices {} should be "
                 "a multiple of 3, skipping this primitive",
@@ -238,7 +277,8 @@ std::optional<gltf::Primitive> readPrimitiveData(
             return std::nullopt;
         }
         primitive.indices.reserve(positions.size());
-        for (uint32_t IIndex = 0; IIndex < positions.size(); IIndex++) {
+        for (uint32_t IIndex = 0; IIndex < positions.size(); IIndex++)
+        {
             primitive.indices.push_back(IIndex);
         }
     }
@@ -246,27 +286,33 @@ std::optional<gltf::Primitive> readPrimitiveData(
     primitive.vertices.resize(positions.size());
 
     // fill vertices data
-    for (size_t IVertex = 0; IVertex < positions.size(); IVertex++) {
+    for (size_t IVertex = 0; IVertex < positions.size(); IVertex++)
+    {
         auto& vertex = primitive.vertices[IVertex];
 
         vertex.position = positions[IVertex];
-        if (attributes.normal != -1) {
+        if (attributes.normal != -1)
+        {
             vertex.normal = normals[IVertex];
         }
-        if (attributes.uv0 != -1) {
+        if (attributes.uv0 != -1)
+        {
             vertex.texCoord0 = uvs0[IVertex];
 
             // fill text coord 1 with values of uv0
             vertex.texCoord1 = uvs0[IVertex];
         }
-        if (attributes.uv1 != -1) {
+        if (attributes.uv1 != -1)
+        {
             // if text coord 1 set, fill with values of uv1
             vertex.texCoord1 = uvs1[IVertex];
         }
-        if (attributes.color != -1) {
+        if (attributes.color != -1)
+        {
             vertex.color = colors[IVertex];
         }
-        if (attributes.tang != -1) {
+        if (attributes.tang != -1)
+        {
             vertex.tangent = tangs[IVertex];
         }
     }
@@ -280,20 +326,23 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
 
     impSceneMeshes.reserve(meshCount);
 
-    for (uint32_t IMesh = 0; IMesh < meshCount; ++IMesh) {
+    for (uint32_t IMesh = 0; IMesh < meshCount; ++IMesh)
+    {
         gltf::Mesh mesh{};
         const tg3_mesh& tgMesh = model.meshes[IMesh];
 
         uint32_t primitivesCount = tgMesh.primitives_count;
         mesh.primitives.reserve(primitivesCount);
 
-        for (uint32_t IPrim = 0; IPrim < primitivesCount; ++IPrim) {
+        for (uint32_t IPrim = 0; IPrim < primitivesCount; ++IPrim)
+        {
             const auto& tgPrim = tgMesh.primitives[IPrim];
 
             const auto primRet =
                 readPrimitiveData(model, IMesh, std::string_view{tgMesh.name.data, tgMesh.name.len}, IPrim, tgPrim);
 
-            if (primRet.has_value()) {
+            if (primRet.has_value())
+            {
                 mesh.primitives.push_back(std::move(primRet.value()));
             }
         }
@@ -307,14 +356,16 @@ void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNode
     impSceneNodes.reserve(model.nodes_count);
 
     // comply with gltf 2.1 => no more than 1 scene wil be loaded, skip if 0 scenes
-    if (model.scenes_count == 0) {
+    if (model.scenes_count == 0)
+    {
         log::gltf->warn("No scenes found inside gltf file");
         return;
     }
 
     const auto& scene = (model.default_scene != -1) ? model.scenes[model.default_scene] : model.scenes[0];
 
-    if (scene.nodes_count == 0) {
+    if (scene.nodes_count == 0)
+    {
         log::gltf->warn(
             "Scene {} : No root nodes found inside gltf file", std::string_view{scene.name.data, scene.name.len}
         );
@@ -322,7 +373,8 @@ void fillNodesData(const tg3_model& model, std::vector<gltf::Node>& impSceneNode
     }
 
     // iterating through rootNodes (listed in gltf -> scenes -> nodes)
-    for (size_t IRootNode = 0; IRootNode < scene.nodes_count; IRootNode++) {
+    for (size_t IRootNode = 0; IRootNode < scene.nodes_count; IRootNode++)
+    {
         const auto& rootNode = model.nodes[scene.nodes[IRootNode]];
 
         traverseNodes(model, rootNode, glm::mat4(1.0f), impSceneNodes); // recursive dfs
@@ -335,7 +387,8 @@ std::vector<unsigned char> readBufferImageBytes(const tg3_model& model, uint32_t
 
     int32_t bufferViewIndex = tgImage.buffer_view;
 
-    if (bufferViewIndex < 0 || bufferViewIndex >= static_cast<int32_t>(model.buffer_views_count)) {
+    if (bufferViewIndex < 0 || bufferViewIndex >= static_cast<int32_t>(model.buffer_views_count))
+    {
         log::gltf->warn(
             "Image {}, Failed to read image bytes, bufferViewIndex {} is out of range  [0, {}[", IImage,
             bufferViewIndex, model.buffer_views_count
@@ -347,7 +400,8 @@ std::vector<unsigned char> readBufferImageBytes(const tg3_model& model, uint32_t
 
     int32_t bufferIndex = bufferView.buffer;
 
-    if (bufferIndex < 0 || bufferIndex >= static_cast<int32_t>(model.buffers_count)) {
+    if (bufferIndex < 0 || bufferIndex >= static_cast<int32_t>(model.buffers_count))
+    {
         log::gltf->warn(
             "Image {}, Failed to read image bytes, bufferIndex {} is out of range [0, {}[", IImage, bufferIndex,
             model.buffers_count
@@ -358,7 +412,8 @@ std::vector<unsigned char> readBufferImageBytes(const tg3_model& model, uint32_t
     const auto& buffer = model.buffers[static_cast<uint32_t>(bufferIndex)];
 
     if (bufferView.byte_offset > buffer.byte_length ||
-        bufferView.byte_length > buffer.byte_length - bufferView.byte_offset) {
+        bufferView.byte_length > buffer.byte_length - bufferView.byte_offset)
+    {
         log::gltf->warn(
             "Image {}, Failed to read {} image bytes from buffer {} with offset {}, the buffer size is {}", IImage,
             bufferView.byte_length, bufferIndex, bufferView.byte_offset, buffer.byte_length
@@ -366,7 +421,8 @@ std::vector<unsigned char> readBufferImageBytes(const tg3_model& model, uint32_t
         return imgBytes; // data will be empty, need to be checked when creating textures
     }
 
-    if (!buffer.data.data) {
+    if (!buffer.data.data)
+    {
         log::gltf->warn("Image {}, Failed to read image bytes buffer {}, data is null", IImage, bufferIndex);
         return imgBytes; // data will be empty, need to be checked when creating textures
     }
@@ -383,26 +439,33 @@ void fillImagesData(const tg3_model& model, const std::filesystem::path& path, s
     uint32_t imageCount = model.images_count;
     impSceneImgs.reserve(imageCount);
 
-    for (uint32_t IImage = 0; IImage < imageCount; IImage++) {
+    for (uint32_t IImage = 0; IImage < imageCount; IImage++)
+    {
         const auto& tgImage = model.images[IImage];
 
         auto& img = impSceneImgs.emplace_back();
 
-        if (tgImage.uri.len != 0) {
+        if (tgImage.uri.len != 0)
+        {
             std::filesystem::path pathImage = path / std::string_view{tgImage.uri.data, tgImage.uri.len};
 
             auto imgData = readFile(pathImage);
 
-            if (imgData.has_value()) {
+            if (imgData.has_value())
+            {
                 img.data = std::move(imgData.value());
-            } else {
+            }
+            else
+            {
                 log::gltf->warn(
                     "Image {} uri : {}, Failed to load image, fallback data will be used", IImage,
                     std::string_view{tgImage.uri.data, tgImage.uri.len}
                 );
                 // data will be empty, img.data.bytes need to be checked when creating textures
             }
-        } else {
+        }
+        else
+        {
             img.data.bytes = std::move(
                 readBufferImageBytes(model, IImage, tgImage)
             ); // will be empty if error, img.data.bytes need to be checked when creating textures
@@ -414,7 +477,8 @@ void fillSamplerData(const tg3_model& model, std::vector<Sampler>& impSceneSampl
 {
     impSceneSampler.reserve(model.samplers_count);
 
-    for (uint32_t ISampler = 0; ISampler < model.samplers_count; ISampler++) {
+    for (uint32_t ISampler = 0; ISampler < model.samplers_count; ISampler++)
+    {
         const auto& tgSampler = model.samplers[ISampler];
 
         impSceneSampler.emplace_back(
@@ -428,7 +492,8 @@ void fillTexturesData(const tg3_model& model, std::vector<gltf::Texture>& impSce
 {
     impSceneTextures.reserve(model.textures_count);
 
-    for (uint32_t ITexture = 0; ITexture < model.textures_count; ITexture++) {
+    for (uint32_t ITexture = 0; ITexture < model.textures_count; ITexture++)
+    {
         const auto& texture = model.textures[ITexture];
 
         impSceneTextures.push_back(gltf::Texture{.imgIndex = texture.source, .samplerIndex = texture.sampler});
@@ -441,17 +506,21 @@ void fillMaterialData(
 {
     impSceneMaterials.reserve(model.materials_count);
 
-    const auto updateToSRGB = [&](uint32_t tgTextureIndex) -> void {
-        if (tgTextureIndex != -1) {
+    const auto updateToSRGB = [&](uint32_t tgTextureIndex) -> void
+    {
+        if (tgTextureIndex != -1)
+        {
             uint32_t imgIndex = model.textures[tgTextureIndex].source;
 
-            if (imgIndex < impSceneImgs.size()) {
+            if (imgIndex < impSceneImgs.size())
+            {
                 impSceneImgs[imgIndex].colorSpace = ColorSpace::SRGB;
             }
         }
     };
 
-    for (uint32_t IMaterial = 0; IMaterial < model.materials_count; IMaterial++) {
+    for (uint32_t IMaterial = 0; IMaterial < model.materials_count; IMaterial++)
+    {
         const auto& tgMaterial = model.materials[IMaterial];
 
         gltf::Material material{
@@ -514,9 +583,12 @@ void traverseNodes(
 {
     glm::mat4 localTransform{1.0f};
 
-    if (tgNode.has_matrix) {
+    if (tgNode.has_matrix)
+    {
         localTransform = glm::mat4(glm::make_mat4(tgNode.matrix));
-    } else {
+    }
+    else
+    {
         // create matrix from T R S
         glm::vec3 translation(glm::make_vec3(tgNode.translation));
         glm::quat rotation(glm::make_quat(tgNode.rotation));
@@ -531,14 +603,17 @@ void traverseNodes(
 
     localTransform = parentTransform * localTransform;
 
-    if (tgNode.mesh != -1) {
+    if (tgNode.mesh != -1)
+    {
         impSceneNodes.emplace_back(tgNode.mesh, localTransform);
     }
 
-    for (uint32_t IChild = 0; IChild < tgNode.children_count; IChild++) {
+    for (uint32_t IChild = 0; IChild < tgNode.children_count; IChild++)
+    {
         uint32_t childNodeIndex = tgNode.children[IChild];
 
-        if (childNodeIndex < model.nodes_count) {
+        if (childNodeIndex < model.nodes_count)
+        {
             traverseNodes(model, model.nodes[tgNode.children[IChild]], localTransform, impSceneNodes);
         }
     }
@@ -546,7 +621,8 @@ void traverseNodes(
 
 WrapMode wrapModeFrom(int32_t value)
 {
-    switch (value) {
+    switch (value)
+    {
         case TG3_TEXTURE_WRAP_CLAMP_TO_EDGE:
             return WrapMode::CLAMP_TO_EDGE;
         case TG3_TEXTURE_WRAP_MIRRORED_REPEAT:
@@ -558,7 +634,8 @@ WrapMode wrapModeFrom(int32_t value)
 
 FilterMode filterModeFrom(int32_t value)
 {
-    switch (value) {
+    switch (value)
+    {
         // TODO : later split this when mipmap is in
         case TG3_TEXTURE_FILTER_NEAREST:
         case TG3_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
@@ -573,8 +650,10 @@ std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& co
 {
     std::vector<glm::vec4> colors;
 
-    if (colorAcc.type == TG3_TYPE_VEC4) {
-        switch (colorAcc.component_type) {
+    if (colorAcc.type == TG3_TYPE_VEC4)
+    {
+        switch (colorAcc.component_type)
+        {
             case TG3_COMPONENT_TYPE_FLOAT:
                 colors = readPrimitiveAttribute<float, 4>(model, colorAcc);
                 break;
@@ -585,10 +664,13 @@ std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& co
                 colors = readPrimitiveAttribute<uint16_t, 4>(model, colorAcc);
                 break;
         }
-    } else if (colorAcc.type == TG3_TYPE_VEC3) {
+    }
+    else if (colorAcc.type == TG3_TYPE_VEC3)
+    {
         std::vector<glm::vec3> colorsV3;
 
-        switch (colorAcc.component_type) {
+        switch (colorAcc.component_type)
+        {
             case TG3_COMPONENT_TYPE_FLOAT:
                 colorsV3 = readPrimitiveAttribute<float, 3>(model, colorAcc);
                 break;
@@ -601,7 +683,8 @@ std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& co
         }
 
         colors.reserve(colorsV3.size());
-        for (const auto& colorV3 : colorsV3) {
+        for (const auto& colorV3 : colorsV3)
+        {
             colors.emplace_back(colorV3, 1.0f);
         }
     }
@@ -611,14 +694,17 @@ std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& co
 
 void fillTextureRefExtData(gltf::TextureInfo& textInfo, const tg3_extras_ext& extensionInfo)
 {
-    if (textInfo.texIndex < 0) {
+    if (textInfo.texIndex < 0)
+    {
         return;
     }
 
-    for (uint32_t IExtension = 0; IExtension < extensionInfo.extensions_count; IExtension++) {
+    for (uint32_t IExtension = 0; IExtension < extensionInfo.extensions_count; IExtension++)
+    {
         const auto& ext = extensionInfo.extensions[IExtension];
 
-        if (strcmp(ext.name.data, "KHR_texture_transform") == 0) {
+        if (strcmp(ext.name.data, "KHR_texture_transform") == 0)
+        {
             textInfo.transform = readTextureTransform(ext);
         }
     }
@@ -631,40 +717,55 @@ glm::mat3x2 readTextureTransform(const tg3_extension& ext)
     glm::vec2 offset{0.0f, 0.0f};
 
     // TODO : cleanup later
-    for (uint32_t IObject = 0; IObject < ext.value.object_count; IObject++) {
+    for (uint32_t IObject = 0; IObject < ext.value.object_count; IObject++)
+    {
         const auto& obj = ext.value.object_data[IObject];
 
-        if (strcmp(obj.key.data, "scale") == 0) {
+        if (strcmp(obj.key.data, "scale") == 0)
+        {
             uint32_t scaleSize = std::min(obj.value.array_count, static_cast<uint32_t>(2));
 
-            for (uint32_t IScaleScalar = 0; IScaleScalar < scaleSize; IScaleScalar++) {
+            for (uint32_t IScaleScalar = 0; IScaleScalar < scaleSize; IScaleScalar++)
+            {
                 const auto& scalar = obj.value.array_data[IScaleScalar];
 
-                if (scalar.type == TG3_VALUE_INT) {
+                if (scalar.type == TG3_VALUE_INT)
+                {
                     scale[IScaleScalar] = (static_cast<float>(scalar.int_val));
-                } else if (scalar.type == TG3_VALUE_REAL) {
+                }
+                else if (scalar.type == TG3_VALUE_REAL)
+                {
                     scale[IScaleScalar] = (static_cast<float>(scalar.real_val));
                 }
             }
         }
 
-        if (strcmp(obj.key.data, "offset") == 0) {
+        if (strcmp(obj.key.data, "offset") == 0)
+        {
             uint32_t offsetSize = std::min(obj.value.array_count, uint32_t{2});
 
-            for (uint32_t IOffsetScalar = 0; IOffsetScalar < offsetSize; IOffsetScalar++) {
+            for (uint32_t IOffsetScalar = 0; IOffsetScalar < offsetSize; IOffsetScalar++)
+            {
                 const auto& scalar = obj.value.array_data[IOffsetScalar];
 
-                if (scalar.type == TG3_VALUE_INT) {
+                if (scalar.type == TG3_VALUE_INT)
+                {
                     offset[IOffsetScalar] = (static_cast<float>(scalar.int_val));
-                } else if (scalar.type == TG3_VALUE_REAL) {
+                }
+                else if (scalar.type == TG3_VALUE_REAL)
+                {
                     offset[IOffsetScalar] = (static_cast<float>(scalar.real_val));
                 }
             }
         }
-        if (strcmp(obj.key.data, "rotation") == 0) {
-            if (obj.value.type == TG3_VALUE_INT) {
+        if (strcmp(obj.key.data, "rotation") == 0)
+        {
+            if (obj.value.type == TG3_VALUE_INT)
+            {
                 rotationRad = (static_cast<float>(obj.value.int_val));
-            } else if (obj.value.type == TG3_VALUE_REAL) {
+            }
+            else if (obj.value.type == TG3_VALUE_REAL)
+            {
                 rotationRad = (static_cast<float>(obj.value.real_val));
             }
         }
@@ -707,7 +808,8 @@ std::optional<gltf::ImportedScene> loadGltf(const std::filesystem::path& path)
 
     // load tiny gltf 3 model from path, RAII wrapper
     auto modelLoaded = loadGltfModel(path);
-    if (!modelLoaded.has_value()) {
+    if (!modelLoaded.has_value())
+    {
         return {};
     }
     tinygltf3::Model model = std::move(modelLoaded).value();

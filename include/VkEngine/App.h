@@ -2,22 +2,24 @@
 
 #include <memory>
 
-namespace vke {
+namespace vke
+{
 
 class Window;
 class VulkanCtx;
 class Renderer;
 class CameraController;
 
-class App {
-public:
+class App
+{
+  public:
     App();
     ~App();
 
     void init();
     void run();
 
-private:
+  private:
     std::unique_ptr<Window> m_window;
     std::unique_ptr<VulkanCtx> m_ctx;
     std::unique_ptr<Renderer> m_renderer;

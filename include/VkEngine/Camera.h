@@ -4,11 +4,13 @@
 #include <glm/trigonometric.hpp>
 #include <glm/vec3.hpp>
 
-namespace vke {
+namespace vke
+{
 
 inline constexpr glm::vec3 WORLD_UP{0.0f, 1.0f, 0.0f};
-class Camera {
-public:
+class Camera
+{
+  public:
     Camera();
 
     glm::mat4 view() const;
@@ -23,7 +25,7 @@ public:
     void updatePosition(const glm::vec3& positionOffset);
     void updateOrientation(float dRadYaw, float dRadPitch);
 
-private:
+  private:
     void refreshView();
     void refreshProj();
 

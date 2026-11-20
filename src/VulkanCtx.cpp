@@ -10,11 +10,11 @@
 #include <unistd.h>
 #endif
 
-#include <VkBootstrap.h>
-
 #include "VkEngine/Helpers.h"
 #include "VkEngine/VkEngineInfo.h"
 #include "VkEngine/Window.h"
+
+#include <VkBootstrap.h>
 
 #ifdef VKENGINE_VALIDATION
 constexpr bool useValidation = true;
@@ -22,7 +22,8 @@ constexpr bool useValidation = true;
 constexpr bool useValidation = false;
 #endif
 
-namespace vke {
+namespace vke
+{
 
 VulkanCtx::~VulkanCtx()
 {
@@ -53,13 +54,18 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
     const char* color = "";
     const char* label = "INFO";
-    if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+    if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    {
         color = "\033[1;31m"; // bold red
         label = "ERROR";
-    } else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+    }
+    else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    {
         color = "\033[1;33m"; // bold yellow
         label = "WARNING";
-    } else {
+    }
+    else
+    {
         color = "\033[90m"; // grey
     }
     const char* dim = "\033[90m";
@@ -86,7 +92,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     std::cerr << color << "[" << label << "|" << tag << "] " << vuid << reset << '\n' << msg << '\n';
 
     // objects named via vkSetDebugUtilsObjectNameEXT show up here
-    for (uint32_t i = 0; i < data->objectCount; ++i) {
+    for (uint32_t i = 0; i < data->objectCount; ++i)
+    {
         const auto& obj = data->pObjects[i];
         std::cerr << dim << "    object " << i << ": " << (obj.pObjectName ? obj.pObjectName : "?") << " (0x"
                   << std::hex << obj.objectHandle << std::dec << ")" << reset << '\n';
@@ -110,7 +117,8 @@ void VulkanCtx::init(Window* pWindow)
                         .set_debug_callback(debugCallback)
                         .require_api_version(app::VK_VERSION_MAJOR, app::VK_VERSION_MINOR, app::VK_VERSION_PATCH)
                         .build();
-    if (!inst_ret) {
+    if (!inst_ret)
+    {
         throw std::runtime_error("[VulkanCtx] Failed to create Vulkan instance. Error: " + inst_ret.error().message());
     }
     m_instance = inst_ret.value().instance;
@@ -151,7 +159,8 @@ void VulkanCtx::init(Window* pWindow)
                         .set_required_features_13(features13)
                         .set_required_features_14(features14)
                         .select();
-    if (!phys_ret) {
+    if (!phys_ret)
+    {
         throw std::runtime_error(
             "[VulkanCtx] Failed to select Vulkan Physical Device. Error: " + phys_ret.error().message()
         );
@@ -161,7 +170,8 @@ void VulkanCtx::init(Window* pWindow)
     // Device
     vkb::DeviceBuilder device_builder{phys_ret.value()};
     auto dev_ret = device_builder.build();
-    if (!dev_ret) {
+    if (!dev_ret)
+    {
         throw std::runtime_error("[VulkanCtx] Failed to create Vulkan device. Error: " + dev_ret.error().message());
     }
     vkb::Device& vkbDevice = dev_ret.value();
@@ -169,7 +179,8 @@ void VulkanCtx::init(Window* pWindow)
 
     // GraphicsQueue
     auto graphics_queue_ret = vkbDevice.get_queue(vkb::QueueType::graphics);
-    if (!graphics_queue_ret) {
+    if (!graphics_queue_ret)
+    {
         throw std::runtime_error(
             "[VulkanCtx] Failed to get graphics queue. Error: " + graphics_queue_ret.error().message()
         );
@@ -204,9 +215,12 @@ void VulkanCtx::createSwapchain()
             .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
             .build();
 
-    if (!swap_ret) {
+    if (!swap_ret)
+    {
         throw std::runtime_error("[VulkanCtx] Failed to create swapchain : " + swap_ret.error().message());
-    } else {
+    }
+    else
+    {
         cleanupSwapchain();
 
         vkb::Swapchain& vkbSwap = swap_ret.value();
@@ -229,7 +243,8 @@ void VulkanCtx::createSwapchain()
 
 void VulkanCtx::cleanupSwapchain()
 {
-    if (m_swapchain) {
+    if (m_swapchain)
+    {
         for (VkImageView view : m_swapchainImgViews)
             vkDestroyImageView(m_device, view, nullptr);
 

@@ -1,12 +1,15 @@
 #pragma once
 
-#include <memory>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-namespace vke {
+#include <memory>
 
-namespace log {
+namespace vke
+{
+
+namespace log
+{
 
 inline std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink = nullptr;
 

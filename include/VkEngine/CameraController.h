@@ -1,21 +1,23 @@
 #pragma once
 
-#include <numbers>
-
 #include "VkEngine/Camera.h"
 #include "VkEngine/Types/RenderApi.h"
 
-namespace vke {
+#include <numbers>
 
-class CameraController {
-public:
+namespace vke
+{
+
+class CameraController
+{
+  public:
     RenderView renderView() const;
 
     void updateAspectRatio(float newAspectRatio);
     void handleMouseMotion(float xRel, float yRel);
     void handleKeyboard(float dt);
 
-private:
+  private:
     Camera m_camera{};
 
     float m_speed{5.0f};

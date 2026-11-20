@@ -1,0 +1,47 @@
+---
+Language:        Cpp
+BasedOnStyle:    LLVM
+Standard:        c++20
+
+# Indentation
+IndentWidth:     4
+TabWidth:        4
+UseTab:          Never
+ContinuationIndentWidth: 4
+NamespaceIndentation: None
+
+# Line width
+ColumnLimit:     120
+
+# Includes
+SortIncludes:    CaseInsensitive
+IncludeBlocks:   Regroup
+IncludeCategories:
+  # Project headers
+  - Regex:           '^"'
+    Priority:        1
+  # Std / sys 
+  - Regex:           '^<([a-z_]+|unistd\.h|io\.h|windows\.h|sys/.*)>$'
+    Priority:        3
+  # External
+  - Regex:           '^<'
+    Priority:        2
+
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+BreakBeforeBraces: Allman
+
+AlignAfterOpenBracket: BlockIndent
+
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Empty
+
+IndentCaseLabels: true
+KeepEmptyLines:
+  AtEndOfFile: false
+  AtStartOfBlock: false
+  AtStartOfFile: false
+
+
+...

@@ -1,6 +1,7 @@
+#include <stdlib.h>
+
 #include <iostream>
 #include <stdexcept>
-#include <stdlib.h>
 
 #ifdef _WIN32
 #include <SDL3/SDL_main.h>
@@ -12,9 +13,12 @@ int main(int, char*[])
 {
     vke::App app{};
 
-    try {
+    try
+    {
         app.run();
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
         std::cerr << "Fatal : " << e.what() << '\n';
         return EXIT_FAILURE;
     }

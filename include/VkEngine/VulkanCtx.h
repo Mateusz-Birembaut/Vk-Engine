@@ -1,17 +1,19 @@
 #pragma once
 
+#include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
 #include <vector>
-#include <vk_mem_alloc.h>
 
-namespace vke {
+namespace vke
+{
 
 // forward declaration
 class Window;
 
-class VulkanCtx {
-public:
+class VulkanCtx
+{
+  public:
     VulkanCtx() = default;
     ~VulkanCtx();
 
@@ -31,7 +33,7 @@ public:
     int swapchainImgCount() const;
     VmaAllocator vmaAllocator() const;
 
-private:
+  private:
     Window* m_window = nullptr;
 
     VkInstance m_instance = VK_NULL_HANDLE;

@@ -4,7 +4,8 @@
 
 #include <vector>
 
-namespace vke {
+namespace vke
+{
 
 inline VkCommandBufferBeginInfo commandBufferBeginInfo(VkCommandBufferUsageFlags flags)
 {

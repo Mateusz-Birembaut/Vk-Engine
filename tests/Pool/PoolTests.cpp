@@ -1,9 +1,10 @@
+#include "VkEngine/Pool.h"
+
 #include <catch2/catch_test_macros.hpp>
+
 #include <cstdint>
 #include <string>
 #include <vector>
-
-#include "VkEngine/Pool.h"
 
 TEST_CASE("Create pool", "[Pool]")
 {
@@ -266,7 +267,8 @@ TEST_CASE("Full create / retire / free cycle many times on one slot", "[Pool][li
     auto handle = pool.create(std::string{"gen"});
     const auto slotIndex = handle.index;
 
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 100; ++i)
+    {
         const auto previous = handle;
 
         REQUIRE(pool.retire(handle).has_value());

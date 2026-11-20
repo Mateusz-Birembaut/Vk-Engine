@@ -4,11 +4,13 @@
 
 #include <stdexcept>
 
-namespace vke {
+namespace vke
+{
 
 inline void check(VkResult result, const char* msg)
 {
-    if (result != VK_SUCCESS) {
+    if (result != VK_SUCCESS)
+    {
         throw std::runtime_error(msg);
     }
 }

@@ -2,9 +2,11 @@
 
 #include <cstdint>
 
-namespace vke {
+namespace vke
+{
 
-template <typename T> struct Handle {
+template <typename T> struct Handle
+{
     uint32_t index{0};
     uint32_t gen{0};
 };

@@ -1,20 +1,22 @@
 #pragma once
 
+#include "VkEngine/Types/Handle.h"
+#include "VkEngine/Types/Texturing.h"
+
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
 
 #include <span>
 
-#include "VkEngine/Types/Handle.h"
-#include "VkEngine/Types/Texturing.h"
-
-namespace vke {
+namespace vke
+{
 
 struct GPUMesh;
 struct GPUImage;
 struct GPUMaterial;
 
-struct ImageDesc {
+struct ImageDesc
+{
     int width{0};
     int height{0};
     int channels{4};
@@ -34,18 +36,21 @@ struct ImageDesc {
     };
 };
 
-struct Texture {
+struct Texture
+{
     Handle<GPUImage> imageHandle{};
     uint32_t samplerIndex{0};
 };
 
-struct TextureInfo {
+struct TextureInfo
+{
     glm::mat3x2 transform{1.0f};
     Texture texture{};
     uint32_t texCoord{0};
 };
 
-struct MaterialDesc {
+struct MaterialDesc
+{
     glm::vec4 baseColorFactor{1.0f, 1.0f, 1.0f, 1.0f};
     TextureInfo baseColorTexture{};
     TextureInfo metallicRoughnessTexture{};
@@ -57,13 +62,15 @@ struct MaterialDesc {
     float roughnessFactor{1.0f};
 };
 
-struct RenderView {
+struct RenderView
+{
     glm::mat4 view{1.0f};
     glm::mat4 proj{1.0f};
     glm::vec3 pos{};
 };
 
-struct RenderItem {
+struct RenderItem
+{
     glm::mat4 model{1.0f};
     Handle<GPUMesh> meshHandle{};
     Handle<GPUMaterial> materialHandle{};

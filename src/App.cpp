@@ -1,22 +1,15 @@
 #include "VkEngine/App.h"
 
+#include <glm/gtc/matrix_transform.hpp>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_scancode.h>
 #include <SDL3/SDL_timer.h>
 
-#include <glm/gtc/matrix_transform.hpp>
-
 #if defined(__linux__)
 #include <SDL3/SDL_main.h>
 #endif
-
-#include <filesystem>
-#include <iostream>
-#include <numbers>
-#include <stb_image.h>
-#include <stdexcept>
 
 #include "VkEngine/CameraController.h"
 #include "VkEngine/FileReader.h"
@@ -27,7 +20,15 @@
 #include "VkEngine/VulkanCtx.h"
 #include "VkEngine/Window.h"
 
-namespace vke {
+#include <stb_image.h>
+
+#include <filesystem>
+#include <iostream>
+#include <numbers>
+#include <stdexcept>
+
+namespace vke
+{
 
 App::App()
 {
@@ -76,7 +77,8 @@ void App::run()
     // const auto modelPath = exeDir / "Resources" / "Models" / "free_1975_porsche_911_930_turbo.glb";
     const auto impSceneRet = loadGltf(modelPath);
 
-    if (!impSceneRet.has_value()) {
+    if (!impSceneRet.has_value())
+    {
         return;
     }
 
@@ -100,10 +102,12 @@ void App::run()
     const auto& fallbackTexture = m_renderer->fallbackTexture();
 
     // upload each primitive for each mesh
-    for (uint32_t IMesh = 0; IMesh < impScene.meshes.size(); IMesh++) {
+    for (uint32_t IMesh = 0; IMesh < impScene.meshes.size(); IMesh++)
+    {
         const gltf::Mesh& mesh = impScene.meshes[IMesh];
 
-        for (uint32_t IPrim = 0; IPrim < mesh.primitives.size(); IPrim++) {
+        for (uint32_t IPrim = 0; IPrim < mesh.primitives.size(); IPrim++)
+        {
             const gltf::Primitive& prim = mesh.primitives[IPrim];
 
             meshHandles[IMesh].push_back(m_renderer->createMesh(prim.vertices, prim.indices));
@@ -111,13 +115,15 @@ void App::run()
     }
 
     // upload each image
-    for (uint32_t IImage = 0; IImage < impScene.images.size(); IImage++) {
+    for (uint32_t IImage = 0; IImage < impScene.images.size(); IImage++)
+    {
         const auto& img = impScene.images[IImage];
 
         ImageDesc cpuImage{.colorSpace = img.colorSpace};
 
         // failed to read image when loading no errors but bytes size == 0, use fallback texture
-        if (img.data.bytes.size() == 0) {
+        if (img.data.bytes.size() == 0)
+        {
             imageHandles[IImage] = fallbackTexture.imageHandle;
             continue;
         }
@@ -128,7 +134,8 @@ void App::run()
             &cpuImage.channels, 4
         );
 
-        if (!cpuImage.data) {
+        if (!cpuImage.data)
+        {
             spdlog::warn("Couldn't load image from memory");
             imageHandles[IImage] = fallbackTexture.imageHandle;
             continue;
@@ -140,13 +147,15 @@ void App::run()
     }
 
     // upload or get samplers
-    for (uint32_t ISampler = 0; ISampler < impScene.samplers.size(); ISampler++) {
+    for (uint32_t ISampler = 0; ISampler < impScene.samplers.size(); ISampler++)
+    {
         const auto& sampler = impScene.samplers[ISampler];
         samplerIndices[ISampler] = m_renderer->getOrCreateSampler(sampler);
     }
 
     // create Textures
-    for (uint32_t ITexture = 0; ITexture < impScene.textures.size(); ITexture++) {
+    for (uint32_t ITexture = 0; ITexture < impScene.textures.size(); ITexture++)
+    {
         const auto& importedTexture = impScene.textures[ITexture];
 
         // check
@@ -163,7 +172,8 @@ void App::run()
     }
 
     // upload each materials
-    for (uint32_t IMaterial = 0; IMaterial < impScene.materials.size(); IMaterial++) {
+    for (uint32_t IMaterial = 0; IMaterial < impScene.materials.size(); IMaterial++)
+    {
         const auto& gltfMaterial = impScene.materials[IMaterial];
 
         MaterialDesc materialDesc{
@@ -201,25 +211,32 @@ void App::run()
             .roughnessFactor = gltfMaterial.roughnessFactor,
         };
 
-        if (gltfMaterial.baseColorTexture.texIndex >= 0) {
+        if (gltfMaterial.baseColorTexture.texIndex >= 0)
+        {
             materialDesc.baseColorTexture.texture = textures[gltfMaterial.baseColorTexture.texIndex];
-        } else {
+        }
+        else
+        {
             materialDesc.baseColorTexture.texture = fallbackTexture;
         }
 
-        if (gltfMaterial.metallicRoughnessTexture.texIndex >= 0) {
+        if (gltfMaterial.metallicRoughnessTexture.texIndex >= 0)
+        {
             materialDesc.metallicRoughnessTexture.texture = textures[gltfMaterial.metallicRoughnessTexture.texIndex];
         }
 
-        if (gltfMaterial.normalTexture.texIndex >= 0) {
+        if (gltfMaterial.normalTexture.texIndex >= 0)
+        {
             materialDesc.normalTexture.texture = textures[gltfMaterial.normalTexture.texIndex];
         }
 
-        if (gltfMaterial.emissiveTexture.texIndex >= 0) {
+        if (gltfMaterial.emissiveTexture.texIndex >= 0)
+        {
             materialDesc.emissiveTexture.texture = textures[gltfMaterial.emissiveTexture.texIndex];
         }
 
-        if (gltfMaterial.occlusionTexture.texIndex >= 0) {
+        if (gltfMaterial.occlusionTexture.texIndex >= 0)
+        {
             materialDesc.occlusionTexture.texture = textures[gltfMaterial.occlusionTexture.texIndex];
         }
 
@@ -229,24 +246,29 @@ void App::run()
     std::vector<RenderItem> renderItems;
     renderItems.reserve(impScene.nodes.size());
 
-    for (uint32_t INode = 0; INode < impScene.nodes.size(); INode++) {
+    for (uint32_t INode = 0; INode < impScene.nodes.size(); INode++)
+    {
         const auto& node = impScene.nodes[INode];
 
-        if (node.meshIndex == -1 || node.meshIndex >= impScene.meshes.size()) {
+        if (node.meshIndex == -1 || node.meshIndex >= impScene.meshes.size())
+        {
             continue;
         }
 
         const auto& mesh = impScene.meshes[node.meshIndex];
         const auto& meshHandlesPrims = meshHandles[node.meshIndex];
 
-        for (uint32_t IPrimHandles = 0; IPrimHandles < meshHandlesPrims.size(); IPrimHandles++) {
+        for (uint32_t IPrimHandles = 0; IPrimHandles < meshHandlesPrims.size(); IPrimHandles++)
+        {
             // there is as mush primiive handles as mesh primitives so should be ok
             const auto& prim = mesh.primitives[IPrimHandles];
 
-            if (prim.material != -1) {
+            if (prim.material != -1)
+            {
                 renderItems.emplace_back(node.transform, meshHandlesPrims[IPrimHandles], matHandles[prim.material]);
-
-            } else {
+            }
+            else
+            {
                 renderItems.emplace_back(
                     node.transform, meshHandlesPrims[IPrimHandles], m_renderer->fallbackMaterial()
                 );
@@ -259,25 +281,36 @@ void App::run()
     uint64_t previousTime = SDL_GetTicksNS();
     VkExtent2D previousExtent{};
 
-    while (m_running) {
+    while (m_running)
+    {
         SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_EVENT_KEY_DOWN) {
-                if (e.key.scancode == SDL_SCANCODE_ESCAPE) {
+        while (SDL_PollEvent(&e))
+        {
+            if (e.type == SDL_EVENT_KEY_DOWN)
+            {
+                if (e.key.scancode == SDL_SCANCODE_ESCAPE)
+                {
                     m_window->setMouseCapture(false);
-
-                } else if (e.key.scancode == SDL_SCANCODE_RETURN) {
+                }
+                else if (e.key.scancode == SDL_SCANCODE_RETURN)
+                {
                     m_window->setMouseCapture(true);
                 }
-            } else if (e.type == SDL_EVENT_MOUSE_MOTION && m_window->isCapturingMouse()) {
+            }
+            else if (e.type == SDL_EVENT_MOUSE_MOTION && m_window->isCapturingMouse())
+            {
                 m_cameraController->handleMouseMotion(e.motion.xrel, e.motion.yrel);
-
-            } else if (e.type == SDL_EVENT_WINDOW_MINIMIZED) {
+            }
+            else if (e.type == SDL_EVENT_WINDOW_MINIMIZED)
+            {
                 m_window->setMinimized(true);
-
-            } else if (e.type == SDL_EVENT_WINDOW_RESTORED) {
+            }
+            else if (e.type == SDL_EVENT_WINDOW_RESTORED)
+            {
                 m_window->setMinimized(false);
-            } else if (e.type == SDL_EVENT_QUIT) {
+            }
+            else if (e.type == SDL_EVENT_QUIT)
+            {
                 m_running = false;
             }
         }
@@ -293,13 +326,15 @@ void App::run()
             break;
 
         // update game state, draw the current frame
-        if (!m_window->isMinimized()) {
+        if (!m_window->isMinimized())
+        {
             m_renderer->drawFrame(renderItems, m_cameraController->renderView());
 
             // update after swapchain recreation
             VkExtent2D currentExtent = m_ctx->swapchainExtent();
             if (currentExtent.width != 0 && currentExtent.height != 0 &&
-                (currentExtent.height != previousExtent.height || currentExtent.width != previousExtent.width)) {
+                (currentExtent.height != previousExtent.height || currentExtent.width != previousExtent.width))
+            {
                 previousExtent = currentExtent;
                 m_cameraController->updateAspectRatio(
                     static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height)

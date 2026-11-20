@@ -1,49 +1,58 @@
 #pragma once
 
-#include <glm/mat4x4.hpp>
-
-#include <vector>
-
 #include "VkEngine/Types/FileData.h"
 #include "VkEngine/Types/Texturing.h"
 #include "VkEngine/Types/Vertex.h"
 
-namespace vke {
+#include <glm/mat4x4.hpp>
 
-namespace gltf {
+#include <vector>
 
-struct Primitive {
+namespace vke
+{
+
+namespace gltf
+{
+
+struct Primitive
+{
     std::vector<Vertex> vertices{};
     std::vector<uint32_t> indices{};
     int32_t material{-1}; // -1 absent like in gltf
 };
 
-struct Mesh {
+struct Mesh
+{
     std::vector<Primitive> primitives;
 };
 
-struct Node {
+struct Node
+{
     int32_t meshIndex{-1}; // -1 absent like in gltf
     glm::mat4 transform{1.0f};
 };
 
-struct Image {
+struct Image
+{
     FileData data; // empty if failed to read image
     ColorSpace colorSpace{ColorSpace::LINEAR};
 };
 
-struct Texture {
+struct Texture
+{
     int32_t imgIndex{0};
     int32_t samplerIndex{0};
 };
 
-struct TextureInfo {
+struct TextureInfo
+{
     glm::mat3x2 transform{1.0f};
     int32_t texIndex{-1};
     uint32_t texCoord{0};
 };
 
-struct Material {
+struct Material
+{
     glm::vec4 baseColorFactor{1.0f, 1.0f, 1.0f, 1.0f};
     TextureInfo baseColorTexture{};
     float metallicFactor{1.0f};
@@ -55,7 +64,8 @@ struct Material {
     glm::vec3 emissiveFactor{0.0f, 0.0f, 0.0f};
 };
 
-struct ImportedScene {
+struct ImportedScene
+{
     std::vector<Mesh> meshes;
     std::vector<Node> nodes;
     std::vector<Image> images;

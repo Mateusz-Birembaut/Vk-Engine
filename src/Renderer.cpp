@@ -1,16 +1,18 @@
 #include "VkEngine/Renderer.h"
 
-#include <array>
-#include <cmath>
-#include <stdexcept>
-#include <time.h>
-
 #include "VkEngine/FileReader.h"
 #include "VkEngine/Helpers.h"
 #include "VkEngine/VkInits.h"
 #include "VkEngine/VulkanCtx.h"
 
-namespace vke {
+#include <time.h>
+
+#include <array>
+#include <cmath>
+#include <stdexcept>
+
+namespace vke
+{
 
 Renderer::Renderer() = default;
 
@@ -60,7 +62,8 @@ void Renderer::initPerFrameData()
     };
     VkSemaphoreCreateInfo semaphoreCreateInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
 
-    for (int IFrame = 0; IFrame < FRAMES_IN_FLIGHT; ++IFrame) {
+    for (int IFrame = 0; IFrame < FRAMES_IN_FLIGHT; ++IFrame)
+    {
         // cmd pool and buffer
         check(
             vkCreateCommandPool(m_ctx->device(), &cmdPoolInfo, nullptr, &m_frames[IFrame].commandPool),
@@ -105,7 +108,8 @@ void Renderer::initGraphicsPipeline()
     vertPath += "/shader.vert.spv";
 
     auto readVertexShader = readShader(vertPath);
-    if (!readVertexShader.has_value()) {
+    if (!readVertexShader.has_value())
+    {
         throw std::runtime_error(
             "[Renderer] Failed to read vertex shader code, error code : " + std::to_string(readVertexShader.error())
         );
@@ -117,7 +121,8 @@ void Renderer::initGraphicsPipeline()
     fragPath += "/shader.frag.spv";
 
     auto readFragShader = readShader(fragPath);
-    if (!readFragShader.has_value()) {
+    if (!readFragShader.has_value())
+    {
         throw std::runtime_error(
             "[Renderer] Failed to read frag shader code, error code : " + std::to_string(readFragShader.error())
         );
@@ -196,7 +201,8 @@ void Renderer::createRenderSems()
     int imgCount = static_cast<int>(m_ctx->swapchainImgs().size());
     m_renderSems.resize(imgCount);
 
-    for (int ISwapChainImg = 0; ISwapChainImg < imgCount; ++ISwapChainImg) {
+    for (int ISwapChainImg = 0; ISwapChainImg < imgCount; ++ISwapChainImg)
+    {
         check(
             vkCreateSemaphore(m_ctx->device(), &semaphoreCreateInfo, nullptr, &m_renderSems[ISwapChainImg]),
             "[Renderer] Failed to create swapchain semaphore"
@@ -242,7 +248,8 @@ void Renderer::cleanupRenderSems()
     auto device = m_ctx->device();
 
     int semCount = static_cast<int>(m_renderSems.size());
-    for (int IRenderSem = 0; IRenderSem < semCount; ++IRenderSem) {
+    for (int IRenderSem = 0; IRenderSem < semCount; ++IRenderSem)
+    {
         vkDestroySemaphore(device, m_renderSems[IRenderSem], nullptr);
     }
     m_renderSems.clear();
@@ -264,7 +271,8 @@ void Renderer::recreateSwapchain()
 // the swapchain semaphore would be left signaled and next acquire would fail
 void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderView& RenderView)
 {
-    if (m_swapchainDirty) {
+    if (m_swapchainDirty)
+    {
         recreateSwapchain();
         m_swapchainDirty = false;
     }
@@ -280,14 +288,18 @@ void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderV
     auto acquireImg =
         vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, frameData.swapchainSem, VK_NULL_HANDLE, &imgId);
 
-    if (acquireImg == VK_ERROR_OUT_OF_DATE_KHR) {
+    if (acquireImg == VK_ERROR_OUT_OF_DATE_KHR)
+    {
         m_swapchainDirty = true;
         return;
     }
 
-    if (acquireImg == VK_SUBOPTIMAL_KHR) {
+    if (acquireImg == VK_SUBOPTIMAL_KHR)
+    {
         m_swapchainDirty = true;
-    } else {
+    }
+    else
+    {
         check(acquireImg, "[Renderer] Failed to acquire swapchain image");
     }
 
@@ -401,7 +413,8 @@ void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderV
         .sceneDataBufferAddr = sceneBuffer->deviceAddress,
     };
 
-    for (const auto& renderItem : renderItems) {
+    for (const auto& renderItem : renderItems)
+    {
         pushConstants.materialIndex = renderItem.materialHandle.index; // TODO check for validity before this
         pushConstants.model = renderItem.model;
 
@@ -412,7 +425,8 @@ void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderV
 
         vkCmdBindIndexBuffer(cmdBuff, m_gpuResources.indexBuffer(), 0, VK_INDEX_TYPE_UINT32);
         const GPUMesh* mesh = m_gpuResources.getMesh(renderItem.meshHandle);
-        if (mesh) {
+        if (mesh)
+        {
             vkCmdDrawIndexed(cmdBuff, mesh->indexCount, 1, mesh->firstIndex, mesh->baseVertex, 0);
         }
     }
@@ -448,9 +462,11 @@ void Renderer::drawFrame(const std::span<RenderItem>& renderItems, const RenderV
     // present after render semaphore signaled
     VkPresentInfoKHR presentInfo = vke::presentInfo(&swapChain, &imgId, &renderSemaphore);
     auto resPresent = vkQueuePresentKHR(m_ctx->graphicsQueue(), &presentInfo);
-    if (resPresent == VK_ERROR_OUT_OF_DATE_KHR || resPresent == VK_SUBOPTIMAL_KHR) {
+    if (resPresent == VK_ERROR_OUT_OF_DATE_KHR || resPresent == VK_SUBOPTIMAL_KHR)
+    {
         m_swapchainDirty = true;
-    } else if (resPresent != VK_SUCCESS)
+    }
+    else if (resPresent != VK_SUCCESS)
         throw std::runtime_error("[Renderer] present failed");
 
     ++m_frameNb;

@@ -1,16 +1,17 @@
 #include "VkEngine/GPUResources.h"
 
+#include "VkEngine/Helpers.h"
+#include "VkEngine/VkInits.h"
+
+#include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
 #include <array>
 #include <cstddef>
 #include <stdexcept>
-#include <vk_mem_alloc.h>
 
-#include "VkEngine/Helpers.h"
-#include "VkEngine/VkInits.h"
-
-namespace vke {
+namespace vke
+{
 
 void GPUResources::init(VulkanCtx* pVulkanCtx)
 {
@@ -146,7 +147,8 @@ GPUBuffer GPUResources::createBuffer(
     VkBufferCreateInfo stagingBufferCreateInfo = bufferCreateInfo(size, usage);
     VmaAllocationInfo allocInfo;
 
-    if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+    if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
+    {
         check(
             vmaCreateBufferWithAlignment(
                 m_ctx->vmaAllocator(), &stagingBufferCreateInfo, &allocCreateInfo,
@@ -159,7 +161,9 @@ GPUBuffer GPUResources::createBuffer(
         address_info.buffer = gpuBuff.vkbuffer;
 
         gpuBuff.deviceAddress = vkGetBufferDeviceAddress(m_ctx->device(), &address_info);
-    } else {
+    }
+    else
+    {
         check(
             vmaCreateBuffer(
                 m_ctx->vmaAllocator(), &stagingBufferCreateInfo, &allocCreateInfo, &gpuBuff.vkbuffer,
@@ -169,7 +173,8 @@ GPUBuffer GPUResources::createBuffer(
         );
     }
 
-    if (allocCreateInfo.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) {
+    if (allocCreateInfo.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT)
+    {
         gpuBuff.pMappedData = allocInfo.pMappedData;
     }
 
@@ -256,7 +261,8 @@ void GPUResources::recreateDepthBuffer()
 
 void GPUResources::cleanupDepthBuffer()
 {
-    if (m_depthBuffer.vkImage) {
+    if (m_depthBuffer.vkImage)
+    {
         const auto device = m_ctx->device();
         const auto vmaAllocator = m_ctx->vmaAllocator();
         vkDestroyImageView(device, m_depthBuffer.vkImageView, nullptr);
@@ -286,9 +292,8 @@ Handle<GPUImage> GPUResources::createGpuImage(const ImageDesc& imgDesc)
 
     copyToStagingBuffer(imgDesc.bytes(), 0, stagingBuffer);
 
-    immediateSubmit([&](VkCommandBuffer transientCmdBuff) {
-        recordImgCopyCmds(transientCmdBuff, stagingBuffer.vkbuffer, imgExtent, gpuImage.vkImage);
-    });
+    immediateSubmit([&](VkCommandBuffer transientCmdBuff)
+                    { recordImgCopyCmds(transientCmdBuff, stagingBuffer.vkbuffer, imgExtent, gpuImage.vkImage); });
 
     vmaDestroyBuffer(
         m_ctx->vmaAllocator(), stagingBuffer.vkbuffer, stagingBuffer.allocation
@@ -368,9 +373,8 @@ Handle<GPUMesh> GPUResources::createGpuMesh(std::span<const Vertex> vertices, st
         .size = indices.size_bytes(),
     };
 
-    immediateSubmit([&](VkCommandBuffer cmd) {
-        recordMeshCopyCmds(cmd, stagingBuffer.vkbuffer, vertexCopyRegion, indexCopyRegion);
-    });
+    immediateSubmit([&](VkCommandBuffer cmd)
+                    { recordMeshCopyCmds(cmd, stagingBuffer.vkbuffer, vertexCopyRegion, indexCopyRegion); });
 
     vmaDestroyBuffer(
         m_ctx->vmaAllocator(), stagingBuffer.vkbuffer, stagingBuffer.allocation
@@ -387,20 +391,23 @@ Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
         .roughnessFactor = matInfo.roughnessFactor,
     };
 
-    if (m_gpuImgs.get(matInfo.metallicRoughnessTexture.texture.imageHandle)) {
+    if (m_gpuImgs.get(matInfo.metallicRoughnessTexture.texture.imageHandle))
+    {
         gpuMat.metallicRoughnessTexture.imageIndex = matInfo.metallicRoughnessTexture.texture.imageHandle.index;
         gpuMat.metallicRoughnessTexture.samplerIndex =
             static_cast<uint16_t>(matInfo.metallicRoughnessTexture.texture.samplerIndex);
         gpuMat.metallicRoughnessTexture.transform = matInfo.metallicRoughnessTexture.transform;
     }
 
-    if (m_gpuImgs.get(matInfo.baseColorTexture.texture.imageHandle)) {
+    if (m_gpuImgs.get(matInfo.baseColorTexture.texture.imageHandle))
+    {
         gpuMat.baseColorTexture.imageIndex = matInfo.baseColorTexture.texture.imageHandle.index;
         gpuMat.baseColorTexture.samplerIndex = static_cast<uint16_t>(matInfo.baseColorTexture.texture.samplerIndex);
         gpuMat.baseColorTexture.transform = matInfo.baseColorTexture.transform;
     }
 
-    if (m_gpuImgs.get(matInfo.normalTexture.texture.imageHandle)) {
+    if (m_gpuImgs.get(matInfo.normalTexture.texture.imageHandle))
+    {
         gpuMat.normalTexture.imageIndex = matInfo.normalTexture.texture.imageHandle.index;
         gpuMat.normalTexture.samplerIndex = static_cast<uint16_t>(matInfo.normalTexture.texture.samplerIndex);
         gpuMat.normalTexture.transform = matInfo.normalTexture.transform;
@@ -421,32 +428,35 @@ Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
         .size = bytes.size_bytes(),
     };
 
-    immediateSubmit([&](VkCommandBuffer transientCmdBuff) {
-        vkCmdCopyBuffer(
-            transientCmdBuff, stagingBuffer.vkbuffer, m_materialMegaBuffer.vkbuffer, 1, &materialCopyRegion
-        );
+    immediateSubmit(
+        [&](VkCommandBuffer transientCmdBuff)
+        {
+            vkCmdCopyBuffer(
+                transientCmdBuff, stagingBuffer.vkbuffer, m_materialMegaBuffer.vkbuffer, 1, &materialCopyRegion
+            );
 
-        VkBufferMemoryBarrier2 transferBarrier{
-            .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-            .srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT,
-            .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-            .dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .buffer = m_materialMegaBuffer.vkbuffer,
-            .offset = materialCopyRegion.dstOffset,
-            .size = materialCopyRegion.size,
-        };
+            VkBufferMemoryBarrier2 transferBarrier{
+                .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                .srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT,
+                .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                .dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .buffer = m_materialMegaBuffer.vkbuffer,
+                .offset = materialCopyRegion.dstOffset,
+                .size = materialCopyRegion.size,
+            };
 
-        VkDependencyInfo transferDependencyInfo{
-            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-            .bufferMemoryBarrierCount = 1,
-            .pBufferMemoryBarriers = &transferBarrier,
-        };
+            VkDependencyInfo transferDependencyInfo{
+                .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                .bufferMemoryBarrierCount = 1,
+                .pBufferMemoryBarriers = &transferBarrier,
+            };
 
-        vkCmdPipelineBarrier2(transientCmdBuff, &transferDependencyInfo);
-    });
+            vkCmdPipelineBarrier2(transientCmdBuff, &transferDependencyInfo);
+        }
+    );
 
     vmaDestroyBuffer(
         m_ctx->vmaAllocator(), stagingBuffer.vkbuffer, stagingBuffer.allocation
@@ -457,8 +467,10 @@ Handle<GPUMaterial> GPUResources::createMaterial(const MaterialDesc& matInfo)
 
 uint32_t GPUResources::getOrCreateSampler(const Sampler& samplerDesc)
 {
-    for (uint32_t ISampler = 0; ISampler < m_gpuSamplers.size(); ISampler++) {
-        if (m_gpuSamplers[ISampler].samplerDesc == samplerDesc) {
+    for (uint32_t ISampler = 0; ISampler < m_gpuSamplers.size(); ISampler++)
+    {
+        if (m_gpuSamplers[ISampler].samplerDesc == samplerDesc)
+        {
             return ISampler;
         }
     }
@@ -636,7 +648,8 @@ void GPUResources::recordMeshCopyCmds(
 
 VkSamplerAddressMode GPUResources::wrapModeFrom(WrapMode wrapMode)
 {
-    switch (wrapMode) {
+    switch (wrapMode)
+    {
         case WrapMode::CLAMP_TO_EDGE:
             return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         case WrapMode::MIRRORED_REPEAT:
@@ -649,7 +662,8 @@ VkSamplerAddressMode GPUResources::wrapModeFrom(WrapMode wrapMode)
 
 VkFilter GPUResources::filterModeFrom(FilterMode filterMode)
 {
-    switch (filterMode) {
+    switch (filterMode)
+    {
         case FilterMode::NEAREST:
             return VK_FILTER_NEAREST;
         case FilterMode::LINEAR:
@@ -670,23 +684,29 @@ void GPUResources::cleanup()
 
     vkDestroyCommandPool(device, m_transientBuffCmdPool, nullptr);
 
-    for (auto& sampler : m_gpuSamplers) {
+    for (auto& sampler : m_gpuSamplers)
+    {
         vkDestroySampler(device, sampler.vkSampler, nullptr);
     }
 
-    m_gpuImgs.releaseAllAlive([this, device, vmaAllocator](GPUImage& gpuImage) {
-        vkDestroyImageView(device, gpuImage.vkImageView, nullptr);
-        vmaDestroyImage(vmaAllocator, gpuImage.vkImage, gpuImage.allocation);
-    });
+    m_gpuImgs.releaseAllAlive(
+        [this, device, vmaAllocator](GPUImage& gpuImage)
+        {
+            vkDestroyImageView(device, gpuImage.vkImageView, nullptr);
+            vmaDestroyImage(vmaAllocator, gpuImage.vkImage, gpuImage.allocation);
+        }
+    );
 
-    m_gpuBuffs.releaseAllAlive([this, vmaAllocator](GPUBuffer& gpuBuff) {
-        vmaDestroyBuffer(vmaAllocator, gpuBuff.vkbuffer, gpuBuff.allocation);
-    });
+    m_gpuBuffs.releaseAllAlive([this, vmaAllocator](GPUBuffer& gpuBuff)
+                               { vmaDestroyBuffer(vmaAllocator, gpuBuff.vkbuffer, gpuBuff.allocation); });
 
-    m_gpuMeshes.releaseAllAlive([this, vertexBlock, indexBlock](GPUMesh& gpuMesh) {
-        vmaVirtualFree(vertexBlock, gpuMesh.vAllocVertices);
-        vmaVirtualFree(indexBlock, gpuMesh.vAllocIndices);
-    });
+    m_gpuMeshes.releaseAllAlive(
+        [this, vertexBlock, indexBlock](GPUMesh& gpuMesh)
+        {
+            vmaVirtualFree(vertexBlock, gpuMesh.vAllocVertices);
+            vmaVirtualFree(indexBlock, gpuMesh.vAllocIndices);
+        }
+    );
 
     vmaDestroyVirtualBlock(vertexBlock);
     vmaDestroyVirtualBlock(indexBlock);

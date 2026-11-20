@@ -9,7 +9,8 @@
 #include <stb_image.h>
 
 #define VMA_LEAK_LOG_FORMAT(format, ...)                                                                               \
-    do {                                                                                                               \
+    do                                                                                                                 \
+    {                                                                                                                  \
         printf((format), __VA_ARGS__);                                                                                 \
         printf("\n");                                                                                                  \
     } while (false)

@@ -1,9 +1,5 @@
 #pragma once
 
-#include <span>
-#include <stdint.h>
-#include <vector>
-
 #include "VkEngine/Helpers.h"
 #include "VkEngine/Pool.h"
 #include "VkEngine/Types/GpuTypes.h"
@@ -13,10 +9,17 @@
 #include "VkEngine/VkInits.h"
 #include "VkEngine/VulkanCtx.h"
 
-namespace vke {
+#include <stdint.h>
 
-class GPUResources {
-public:
+#include <span>
+#include <vector>
+
+namespace vke
+{
+
+class GPUResources
+{
+  public:
     GPUResources() = default;
     ~GPUResources() = default;
 
@@ -103,7 +106,7 @@ public:
      */
     void cleanup();
 
-private:
+  private:
     void initDescriptorPool(VkDevice device);
 
     void initDescriptorSetLayout(VkDevice device);
