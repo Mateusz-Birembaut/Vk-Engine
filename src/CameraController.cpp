@@ -8,7 +8,7 @@ namespace vke
 
 vke::RenderView CameraController::renderView() const
 {
-    return {m_camera.view(), m_camera.proj(), m_camera.pos()};
+    return {.view = m_camera.view(), .proj = m_camera.proj(), .pos = m_camera.pos()};
 }
 
 void CameraController::updateAspectRatio(float newAspectRatio)
