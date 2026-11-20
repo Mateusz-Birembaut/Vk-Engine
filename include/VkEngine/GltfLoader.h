@@ -2,14 +2,35 @@
 
 #include <glm/mat4x4.hpp>
 
+#include <tiny_gltf_v3.h>
+
 #include <filesystem>
 #include <memory>
 #include <optional>
-#include <tiny_gltf_v3.h>
 
 #include "VkEngine/Types/ImportedScene.h"
 
 namespace vke {
+
+struct PrimitiveAttributeIndices {
+    int32_t pos{-1};
+    int32_t normal{-1};
+    int32_t uv0{-1};
+    int32_t uv1{-1};
+    int32_t color{-1};
+    int32_t tang{-1};
+    int32_t indices{-1};
+};
+
+enum materialTextureFlagBits : uint32_t {
+    VKE_MAT_BASE_COLOR_TEXTURE = 1u << 0,
+    VKE_MAT_METALLIC_ROUGHNESS_TEXTURE = 1u << 1,
+    VKE_MAT_NORMAL_TEXTURE = 1u << 2,
+    VKE_MAT_OCCLUSION_TEXTURE = 1u << 3,
+    VKE_MAT_EMISSIVE_TEXTURE = 1u << 4,
+    VKE_MAT_ANY_TEXTURE = 0xFFFFFFFF,
+};
+typedef uint32_t materialTextureFlags;
 
 /**
  * Loads in RAM a scene from a gltf file
@@ -24,7 +45,18 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
 /**
  * Fills a structure containing all possible attrbitue indices for a primitive, -1 if absent
  */
-gltf::PrimitiveAttributeIndices readAttributesIndices(const tg3_primitive& tgPrim);
+PrimitiveAttributeIndices readPrimitiveAttributesIndices(const tg3_primitive& tgPrim);
+
+std::vector<glm::vec2> readPrimitiveUVAttribute(const tg3_model& model, int32_t uvAttributeIndex);
+
+/**
+ * Checks whether the material have a set of textures, by default checks if the material have at least 1 texture
+ *
+ * @param textureFlags Default = VKE_MAT_ANY_TEXTURE, change this to check
+ */
+bool MaterialHaveTexture(
+    const tg3_model& model, int32_t materialIndex, materialTextureFlags textureFlags = VKE_MAT_ANY_TEXTURE
+);
 
 std::optional<gltf::Primitive>
 readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t primIndex, const tg3_primitive& tgPrim);
@@ -114,6 +146,5 @@ template <typename SRC> std::vector<uint32_t> readIndices(const tg3_model& model
 }
 
 std::vector<glm::vec4> readColors(const tg3_model& model, const tg3_accessor& acc);
-
 
 } // namespace vke

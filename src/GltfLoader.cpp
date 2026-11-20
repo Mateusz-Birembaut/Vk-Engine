@@ -2,12 +2,12 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include <tiny_gltf_v3.h>
+
 #include <cmath>
 #include <iostream>
 #include <spdlog/fmt/std.h>
 #include <spdlog/spdlog.h>
-#include <stb_image.h>
-#include <tiny_gltf_v3.h>
 #include <utility>
 
 #include "VkEngine/FileReader.h"
@@ -56,9 +56,9 @@ std::optional<tinygltf3::Model> loadGltfModel(const std::filesystem::path& path)
     return model;
 }
 
-gltf::PrimitiveAttributeIndices readAttributesIndices(const tg3_primitive& tgPrim)
+PrimitiveAttributeIndices readPrimitiveAttributesIndices(const tg3_primitive& tgPrim)
 {
-    gltf::PrimitiveAttributeIndices attributes{
+    PrimitiveAttributeIndices attributes{
         .indices = tgPrim.indices,
     };
 
@@ -85,13 +85,55 @@ gltf::PrimitiveAttributeIndices readAttributesIndices(const tg3_primitive& tgPri
     return attributes;
 }
 
-std::optional<gltf::Primitive>
-readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t primIndex, const tg3_primitive& tgPrim)
+std::vector<glm::vec2> readPrimitiveUVAttribute(const tg3_model& model, int32_t uvAttributeIndex)
+{
+    if (uvAttributeIndex < 0 || static_cast<uint32_t>(uvAttributeIndex) >= model.accessors_count) {
+        return std::vector<glm::vec2>();
+    }
+
+    const auto& uvAcc = model.accessors[static_cast<uint32_t>(uvAttributeIndex)];
+
+    switch (uvAcc.component_type) {
+        case TG3_COMPONENT_TYPE_FLOAT:
+            return readPrimitiveAttribute<float, 2>(model, uvAcc);
+        case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
+            return readPrimitiveAttribute<uint8_t, 2>(model, uvAcc);
+        case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
+            return readPrimitiveAttribute<uint16_t, 2>(model, uvAcc);
+        default:
+            return std::vector<glm::vec2>();
+    }
+}
+
+bool MaterialHaveTexture(const tg3_model& model, int32_t materialIndex, materialTextureFlags textureFlags)
+{
+    if (materialIndex == -1 || static_cast<uint32_t>(materialIndex) >= model.materials_count)
+        return false;
+
+    const auto& tgMaterial = model.materials[static_cast<uint32_t>(materialIndex)];
+
+    // clang-format off
+
+    return (
+        ((textureFlags & VKE_MAT_BASE_COLOR_TEXTURE)         && tgMaterial.pbr_metallic_roughness.base_color_texture.index >= 0)         ||
+        ((textureFlags & VKE_MAT_METALLIC_ROUGHNESS_TEXTURE) && tgMaterial.pbr_metallic_roughness.metallic_roughness_texture.index >= 0) ||
+        ((textureFlags & VKE_MAT_NORMAL_TEXTURE)             && tgMaterial.normal_texture.index >= 0)                                    ||
+        ((textureFlags & VKE_MAT_OCCLUSION_TEXTURE)          && tgMaterial.occlusion_texture.index >= 0)                                 ||
+        ((textureFlags & VKE_MAT_EMISSIVE_TEXTURE)           && tgMaterial.emissive_texture.index >= 0));
+
+    // clang-format on
+}
+
+std::optional<gltf::Primitive> readPrimitiveData(
+    const tg3_model& model, uint32_t meshIndex, std::string_view meshName, uint32_t primIndex,
+    const tg3_primitive& tgPrim
+)
 {
     if (tgPrim.mode != TG3_MODE_TRIANGLES) {
         log::gltf->warn(
-            "Mesh {} : Prim {}, Wrong primitive mode, primitive will be skipped, primitive mode must be Triangles (4)",
-            meshName, primIndex
+            "Mesh {} '{}' : Prim {}, Wrong primitive mode, primitive will be skipped, primitive mode must be Triangles "
+            "(4)",
+            meshIndex, meshName, primIndex
         );
         return std::nullopt;
     };
@@ -100,10 +142,12 @@ readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t pr
         .material = tgPrim.material,
     };
 
-    gltf::PrimitiveAttributeIndices attributes{readAttributesIndices(tgPrim)};
+    PrimitiveAttributeIndices attributes = readPrimitiveAttributesIndices(tgPrim);
 
     if (attributes.pos == -1) {
-        log::gltf->warn("Mesh {} : Prim {}, No position attribute found, primitive skipped", meshName, primIndex);
+        log::gltf->warn(
+            "Mesh {} '{}' : Prim {}, No position attribute found, primitive skipped", meshIndex, meshName, primIndex
+        );
         return std::nullopt;
     }
 
@@ -122,46 +166,37 @@ readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t pr
         normals = readPrimitiveAttribute<float, 3>(model, normalAcc);
     } else {
         log::gltf->warn(
-            "Mesh {} : Prim {}, No normal attribute found, normals and tangents must be computed", meshName, primIndex
+            "Mesh {} '{}' : Prim {}, No normal attribute found, normals must be computed", meshIndex, meshName,
+            primIndex
         );
+        if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_NORMAL_TEXTURE)) {
+            log::gltf->warn("tangents should also be computed", meshIndex, meshName, primIndex);
+        }
     }
 
     if (attributes.uv0 != -1) {
-        const auto& uvAcc = model.accessors[attributes.uv0];
-        switch (uvAcc.component_type) {
-            case TG3_COMPONENT_TYPE_FLOAT:
-                uvs0 = readPrimitiveAttribute<float, 2>(model, uvAcc);
-                break;
-            case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
-                uvs0 = readPrimitiveAttribute<uint8_t, 2>(model, uvAcc);
-                break;
-            case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
-                uvs0 = readPrimitiveAttribute<uint16_t, 2>(model, uvAcc);
-                break;
-        }
+        uvs0 = readPrimitiveUVAttribute(model, attributes.uv0);
+        uvs1 = uvs0;
     } else {
-        log::gltf->warn("No texCoord attribute found");
+        if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_ANY_TEXTURE)) {
+            log::gltf->warn(
+                "Mesh  {} '{}' : Prim {} has texture attached to its material but no uv attribute found ; "
+                "tangents must be computed",
+                meshIndex, meshName, primIndex
+            );
+        }
     }
 
     if (attributes.uv1 != -1) {
-        const auto& uvAcc = model.accessors[attributes.uv1];
-        switch (uvAcc.component_type) {
-            case TG3_COMPONENT_TYPE_FLOAT:
-                uvs1 = readPrimitiveAttribute<float, 2>(model, uvAcc);
-                break;
-            case TG3_COMPONENT_TYPE_UNSIGNED_BYTE:
-                uvs1 = readPrimitiveAttribute<uint8_t, 2>(model, uvAcc);
-                break;
-            case TG3_COMPONENT_TYPE_UNSIGNED_SHORT:
-                uvs1 = readPrimitiveAttribute<uint16_t, 2>(model, uvAcc);
-                break;
-        }
+        uvs1 = readPrimitiveUVAttribute(model, attributes.uv1);
     }
 
     if (attributes.color != -1) {
         const auto& colorAcc = model.accessors[attributes.color];
 
         colors = readColors(model, colorAcc);
+    } else {
+        log::gltf->debug("Mesh  {} '{}' : Prim {}, No color attribute found", meshIndex, meshName, primIndex);
     }
 
     // TODO : compute them if absent
@@ -170,9 +205,12 @@ readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t pr
 
         tangs = readPrimitiveAttribute<float, 4>(model, tangAcc);
     } else {
-        log::gltf->warn(
-            "Mesh {} : Prim {}, No tangent attribute found, tangents must be computed", meshName, primIndex
-        );
+        if (MaterialHaveTexture(model, tgPrim.material, VKE_MAT_NORMAL_TEXTURE))
+            log::gltf->warn(
+                "Mesh  {} '{}' : Prim {} has a normal map attached to its material but no tangent attribute found ; "
+                "tangents must be computed",
+                meshIndex, meshName, primIndex
+            );
     }
 
     if (attributes.indices != -1) {
@@ -193,9 +231,9 @@ readPrimitiveData(const tg3_model& model, std::string_view meshName, uint32_t pr
         // fill indices for
         if (positions.size() % 3 != 0) { // only for TG3_MODE_TRIANGLES
             log::gltf->warn(
-                "Mesh {} : Prim {}, No indices found, failed to compute indices, number of vertices {} should be a "
-                "multiple of 3, skipping this primitive",
-                meshName, primIndex, positions.size()
+                "Mesh {} '{}' : Prim {}, No indices found, failed to compute indices, number of vertices {} should be "
+                "a multiple of 3, skipping this primitive",
+                meshIndex, meshName, primIndex, positions.size()
             );
             return std::nullopt;
         }
@@ -253,7 +291,7 @@ void fillMeshesData(const tg3_model& model, std::vector<gltf::Mesh>& impSceneMes
             const auto& tgPrim = tgMesh.primitives[IPrim];
 
             const auto primRet =
-                readPrimitiveData(model, std::string_view{tgMesh.name.data, tgMesh.name.len}, IPrim, tgPrim);
+                readPrimitiveData(model, IMesh, std::string_view{tgMesh.name.data, tgMesh.name.len}, IPrim, tgPrim);
 
             if (primRet.has_value()) {
                 mesh.primitives.push_back(std::move(primRet.value()));
